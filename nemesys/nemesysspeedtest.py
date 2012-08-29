@@ -20,7 +20,7 @@ from time import sleep
 from timeNtp import timestampNtp
 from urlparse import urlparse
 from xmlutils import xml2task
-from usbkey import check_usb, move_on_key
+# from usbkey import check_usb, move_on_key
 from logger import logging
 from collections import deque
 import hashlib
@@ -196,10 +196,10 @@ class _Checker(Thread):
       self._cycle.clear()
       logger.debug('Verifica della scadenza del software fallita')
       wx.CallAfter(self._gui._update_messages, "Questa copia di Ne.Me.Sys Speedtest risulta scaduta. Si consiglia di disinstallare il software.", 'red')
-    elif (not check_usb()):
-      self._cycle.clear()
-      logger.debug('Verifica della presenza della chiave USB fallita')
-      wx.CallAfter(self._gui._update_messages, "Per l'utilizzo di questo software occorre disporre della opportuna chiave USB. Inserire la chiave nel computer e riavviare il programma.", 'red')
+    # elif (not check_usb()):
+      # self._cycle.clear()
+      # logger.debug('Verifica della presenza della chiave USB fallita')
+      # wx.CallAfter(self._gui._update_messages, "Per l'utilizzo di questo software occorre disporre della opportuna chiave USB. Inserire la chiave nel computer e riavviare il programma.", 'red')
     elif (self._new_version_available()):
       self._cycle.clear()
       logger.debug('Verifica della presenza di nuove versioni del software')
@@ -510,22 +510,22 @@ class _Tester(Thread):
         profiler.update(prof)
         m.savetest(test, profiler)
         wx.CallAfter(self._gui._update_messages, "Elaborazione dei dati")
-        if (move_on_key()):
-          wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.value, 'green')
-          wx.CallAfter(self._gui._update_ping, test.value)
-        else:
-          raise Exception("chiave USB mancante")
+        # if (move_on_key()):
+        wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.value, 'green')
+        wx.CallAfter(self._gui._update_ping, test.value)
+        # else:
+          # raise Exception("chiave USB mancante")
         
         # Testa gli ftp down
         (test, prof) = self._do_ftp_test(t, DOWN, task)
         profiler.update(prof)
         m.savetest(test, profiler)
         wx.CallAfter(self._gui._update_messages, "Elaborazione dei dati")
-        if (move_on_key()):
-          wx.CallAfter(self._gui._update_messages, "Download bandwith %s kbps" % self._get_bandwith(test), 'green')
-          wx.CallAfter(self._gui._update_down, self._get_bandwith(test))
-        else:
-          raise Exception("chiave USB mancante")
+        # if (move_on_key()):
+        wx.CallAfter(self._gui._update_messages, "Download bandwith %s kbps" % self._get_bandwith(test), 'green')
+        wx.CallAfter(self._gui._update_down, self._get_bandwith(test))
+        # else:
+          # raise Exception("chiave USB mancante")
 
         # Testa gli ftp up
         (test, prof) = self._do_ftp_test(t, UP, task)
@@ -539,11 +539,11 @@ class _Tester(Thread):
         self._upload(self._prospect)
         # Fine Salvataggio
         
-        if (move_on_key()):
-          wx.CallAfter(self._gui._update_messages, "Upload bandwith %s kbps" % self._get_bandwith(test), 'green')
-          wx.CallAfter(self._gui._update_up, self._get_bandwith(test))
-        else:
-          raise Exception("chiave USB mancante")
+        # if (move_on_key()):
+        wx.CallAfter(self._gui._update_messages, "Upload bandwith %s kbps" % self._get_bandwith(test), 'green')
+        wx.CallAfter(self._gui._update_up, self._get_bandwith(test))
+        # else:
+          # raise Exception("chiave USB mancante")
 
       except Exception as e:
         logger.warning('Misura sospesa per eccezione: %s.' % e)
@@ -796,7 +796,7 @@ class Frame(wx.Frame):
         self._tester = _Tester(self)
         self._tester.start()
       else:
-        move_on_key()
+        # move_on_key()
         self._button_check = False
         self._update_messages("Profilazione terminata")
         self._enable_button()
