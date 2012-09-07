@@ -538,7 +538,7 @@ def _get_NetIF(type = 0):
 
   global NETIF_TIME, NETIF_1, NETIF_2
 
-  age = 20 #seconds
+  age = 4 #seconds
   now = time.time()
   
   if ( NETIF_TIME == None ):
