@@ -3,22 +3,22 @@
 
 struct device
 {
-  int		index;
-	int		type;
-	char	*description;
-  char	*name;
-	char	*mac;
-  char	*ip;
-  char	*net;
-  char	*mask;
+  int   index;
+  int   type;
+  char  *description;
+  char  *name;
+  char  *mac;
+  char  *ip;
+  char  *net;
+  char  *mask;
 };
 
 char *sniff_error[] =
 {
-	"Timeout was reached during packet receive",
-	"One packet pulled",
-	"Packet out of range",
-	"Error receiving the packet",
+  "Timeout was reached during packet receive",
+  "One packet pulled",
+  "Packet out of range",
+  "Error receiving the packet",
 };
 
 struct statistics
@@ -54,55 +54,55 @@ struct statistics stats;
 
 void print_hex_ascii_line(const u_char *payload, int len, int offset, char *packet)
 {
-	int i;
-	int gap;
-	const u_char *ch;
-	char buffer[22];
+  int i;
+  int gap;
+  const u_char *ch;
+  char buffer[22];
 
-	/* offset */
-	sprintf(buffer,"| %05d |  ", offset);
-	strcat(packet,buffer);
+  /* offset */
+  sprintf(buffer,"| %05d |  ", offset);
+  strcat(packet,buffer);
 
-	/* hex */
-	ch = payload;
-	for(i = 0; i < len; i++)
-	{
-		sprintf(buffer,"%02x ", *ch);
-		strcat(packet,buffer);
-		ch++;
-		/* print extra space after 8th byte for visual aid */
-		if (i == 7) {strcat(packet," ");}
-	}
-	/* print space to handle line less than 8 bytes */
-	if (len < 8) {strcat(packet," ");}
+  /* hex */
+  ch = payload;
+  for(i = 0; i < len; i++)
+  {
+    sprintf(buffer,"%02x ", *ch);
+    strcat(packet,buffer);
+    ch++;
+    /* print extra space after 8th byte for visual aid */
+    if (i == 7) {strcat(packet," ");}
+  }
+  /* print space to handle line less than 8 bytes */
+  if (len < 8) {strcat(packet," ");}
 
-	/* fill hex gap with spaces if not full line */
-	if (len < 16)
-	{
-		gap = 16 - len;
-		for (i = 0; i < gap; i++) {strcat(packet,"   ");}
-	}
-	strcat(packet," | ");
+  /* fill hex gap with spaces if not full line */
+  if (len < 16)
+  {
+    gap = 16 - len;
+    for (i = 0; i < gap; i++) {strcat(packet,"   ");}
+  }
+  strcat(packet," | ");
 
-	/* ascii (if printable) */
-	ch = payload;
-	for(i = 0; i < len; i++)
-	{
-		if (isprint(*ch))
-		{
-			sprintf(buffer,"%c", *ch);
-			strcat(packet,buffer);
-		}
-		else {strcat(packet,".");}
-		ch++;
-	}
+  /* ascii (if printable) */
+  ch = payload;
+  for(i = 0; i < len; i++)
+  {
+    if (isprint(*ch))
+    {
+      sprintf(buffer,"%c", *ch);
+      strcat(packet,buffer);
+    }
+    else {strcat(packet,".");}
+    ch++;
+  }
 
-	if (len < 16)
-	{
-		gap = 16 - len;
-		for (i = 0; i < gap; i++) {strcat(packet,".");}
-	}
-	strcat(packet," |\n");
+  if (len < 16)
+  {
+    gap = 16 - len;
+    for (i = 0; i < gap; i++) {strcat(packet,".");}
+  }
+  strcat(packet," |\n");
 
   return;
 }
@@ -110,51 +110,51 @@ void print_hex_ascii_line(const u_char *payload, int len, int offset, char *pack
 
 void print_payload(const u_char *payload, int len)
 {
-	int len_rem = len;
-	int line_width = 16;			/* number of bytes per line */
-	int line_len;
-	int offset = 0;					/* zero-based offset counter */
-	const u_char *ch = payload;
-	char *packet;
+  int len_rem = len;
+  int line_width = 16;      /* number of bytes per line */
+  int line_len;
+  int offset = 0;          /* zero-based offset counter */
+  const u_char *ch = payload;
+  char *packet;
 
-	packet = PyMem_New(char,88*((len/line_width)+1));
+  packet = PyMem_New(char,88*((len/line_width)+1));
 
-	strcpy(packet,"\n");
+  strcpy(packet,"\n");
 
-	if (len <= 0) {return;}
+  if (len <= 0) {return;}
 
-	/* data fits on one line */
-	if (len <= line_width)
-	{
-		print_hex_ascii_line(ch, len, offset, packet);
-		return;
-	}
+  /* data fits on one line */
+  if (len <= line_width)
+  {
+    print_hex_ascii_line(ch, len, offset, packet);
+    return;
+  }
 
-	/* data spans multiple lines */
-	for ( ;; )
-	{
-		/* compute current line length */
-		line_len = line_width % len_rem;
-		/* print line */
-		print_hex_ascii_line(ch, line_len, offset, packet);
-		/* compute total remaining */
-		len_rem = len_rem - line_len;
-		/* shift pointer to remaining bytes to print */
-		ch = ch + line_len;
-		/* add offset */
-		offset = offset + line_width;
-		/* check if we have line width chars or less */
-		if (len_rem <= line_width)
-		{
-			/* print last line and get out */
-			print_hex_ascii_line(ch, len_rem, offset, packet);
-			break;
-		}
-	}
+  /* data spans multiple lines */
+  for ( ;; )
+  {
+    /* compute current line length */
+    line_len = line_width % len_rem;
+    /* print line */
+    print_hex_ascii_line(ch, line_len, offset, packet);
+    /* compute total remaining */
+    len_rem = len_rem - line_len;
+    /* shift pointer to remaining bytes to print */
+    ch = ch + line_len;
+    /* add offset */
+    offset = offset + line_width;
+    /* check if we have line width chars or less */
+    if (len_rem <= line_width)
+    {
+      /* print last line and get out */
+      print_hex_ascii_line(ch, len_rem, offset, packet);
+      break;
+    }
+  }
 
-	fprintf(debug_log,"%s",packet);
+  fprintf(debug_log,"%s",packet);
 
-	PyMem_Free(packet);
+  PyMem_Free(packet);
 
   return;
 }
@@ -265,8 +265,8 @@ int sniffer()
   const u_char *pcap_data;
 
   struct tm *ts;
-	time_t timestamp;
-	char timestamp_string[44];
+  time_t timestamp;
+  char timestamp_string[44];
 
   no_stop=1;
 
@@ -406,21 +406,21 @@ char *int_to_dot(u_int address, char *res)
   }
   sprintf(res,"%u.%u.%u.%u",dot[0],dot[1],dot[2],dot[3]);
 
-	return res;
+  return res;
 }
 
 
 char *cidr_to_dot(u_long cidr, char *mask)
 {
   char *mask255 = "255.255.255.255";
-	double ui_net = 0;
-	u_int ui_mask=0, ui_mask255=0;
-	u_int i, bits;
+  double ui_net = 0;
+  u_int ui_mask=0, ui_mask255=0;
+  u_int i, bits;
 
-	bits = 32 - (u_int)cidr;
-	ui_mask255 = dot_to_int(mask255);
+  bits = 32 - (u_int)cidr;
+  ui_mask255 = dot_to_int(mask255);
 
-	for(i = 0; i < bits ; i++)
+  for(i = 0; i < bits ; i++)
   {ui_net += pow(2,(double)i);}
 
   ui_mask = ui_mask255 - (u_int)ui_net;
@@ -641,16 +641,16 @@ u_int select_device(char *dev)
 
   sel_dev=0;
 
-	/* DEBUG BEGIN */
+  /* DEBUG BEGIN */
   if(DEBUG_MODE)
-	{
-	  debug_log = fopen("pktman.txt","a");
+  {
+    debug_log = fopen("pktman.txt","a");
 
-		fprintf(debug_log,"\nSEARCHING FOR: %s\n",dev);
+    fprintf(debug_log,"\nSEARCHING FOR: %s\n",dev);
 
-		fclose(debug_log);
-		debug_log = NULL;
-	}
+    fclose(debug_log);
+    debug_log = NULL;
+  }
   /* DEBUG END */
 
   for(sel_dev=1; sel_dev<=tot_dev; sel_dev++)
@@ -671,20 +671,20 @@ u_int select_device(char *dev)
 
     if (strstr(devices[sel_dev].name,dev)!=NULL||(strcmp(dev,devices[sel_dev].name)==0)||(strcmp(dev,devices[sel_dev].ip)==0))
     {
-        indice++;
-        find[indice]=sel_dev;
+      indice++;
+      find[indice]=sel_dev;
 
-        /* DEBUG BEGIN */
-        if(DEBUG_MODE)
-        {
-          debug_log = fopen("pktman.txt","a");
+      /* DEBUG BEGIN */
+      if(DEBUG_MODE)
+      {
+        debug_log = fopen("pktman.txt","a");
 
-          fprintf(debug_log,"\n[%i] Trovato Device n°%i [%s]\n",indice,sel_dev,devices[sel_dev].name);
+        fprintf(debug_log,"\n[%i] Trovato Device n°%i [%s]\n",indice,sel_dev,devices[sel_dev].name);
 
-          fclose(debug_log);
-          debug_log = NULL;
-        }
-        /* DEBUG END */
+        fclose(debug_log);
+        debug_log = NULL;
+      }
+      /* DEBUG END */
     }
   }
 
