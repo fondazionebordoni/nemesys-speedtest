@@ -54,11 +54,12 @@ def send_arping(IPsrc, IPdst, MACsrc, MACdst, sock):
 
   netPkt = ethPkt + (60 - len(ethPkt)) * '\x00'
 
-  # sended = pktman.push(netPkt)
-  # if (sended['err_flag'] != 0):
-    # logger.debug("%s" % sended['err_str'])
-  
-  sock.sendto(netPkt, (IPdst, 0))
+  if (platform.startswith('win')):
+    sock.sendto(netPkt, (IPdst, 0))
+  else:
+    sended = pktman.push(netPkt)
+    if (sended['err_flag'] != 0):
+      logger.debug("%s" % sended['err_str'])
 
 
 def receive_arping(MACsrc):
@@ -132,9 +133,10 @@ def do_arping(dev, IPsrc, NETmask, realSubnet = True, timeout = 1, mac = None, t
   
     if (platform.startswith('win')):
       subprocess.call('netsh interface ip delete arpcache', shell=True)
-      
-    sock = socket.socket(socket.AF_INET, socket.SOCK_RAW)
-    sock.setblocking(True)
+      sock = socket.socket(socket.AF_INET, socket.SOCK_RAW)
+      sock.setblocking(True)
+    else:
+      sock = None
     
     lasting = 2 ** (32 - NETmask)
     index = 0
@@ -166,7 +168,8 @@ def do_arping(dev, IPsrc, NETmask, realSubnet = True, timeout = 1, mac = None, t
 
     #logger.debug("Totale host: %d" % nHosts)
     pktman.close()
-    sock.close()
+    if (platform.startswith('win')):
+      sock.close()
 
   return nHosts
 
