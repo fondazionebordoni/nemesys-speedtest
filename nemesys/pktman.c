@@ -935,7 +935,7 @@ static PyObject *pktman_initialize(PyObject *self, PyObject *args)
 
   PyArg_ParseTuple(args, "s|iiiiizii", &dev, &buffer, &snaplen, &timeout, &promisc, &online, &dump_file, &pkt_start, &pkt_stop);
 
-  buffer=44*1024000;
+  // buffer=44*1024000;
 
   if (dump_file == NULL)
   {

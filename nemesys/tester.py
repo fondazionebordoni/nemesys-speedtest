@@ -46,8 +46,8 @@ max_retry = 8
 max_time = 240000
 
 #Parametri Sniffer:
-BUFF = 8 * 1024 * 1024 # MegaByte
-SNAPLEN = 150           # Byte
+BUFF = 22 * 1024000     # MegaByte
+SNAPLEN = 160           # Byte
 TIMEOUT = 1             # MilliSeconds
 PROMISC = 1             # Promisc Mode ON/OFF
 
@@ -165,8 +165,8 @@ class Tester:
     try:
       logger.debug('Test initializing...')
       logger.debug('File dimension: %s bytes' % bytes)
-      buff = int(max(bytes*4,BUFF))
-      pcapper = Pcapper(self._nic_if, buff, SNAPLEN, TIMEOUT, PROMISC)
+      # buff = int(max(bytes/2,BUFF))
+      pcapper = Pcapper(self._nic_if, BUFF, SNAPLEN, TIMEOUT, PROMISC)
       pcapper.start()
 
       logger.debug('Testing... ')
@@ -230,8 +230,8 @@ class Tester:
     try:
       logger.debug('Test initializing...')
       logger.debug('File dimension: %s bytes' % bytes)
-      buff = int(max(bytes*2,BUFF))
-      pcapper = Pcapper(self._nic_if, buff, SNAPLEN, TIMEOUT, PROMISC)
+      # buff = int(max(bytes/2,BUFF))
+      pcapper = Pcapper(self._nic_if, BUFF, SNAPLEN, TIMEOUT, PROMISC)
       pcapper.start()
 
       logger.debug('Testing... ')
