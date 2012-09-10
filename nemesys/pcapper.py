@@ -74,8 +74,8 @@ class Pcapper(Thread):
     pktman.close()
     
     self._stop = time.time()
-    elapsed = int((self._stop-self._start)*1000000)
-    logger.debug("Sniffer Total Time: %d microsecondi" % elapsed)
+    elapsed = self._stop-self._start
+    # logger.debug("Sniffer Total Time: %d.%.3d.%.3d.%.3d [s.ms.us.ns] " % (int(elapsed),int((elapsed%1)*1000),int((elapsed%0.001)*1000000),int((elapsed % 0.000001) * 1000000000)))
 
   def sniff(self, analyzer):
     self._analyzer = analyzer
