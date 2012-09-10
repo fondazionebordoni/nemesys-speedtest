@@ -43,7 +43,7 @@ file = None
 filepath = None
 size = 0
 max_retry = 8
-max_time = 240000
+max_time = 12000  #240000
 
 #Parametri Sniffer:
 BUFF = 22 * 1024000     # MegaByte

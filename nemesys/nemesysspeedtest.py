@@ -37,7 +37,7 @@ __version__ = '1.0.3'
 #Data di scadenza
 dead_date = 20120930
 
-TASK_FILE = '1000.rnd'
+TASK_FILE = '40000.rnd'
 
 # Tempo di attesa tra una misura e la successiva in caso di misura fallita
 TIME_LAG = 5
