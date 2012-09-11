@@ -105,10 +105,11 @@ class rete(Risorsa):
         return ipval
 
     def profileDevice(self):
-        vocab = ['wireless', 'wifi', 'wi-fi', 'senzafili', 'wlan']
+        
         devpath = '/sys/class/net/'
-        descriptors = ['address', 'type', 'operstate']
-        val = {'address': ' ', 'type': ' ', 'operstate': ' '}
+        wireless = ['wireless', 'wifi', 'wi-fi', 'senzafili', 'wlan']
+        descriptors = ['address', 'type', 'operstate', 'uevent']
+        
         self.ipaddr = self.getipaddr()
         devlist = os.listdir(devpath)
         maindevxml = ET.Element('rete')
@@ -118,30 +119,34 @@ class rete(Risorsa):
                 ipdev = self.get_if_ipaddress(dev)
                 if (ipdev == self.ipaddr):
                     devIsAct = 'True'
+                    
+                val = {}
                 for des in descriptors:
                     fname = devpath + str(dev) + '/' + str(des)
                     f = open(fname)
-                    val[des] = f.readline()
+                    val[des] = f.read().strip('\n')
+                    #print des, '=', val[des]
 
-                wifipath = devpath + str(dev)
-                inner_folder = os.listdir(wifipath)
                 devxml = ET.Element('NetworkDevice')
-
                 devxml.append(self.xmlFormat('Name', dev))
 
-                if val['operstate'].rstrip() == "up":
+                if val['operstate'] == "up":
                     devxml.append(self.xmlFormat('Status', 'Enabled'))
                 else:
                     devxml.append(self.xmlFormat('Status', 'Disabled'))
-                if val['type'].split('\n')[0] == '1':
+                    
+                if (val['type'] == '1'):
                     val['type'] = 'Ethernet 802.3'
-                for folds in inner_folder:
-                    for mot in vocab:
-                        if str(folds).lower() == mot:
-                            val['type'] = 'Wireless'
+                elif (val['type'] == '512'):
+                    val['type'] = 'WWAN'
+                
+                for word in wireless:
+                    if word in val['uevent']:
+                        val['type'] = 'Wireless'
+                        
                 devxml.append(self.xmlFormat('Type', val['type']))
                 devxml.append(self.xmlFormat('MACAddress', val['address']))
-
+                devxml.append(self.xmlFormat('IP', ipdev))
                 devxml.append(self.xmlFormat('isActive', devIsAct))
                 maindevxml.append(devxml)
                 del devxml

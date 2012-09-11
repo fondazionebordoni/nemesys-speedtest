@@ -23,7 +23,6 @@
 #endif
 
 #ifndef _WIN32
-#include <arpa/inet.h>
 #include <netdb.h>
 #endif
 
@@ -42,3 +41,7 @@
 #include <signal.h>
 #include <time.h>
 #include <math.h>
+
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <arpa/inet.h>

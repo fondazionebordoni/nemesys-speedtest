@@ -20,7 +20,7 @@ from time import sleep
 from timeNtp import timestampNtp
 from urlparse import urlparse
 from xmlutils import xml2task
-from usbkey import check_usb, move_on_key
+# from usbkey import check_usb, move_on_key
 from logger import logging
 from collections import deque
 import hashlib
@@ -37,7 +37,7 @@ __version__ = '1.0.3'
 #Data di scadenza
 dead_date = 20120930
 
-TASK_FILE = '1000.rnd'
+TASK_FILE = '40000.rnd'
 
 # Tempo di attesa tra una misura e la successiva in caso di misura fallita
 TIME_LAG = 5
@@ -196,10 +196,10 @@ class _Checker(Thread):
       self._cycle.clear()
       logger.debug('Verifica della scadenza del software fallita')
       wx.CallAfter(self._gui._update_messages, "Questa copia di Ne.Me.Sys Speedtest risulta scaduta. Si consiglia di disinstallare il software.", 'red')
-    elif (not check_usb()):
-      self._cycle.clear()
-      logger.debug('Verifica della presenza della chiave USB fallita')
-      wx.CallAfter(self._gui._update_messages, "Per l'utilizzo di questo software occorre disporre della opportuna chiave USB. Inserire la chiave nel computer e riavviare il programma.", 'red')
+    # elif (not check_usb()):
+      # self._cycle.clear()
+      # logger.debug('Verifica della presenza della chiave USB fallita')
+      # wx.CallAfter(self._gui._update_messages, "Per l'utilizzo di questo software occorre disporre della opportuna chiave USB. Inserire la chiave nel computer e riavviare il programma.", 'red')
     elif (self._new_version_available()):
       self._cycle.clear()
       logger.debug('Verifica della presenza di nuove versioni del software')
@@ -510,22 +510,22 @@ class _Tester(Thread):
         profiler.update(prof)
         m.savetest(test, profiler)
         wx.CallAfter(self._gui._update_messages, "Elaborazione dei dati")
-        if (move_on_key()):
-          wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.value, 'green')
-          wx.CallAfter(self._gui._update_ping, test.value)
-        else:
-          raise Exception("chiave USB mancante")
+        # if (move_on_key()):
+        wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.value, 'green')
+        wx.CallAfter(self._gui._update_ping, test.value)
+        # else:
+          # raise Exception("chiave USB mancante")
         
         # Testa gli ftp down
         (test, prof) = self._do_ftp_test(t, DOWN, task)
         profiler.update(prof)
         m.savetest(test, profiler)
         wx.CallAfter(self._gui._update_messages, "Elaborazione dei dati")
-        if (move_on_key()):
-          wx.CallAfter(self._gui._update_messages, "Download bandwith %s kbps" % self._get_bandwith(test), 'green')
-          wx.CallAfter(self._gui._update_down, self._get_bandwith(test))
-        else:
-          raise Exception("chiave USB mancante")
+        # if (move_on_key()):
+        wx.CallAfter(self._gui._update_messages, "Download bandwith %s kbps" % self._get_bandwith(test), 'green')
+        wx.CallAfter(self._gui._update_down, self._get_bandwith(test))
+        # else:
+          # raise Exception("chiave USB mancante")
 
         # Testa gli ftp up
         (test, prof) = self._do_ftp_test(t, UP, task)
@@ -539,11 +539,11 @@ class _Tester(Thread):
         self._upload(self._prospect)
         # Fine Salvataggio
         
-        if (move_on_key()):
-          wx.CallAfter(self._gui._update_messages, "Upload bandwith %s kbps" % self._get_bandwith(test), 'green')
-          wx.CallAfter(self._gui._update_up, self._get_bandwith(test))
-        else:
-          raise Exception("chiave USB mancante")
+        # if (move_on_key()):
+        wx.CallAfter(self._gui._update_messages, "Upload bandwith %s kbps" % self._get_bandwith(test), 'green')
+        wx.CallAfter(self._gui._update_up, self._get_bandwith(test))
+        # else:
+          # raise Exception("chiave USB mancante")
 
       except Exception as e:
         logger.warning('Misura sospesa per eccezione: %s.' % e)
@@ -673,7 +673,7 @@ class Frame(wx.Frame):
         
         self.messages_area.SetFont(wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, ""))
         self.messages_area.SetMinSize((710, 150))
-        self.sizer_5.SetMinSize((410, 120))
+        self.sizer_5.SetMinSize((450, 120))
         self.sizer_6.SetMinSize((730, 100))
         self.sizer_7.SetMinSize((730, 100))
 
@@ -700,9 +700,9 @@ class Frame(wx.Frame):
         self.grid_sizer_1.Add(self.label_hosts, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
         self.grid_sizer_1.Add(self.label_traffic, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
         
-        self.grid_sizer_2.Add(self.label_r_1, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
-        self.grid_sizer_2.Add(self.label_r_2, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
-        self.grid_sizer_2.Add(self.label_r_3, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
+        self.grid_sizer_2.Add(self.label_r_1, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 40)
+        self.grid_sizer_2.Add(self.label_r_2, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 40)
+        self.grid_sizer_2.Add(self.label_r_3, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 40)
         
         self.grid_sizer_2.Add(self.label_rr_ping, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
         self.grid_sizer_2.Add(self.label_rr_down, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
@@ -796,7 +796,7 @@ class Frame(wx.Frame):
         self._tester = _Tester(self)
         self._tester.start()
       else:
-        move_on_key()
+        # move_on_key()
         self._button_check = False
         self._update_messages("Profilazione terminata")
         self._enable_button()
@@ -894,8 +894,11 @@ class Frame(wx.Frame):
       logger.info('Messagio all\'utente: "%s"' % message)
       self._stream.append((message, color))
       if (not self._stream_flag.isSet()):
-        writer = Thread(target = self._writer)
-        writer.start()
+        if (platform.startswith('win')):
+          writer = Thread(target = self._writer)
+          writer.start()
+        else:
+          self._writer()
 
     def _writer(self):
       self._stream_flag.set()

@@ -43,7 +43,7 @@ logger = logging.getLogger()
 
 class Pcapper(Thread):
 
-  def __init__(self, dev, buff = 88 * 1024000, snaplen = 8192, timeout = 1, promisc = 1, online = 1, pcap_file = None, pkt_start = 0, pkt_stop = 0):
+  def __init__(self, dev, buff = 22 * 1024000, snaplen = 8192, timeout = 1, promisc = 1, online = 1, pcap_file = None, pkt_start = 0, pkt_stop = 0):
     Thread.__init__(self)
     
     logger.debug('Sniffing: [%s|%s|%s|%s|%s|%s|%s|%s|%s]' % (dev, buff, snaplen, timeout, promisc, online, pcap_file, pkt_start, pkt_stop))
@@ -59,13 +59,23 @@ class Pcapper(Thread):
     self._tot = 0
     self._remaining = 0
     self._stop_eating = Event()
+    
+    self._start = 0
+    self._stop = 0
 
   def run(self):
+    self._start = time.time()
+    
     while self._running:
       self._produce()
-      time.sleep(0.0001)
+      if (self._status != EAT):
+        time.sleep(0.00001)
     logger.debug('Exit sniffer! Stats: %s' % pktman.getstat())
     pktman.close()
+    
+    self._stop = time.time()
+    elapsed = self._stop-self._start
+    # logger.debug("Sniffer Total Time: %d.%.3d.%.3d.%.3d [s.ms.us.ns] " % (int(elapsed),int((elapsed%1)*1000),int((elapsed%0.001)*1000000),int((elapsed % 0.000001) * 1000000000)))
 
   def sniff(self, analyzer):
     self._analyzer = analyzer
@@ -117,11 +127,13 @@ class Pcapper(Thread):
     self._cook(1)
 
   def _count(self):
-    self._status = _switch_status[COUNT]
     self._remaining = self._get_remaining()
-
+    self._status = _switch_status[COUNT]
+    
   def _eat(self):
     if self._remaining > 0:
+#      if (self._remaining % 100 == 0):
+#        logger.debug("Remaining Packet: %d" % self._remaining)
       self._cook(1)
       self._remaining -= 1
     else:
@@ -144,13 +156,14 @@ class Pcapper(Thread):
       if mode != 0:
         data = pktman.pull(mode)
         if (data != None):
-          if (data['err_flag'] == -2):
+          if (data['py_pcap_hdr'] != None):
+            return data
+          elif (data['err_flag'] == -2):
             self._status = LOOP
           elif (data['err_flag'] < 0):
             logger.error(data['err_str'])
             raise Exception(data['err_str'])
-          if (data['py_pcap_hdr'] != None):
-            return data
+
       else:
         remaining = self._get_remaining()
         while remaining > 0:
@@ -161,7 +174,8 @@ class Pcapper(Thread):
       logger.error("Errore nello Sniffer: %s" % str(sys.exc_info()[0]))
       pktman.close()
       raise e
-
+    
+    
 if __name__ == '__main__':
 
   ip = '192.168.62.10'
