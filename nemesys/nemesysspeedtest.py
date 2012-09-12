@@ -32,7 +32,7 @@ import time
 import wx
 from prospect import Prospect
 
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 #Data di scadenza
 dead_date = 20120930
