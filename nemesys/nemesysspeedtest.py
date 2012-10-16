@@ -23,6 +23,7 @@ from xmlutils import xml2task
 # from usbkey import check_usb, move_on_key
 from logger import logging
 from collections import deque
+from registration import registration
 import hashlib
 import httputils
 import paths
@@ -35,7 +36,7 @@ from prospect import Prospect
 __version__ = '1.0.4'
 
 #Data di scadenza
-dead_date = 20120930
+dead_date = 22221111
 
 TASK_FILE = '40000.rnd'
 
@@ -58,13 +59,6 @@ def sleeper():
     sleep(.001)
     return 1 # don't forget this otherwise the timeout will be removed
 
-class OptionParser(OptionParser):
-
-  def check_required(self, opt):
-    option = self.get_option(opt)
-    if getattr(self.values, option.dest) is None:
-      self.error('%s option not supplied' % option)
-
 class _Checker(Thread):
 
   def __init__(self, gui, type = 'check', checkable_set = set([RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_HOSTS, RES_TRAFFIC])):
@@ -80,7 +74,7 @@ class _Checker(Thread):
     self._cycle = Event()
     self._results_flag = Event()
     self._traffic_wait_hosts = Event()
-    self._software_ok = False
+    self._usbkey_ok = False
     self._device = None
 
   def run(self):
@@ -93,14 +87,14 @@ class _Checker(Thread):
       self._results_flag.clear()
 
       if (self._type != 'tester'):
-        self._software_ok = self._check_software()
+        self._usbkey_ok = self._check_usbkey()
       else:
-        self._software_ok = True
+        self._usbkey_ok = True
 
-      if (self._software_ok and self._type != 'software'):
+      if (self._usbkey_ok and self._type != 'usbkey'):
         self._check_device()
         
-      if (self._software_ok or self._type == 'software'):
+      if (self._usbkey_ok or self._type == 'usbkey'):
         self._traffic_wait_hosts.clear()
 
         for res in sorted(self._available_check, key = lambda res: self._available_check[res]):
@@ -128,7 +122,7 @@ class _Checker(Thread):
         if (self._type != 'tester'):
           self._cycle.clear()
 
-    if (self._software_ok and self._type == 'check'):
+    if (self._usbkey_ok and self._type == 'check'):
       wx.CallAfter(self._gui._after_check)
 
   def stop(self):
@@ -149,8 +143,8 @@ class _Checker(Thread):
   def get_results(self):
     self._results_flag.wait()
     self._results_flag.clear()
-    if (self._type == 'software'):
-      results = self._software_ok
+    if (self._type == 'usbkey'):
+      results = self._usbkey_ok
     else:
       results = self._results
     return results
@@ -185,54 +179,18 @@ class _Checker(Thread):
         wx.CallAfter(self._gui._update_interface, dev_descr, ip)
     elif (id != self._device):
       self._cycle.clear()
-      self._software_ok = False
+      self._usbkey_ok = False
       wx.CallAfter(self._gui._update_messages, "Test interrotto per variazione interfaccia di rete di riferimento.", 'red')
       wx.CallAfter(self._gui.stop)
       
-    
-  def _check_software(self):
-    check = False
-    if (self._deadline()):
-      self._cycle.clear()
-      logger.debug('Verifica della scadenza del software fallita')
-      wx.CallAfter(self._gui._update_messages, "Questa copia di Ne.Me.Sys Speedtest risulta scaduta. Si consiglia di disinstallare il software.", 'red')
-    # elif (not check_usb()):
+         
+  def _check_usbkey(self):
+    check = True
+    # if (not check_usb()):
       # self._cycle.clear()
       # logger.debug('Verifica della presenza della chiave USB fallita')
       # wx.CallAfter(self._gui._update_messages, "Per l'utilizzo di questo software occorre disporre della opportuna chiave USB. Inserire la chiave nel computer e riavviare il programma.", 'red')
-    elif (self._new_version_available()):
-      self._cycle.clear()
-      logger.debug('Verifica della presenza di nuove versioni del software')
-      wx.CallAfter(self._gui._update_messages, "E' disponibile per il download una nuova versione del software!", 'red')
-    else:
-      check = True
     return check
-
-  def _deadline(self):
-    this_date = int(getdate().strftime('%Y%m%d'))
-    #logger.debug('%d > %d = %s' % (this_date,dead_date,(this_date > dead_date)))
-    return (this_date > dead_date)
-
-  def _new_version_available(self):
-    (options, args, md5conf) = parse()
-    httptimeout = options.httptimeout
-
-    new_version = False
-
-    url = urlparse("https://www.misurainternet.it/nemesys_speedtest_check.php")
-    connection = httputils.getverifiedconnection(url = url, certificate = None, timeout = httptimeout)
-
-    try:
-      connection.request('GET', '%s?speedtest=true&version=%s' % (url.path, __version__))
-      data = connection.getresponse().read()
-      #logger.debug(data)
-      if (data == "NEWVERSION"):
-        new_version = True
-    except Exception as e:
-      logger.error('Impossibile controllare per nuove versioni. Errore: %s.' % e)
-      new_version = False
-
-    return new_version
 
 
 class _Tester(Thread):
@@ -585,7 +543,7 @@ class _Tester(Thread):
 
     return xml2task(data)
 
-class Frame(wx.Frame):
+class NemesysSpeedtestGUI(wx.Frame):
     def __init__(self, *args, **kwds):
         self._stream = deque([], maxlen = 800)
         self._stream_flag = Event()
@@ -743,7 +701,7 @@ class Frame(wx.Frame):
 
     def _on_close(self, event):
       logger.debug("Richiesta di close")
-      dlg = wx.MessageDialog(self,"Vuoi davvero chiudere Ne.Me.Sys. Speedtest?","Ne.Me.Sys. Speedtest", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
+      dlg = wx.MessageDialog(self,"\nVuoi davvero chiudere Ne.Me.Sys. Speedtest?","Ne.Me.Sys. Speedtest", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
       result = dlg.ShowModal()
       dlg.Destroy()
       if result == wx.ID_OK:
@@ -759,10 +717,10 @@ class Frame(wx.Frame):
       #self.bitmap_button_play.SetBitmapLabel(wx.Bitmap(path.join(paths.ICONS, u"play.png")))
 
       self._killTester()
-      self._checker = _Checker(self, 'software', set())
+      self._checker = _Checker(self, 'usbkey', set())
       self._checker.start()
-      self._check_software = self._checker.get_results()
-      if (self._check_software):
+      self._check_usbkey = self._checker.get_results()
+      if (self._check_usbkey):
         self._enable_button()
         self._update_messages("Sistema pronto per una nuova misura")
 
@@ -779,13 +737,12 @@ class Frame(wx.Frame):
               logger.error("%s could not be terminated" % str(thread.getName()))
       
     def _check(self, event):
-      logger.debug('Profilazione dello stato del sistema di misura.')
-      self._update_messages("Profilazione dello stato del sistema di misura.")
-
       self._button_check = True
       self.bitmap_button_play.Disable()
       self.bitmap_button_check.Disable()
       self._reset_info()
+      logger.debug('Profilazione dello stato del sistema di misura.')
+      self._update_messages("Profilazione dello stato del sistema di misura.")
       self._checker = _Checker(self)
       self._checker.start()
 
@@ -924,6 +881,17 @@ def getdate(type = 'local'):
     date = datetime.fromtimestamp(time.time())
   return date
 
+class OptionParser(OptionParser):
+
+  def check_required(self, opt):
+    response = True
+    option = self.get_option(opt).dest
+    #logger.debug(getattr(self.values, option))
+    if getattr(self.values, option) is None:
+      response = False
+      self.error('%s option not supplied' % option)
+    return response
+    
 def parse():
   '''
   Parsing dei parametri da linea di comando
@@ -986,7 +954,7 @@ def parse():
     config.add_section(section)
 
   option = 'clientid'
-  value = None
+  value = ''
   try:
     value = config.get(section, option)
   except (ValueError, NoOptionError):
@@ -1019,7 +987,7 @@ def parse():
     config.add_section(section)
 
   option = 'bandwidthup'
-  value = 64
+  value = 2048
   try:
     value = config.getint(section, option)
   except (ValueError, NoOptionError):
@@ -1028,7 +996,7 @@ def parse():
                     help = 'upload bandwidth [%s]' % value)
 
   option = 'bandwidthdown'
-  value = 1000
+  value = 2048
   try:
     value = config.getint(section, option)
   except (ValueError, NoOptionError):
@@ -1040,20 +1008,21 @@ def parse():
     config.write(file)
 
   (options, args) = parser.parse_args()
+  #logger.debug(options)
 
   # Verifica che le opzioni obbligatorie siano presenti
   # --------------------------------------------------------------------------
 
   try:
 
-    parser.check_required('--clientid')
-    config.set('client', 'clientid', options.clientid)
+    if not parser.check_required('--clientid'):
+      config.set('client', 'clientid', options.clientid)
 
-    parser.check_required('--up')
-    config.set('profile', 'bandwidthup', options.bandwidthup)
+    if not parser.check_required('--up'):
+      config.set('profile', 'bandwidthup', options.bandwidthup)
 
-    parser.check_required('--down')
-    config.set('profile', 'bandwidthdown', options.bandwidthdown)
+    if not parser.check_required('--down'):
+      config.set('profile', 'bandwidthdown', options.bandwidthdown)
 
   finally:
     with open(paths.CONF_MAIN, 'w') as file:
@@ -1073,15 +1042,84 @@ def getclient(options):
                 geocode = None, username = 'speedtest',
                 password = options.password)
 
+
+class checkSoftware():
+  def __init__(self):
+    
+    (options, args, md5conf) = parse()
+    self._httptimeout = options.httptimeout
+    self._clientid = options.clientid
+
+  def _newVersionAvailable(self):
+    new_version = False
+    url = urlparse("https://www.misurainternet.it/nemesys_speedtest_check.php")
+    connection = httputils.getverifiedconnection(url = url, certificate = None, timeout = self._httptimeout)
+    try:
+      connection.request('GET', '%s?speedtest=true&version=%s' % (url.path, __version__))
+      data = connection.getresponse().read()
+      #logger.debug(data)
+      if (data == "NEWVERSION"):
+        new_version = True
+    except Exception as e:
+      logger.error('Impossibile controllare per nuove versioni. Errore: %s.' % e)
+      new_version = False  
+    return new_version
+
+
+  def _deadline(self):
+    this_date = int(getdate().strftime('%Y%m%d'))
+    #logger.debug('%d > %d = %s' % (this_date,dead_date,(this_date > dead_date)))
+    return (this_date > dead_date)
+
+
+  def _isRegistered(self):
+    regOK = False
+    if len(self._clientid)==32:
+      regOK = True
+    else:
+      logger.error("ClientID assente o di errata lunghezza")
+      regOK = registration()
+    return regOK
+
+
+  def checkIT(self):
+    check = False
+    if (self._newVersionAvailable()):
+      logger.debug('Verifica della presenza di nuove versioni del software')
+      message="\nE' disponibile per il download una nuova versione del software."
+      icon = wx.ICON_INFORMATION
+    elif (self._deadline()):
+      logger.debug('Verifica della scadenza del software fallita')
+      message = "\nQuesta copia di Ne.Me.Sys Speedtest risulta scaduta.\nSi consiglia di disinstallare il software."
+      icon = wx.ICON_EXCLAMATION
+    elif not (self._isRegistered()):
+      logger.debug('Verifica della registrazione del software fallita')
+      message = "\nQuesta copia di Ne.Me.Sys Speedtest non risulta correttamente registrata."
+      icon = wx.ICON_ERROR
+    else:
+      check = True
+    
+    if not check: 
+      dlg = wx.MessageDialog(None,message,"Ne.Me.Sys. Speedtest", wx.OK|icon)
+      dlg.ShowModal()
+      dlg.Destroy()
+      
+    return check
+    
 if __name__ == "__main__":
 
   logger.info('Starting Ne.Me.Sys. Speedtest v.%s' % __version__)
 
   app = wx.PySimpleApp(0)
-  if (platform.startswith('win')):
-    wx.CallLater(200, sleeper)
-  wx.InitAllImageHandlers()
-  frame_1 = Frame(None, -1, "", style = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
-  app.SetTopWindow(frame_1)
-  frame_1.Show()
-  app.MainLoop()
+  
+  checker = checkSoftware()
+  check = checker.checkIT()
+
+  if check:
+    if (platform.startswith('win')):
+      wx.CallLater(200, sleeper)
+    wx.InitAllImageHandlers()
+    GUI = NemesysSpeedtestGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
+    app.SetTopWindow(GUI)
+    GUI.Show()
+    app.MainLoop()
