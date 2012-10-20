@@ -74,7 +74,7 @@ def getxml(data):
     logger.error('Nessun dato da processare')
     raise Exception('Ricevuto un messaggio vuoto');
 
-  logger.debug('Dati da convertire in XML:\n%s' % data)
+  #logger.debug('Dati da convertire in XML:\n%s' % data)
   try:
     xml = parseString(data)
   except ExpatError:

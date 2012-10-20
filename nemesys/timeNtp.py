@@ -18,38 +18,54 @@
 
 from datetime import datetime
 from logger import logging
-from threading import Thread
-import Queue
 import ntplib
 import time
+import ping
 
-SERVERNTP = ["0.pool.ntp.org","1.pool.ntp.org","2.pool.ntp.org","3.pool.ntp.org","ntp.fub.it","time.windows.com"]
+SERVERNTP = ["ntp.spadhausen.com","ntp.fub.it","time.windows.com","0.pool.ntp.org","1.pool.ntp.org","2.pool.ntp.org","3.pool.ntp.org"]
 
 logger = logging.getLogger()
 
-def _request(server, result):
-  x = ntplib.NTPClient()
+def _timestamp(server):
   try:
-    TimeRX = x.request(server, version=3)
-    result.put(TimeRX.tx_time)
+    TimeRX = ntplib.NTPClient().request(server, version=3)
   except Exception as e:
-    result.put(str(e))
-
+    raise e
+  return TimeRX.tx_time
+  
+def _ping(server):
+  try:
+    delay = ping.do_one("%s" % server, 1) * 1000
+  except Exception as e:
+    raise e
+  return delay
+  
 def timestampNtp():
-  timestamp = None
-  type = 'Internet'
-  result = Queue.Queue()
+  local = True
   for server in SERVERNTP:
-    request = Thread(target=_request, args=(server, result))
-    request.start()
-  timestamp = result.get()
-  if not isinstance(timestamp, float):
+    delay = None
+    timestamp = None
+    try:
+      delay = _ping(server)
+      if (delay != None):
+        timestamp = _timestamp(server)
+        if (timestamp != None):
+          local = False
+          break
+    except Exception as e:
+      #logger.debug("Error: %s" % str(e))
+      pass
+      
+
+  if local:
+    server = 'this computer'
     timestamp = time.time()
-    type = 'Local'
-  #logger.debug("%s Time: %s" % (type, datetime.fromtimestamp(timestamp).strftime('%Y/%m/%d %H:%M:%S')))
+      
+  #logger.debug("Time from %s: %s [%s]\n\n" % (server, datetime.fromtimestamp(timestamp).strftime('%Y/%m/%d %H:%M:%S'), timestamp))
   return timestamp
 
 if __name__ == '__main__':
-  request_num = 150
+  request_num = 8
   for x in range(request_num):
-   logger.debug("Richiesta %s di %s: %s" % (x+1,request_num,timestampNtp()))
+    logger.debug("Richiesta %s di %s:" % (x+1,request_num))
+    timestampNtp()

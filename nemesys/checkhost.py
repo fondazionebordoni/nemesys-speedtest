@@ -63,7 +63,7 @@ def countHosts(ipAddress, netMask, bandwidthup, bandwidthdown, provider = None, 
     # logger.info("IP della scheda di rete di misura pubblico. Non controllo il numero degli host. Host in rete: 1")
     # return 1
 
-  logger.info("Indirizzo: %s/%d; Realsubnet: %s; Threshold: %d" % (ipAddress, netMask, realSubnet, threshold))
+  #logger.info("Indirizzo: %s/%d; Realsubnet: %s; Threshold: %d" % (ipAddress, netMask, realSubnet, threshold))
 
   n_host = _countNetHosts(ipAddress, netMask, realSubnet, threshold, arping, mac, dev)
   return n_host

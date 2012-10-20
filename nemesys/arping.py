@@ -59,7 +59,7 @@ def send_arping(IPsrc, IPdst, MACsrc, MACdst, sock):
   else:
     sended = pktman.push(netPkt)
     if (sended['err_flag'] != 0):
-      logger.debug("%s" % sended['err_str'])
+      logger.error("%s" % sended['err_str'])
 
 
 def receive_arping(MACsrc):
@@ -73,7 +73,7 @@ def receive_arping(MACsrc):
     received = pktman.pull(1)
 
     if (received['err_flag'] < 1):
-      logger.debug("(%s) Numero di Host trovati: %d" % (received['err_str'], len(IPtable)))
+      #logger.info("(%s) Numero di Host trovati: %d" % (received['err_str'], len(IPtable)))
       break
 
     elif (len(received['py_pcap_hdr']) >= 16 and len(received['py_pcap_data']) >= 42):
@@ -97,9 +97,9 @@ def receive_arping(MACsrc):
           IPdst_arp = socket.inet_ntoa(pdst_arp)
           if (IPsrc_arp not in IPtable):
             IPtable[IPsrc_arp] = display_mac(hwsrc_arp)
-            logger.debug('Trovato Host %s con indirizzo fisico %s' % (IPsrc_arp, display_mac(hwsrc_arp)))
+            #logger.info('Trovato Host %s con indirizzo fisico %s' % (IPsrc_arp, display_mac(hwsrc_arp)))
 
-  return len(IPtable)
+  return IPtable
 
 
 def do_arping(dev, IPsrc, NETmask, realSubnet = True, timeout = 1, mac = None, threshold = 1):
@@ -126,7 +126,7 @@ def do_arping(dev, IPsrc, NETmask, realSubnet = True, timeout = 1, mac = None, t
   if (rec_init['err_flag'] != 0):
     raise Exception (rec_init['err_str'])
   rec_init = pktman.setfilter(pcap_filter)
-  logger.debug("Inizializzato sniffer (%s, %s)" % (dev, pcap_filter))
+  #logger.info("Inizializzato sniffer (%s, %s)" % (dev, pcap_filter))
   if (rec_init['err_flag'] != 0):
     raise Exception (rec_init['err_str'])
   else:
@@ -143,9 +143,9 @@ def do_arping(dev, IPsrc, NETmask, realSubnet = True, timeout = 1, mac = None, t
 
     for IPdst in IPnet:
       if ((IPdst.hex() == net.hex() or IPdst.hex() == bcast.hex()) and realSubnet):
-        logger.debug("Saltato ip %s" % IPdst)
+        logger.info("Saltato ip %s" % IPdst)
       elif(IPdst.dq == IPsrc):
-        logger.debug("Salto il mio ip %s" % IPdst)
+        logger.info("Salto il mio ip %s" % IPdst)
       else:
         IPdst = str(IPdst)
         #logger.debug('Arping host %s' % IPdst)
@@ -159,7 +159,12 @@ def do_arping(dev, IPsrc, NETmask, realSubnet = True, timeout = 1, mac = None, t
         index = 0
 
         try:
-          nHosts += receive_arping(MACsrc)
+          IPtable = receive_arping(MACsrc)
+          hosts = "HOSTS: "
+          for key in IPtable:
+            hosts = hosts+"[%s|%s] " % (IPtable[key], key)
+          logger.info(hosts)
+          nHosts = len(IPtable) 
         except Exception as e:
           logger.warning("Errore durante la ricezione degli arping: %s" % e)
 

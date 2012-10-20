@@ -16,17 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import datetime
+
 import hashlib
+import zipfile
+import datetime
 from httplib import HTTPException
 from httputils import post_multipart
 from logger import logging
-from os import path
+from os import path, remove
 from urlparse import urlparse
-import zipfile
 from ssl import SSLError
 from timeNtp import timestampNtp
-import os
 
 logger = logging.getLogger()
 
@@ -42,7 +42,7 @@ class Deliverer:
     Effettua l'upload del file. Restituisce la risposta ricevuta dal repository o None se c'è stato un problema.
     '''
     response = None
-    #logger.debug('Invio del file %s' % filename)
+    logger.info('Invio del file %s a %s' % (filename, self._url))
     try:
       with open(filename, 'rb') as file:
         body = file.read()
@@ -51,11 +51,11 @@ class Deliverer:
       response = post_multipart(url, fields=None, files=[('myfile', path.basename(filename), body)], certificate=self._certificate, timeout=self._timeout)
 
     except HTTPException as e:
-      os.remove(file.name)
+      remove(file.name)
       logger.error('Impossibile effettuare l\'invio del file delle misure. Errore: %s' % e)
 
     except SSLError as e:
-      os.remove(file.name)
+      remove(file.name)
       logger.error('Errore SSL durante l\'invio del file delle misure: %s' % e)
 
     return response
@@ -89,13 +89,13 @@ class Deliverer:
     # Sposto la firma nello zip
     if sign != None and path.exists(sign.name):
         zip.write(sign.name, path.basename(sign.name))
-        os.remove(sign.name)
+        remove(sign.name)
 
     # Controllo lo zip
     if zip.testzip() != None:
       zip.close()
       logger.error("Lo zip %s è corrotto. Lo elimino." % zipname)
-      os.remove(zipname)
+      remove(zipname)
       zipname = None
     else:
       zip.close()

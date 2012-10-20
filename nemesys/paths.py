@@ -21,16 +21,17 @@ from timeNtp import timestampNtp
 from os import mkdir, path, sep
 import sys
 
-def getdate(mode='sec'):
-  this_date = datetime.fromtimestamp(timestampNtp())
+DATE = datetime.fromtimestamp(timestampNtp())
+
+def formatdate(mode='sec'):
   if mode == 'day':
-    format_date = str(this_date.strftime('%Y%m%d'))
+    format_date = str(DATE.strftime('%Y%m%d'))
   elif mode == 'sec':
-    format_date = str(this_date.strftime('%Y%m%d_%H%M%S'))
+    format_date = str(DATE.strftime('%Y%m%d_%H%M%S'))
   return format_date
 
-DAY = getdate('day')
-SEC = getdate('sec')
+DAY = formatdate('day')
+SEC = formatdate('sec')
 
 if hasattr(sys, 'frozen'):
   # Dovrebbe darmi il percorso in cui sta eseguendo l'applicazione
@@ -42,13 +43,16 @@ _APP_PATH = path.normpath(_APP_PATH)
 
 # Resources path
 ICONS = path.join(_APP_PATH, 'icons')
-SENT = path.join(_APP_PATH, 'sent')
+
+#SENT
+SENT_DIR = path.join(_APP_PATH, 'sent')
+SENT_DAY_DIR = path.join(SENT_DIR, DAY)
 
 #OUTBOX
 OUTBOX_DIR = path.join(_APP_PATH, 'outbox')
 OUTBOX_DAY_DIR = path.join(OUTBOX_DIR, DAY)
 
-#Logs
+#LOG
 LOG_DIR = path.join(_APP_PATH, 'logs')
 LOG_DAY_DIR = path.join(LOG_DIR, DAY)
 LOG_FILE = path.join(LOG_DAY_DIR, SEC+'.log')
@@ -58,39 +62,26 @@ _CONF_DIR = path.join(_APP_PATH, 'config')
 CONF_LOG = path.join(_CONF_DIR, 'log.conf')
 CONF_MAIN = path.join(_CONF_DIR, 'client.conf')
 CONF_ERRORS = path.join(_CONF_DIR, 'errorcodes.conf')
-THRESHOLD = path.join(_CONF_DIR, 'threshold.xml')
-RESULTS = path.join(_CONF_DIR, 'result.xml')
-MEASURE_STATUS = path.join(_CONF_DIR, 'progress.xml')
 
-MEASURE_PROSPECT = path.join(OUTBOX_DIR, 'prospect.xml')
-
-from logger import logging
+# THRESHOLD = path.join(_CONF_DIR, 'threshold.xml')
+# RESULTS = path.join(_CONF_DIR, 'result.xml')
+# MEASURE_STATUS = path.join(_CONF_DIR, 'progress.xml')
+# MEASURE_PROSPECT = path.join(OUTBOX_DIR, 'prospect.xml')
 
 def check_paths():
-  logger = logging.getLogger()
-  
-  if not path.exists(LOG_DIR):
-    mkdir(LOG_DIR)
-    logger.debug('Creata la cartella "%s".' % LOG_DIR)
-  
-  if not path.exists(LOG_DAY_DIR):
-    mkdir(LOG_DAY_DIR)
-    logger.debug('Creata la cartella "%s".' % LOG_DAY_DIR)
 
-  if not path.exists(OUTBOX_DIR):
-    mkdir(OUTBOX_DIR)
-    logger.debug('Creata la cartella "%s".' % OUTBOX_DIR)
-    
-  if not path.exists(OUTBOX_DAY_DIR):
-    mkdir(OUTBOX_DAY_DIR)
-    logger.debug('Creata la cartella "%s".' % OUTBOX_DAY_DIR)
+  check = []
 
-  if not path.exists(SENT):
-    mkdir(SENT)
-    logger.debug('Creata la cartella "%s".' % SENT)
+  dirs = [LOG_DIR, LOG_DAY_DIR, OUTBOX_DIR, OUTBOX_DAY_DIR, SENT_DIR, SENT_DAY_DIR, _CONF_DIR]
+
+  for dir in dirs:
+    if not path.exists(dir):
+      mkdir(dir)
+      check.append('Creata la cartella %s' % dir)
+  
+  if (len(check)<1):
+    check.append('Tutte le cartelle utili al programma sono già esistenti.')
     
-  if not path.exists(_CONF_DIR):
-    mkdir(_CONF_DIR)
-    logger.debug('Creata la cartella "%s".' % _CONF_DIR)
-    
-check_paths()
+  return check
+  
+check_paths()    

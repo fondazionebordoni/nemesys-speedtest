@@ -46,13 +46,13 @@ class Pcapper(Thread):
   def __init__(self, dev, buff = 22 * 1024000, snaplen = 8192, timeout = 1, promisc = 1, online = 1, pcap_file = None, pkt_start = 0, pkt_stop = 0):
     Thread.__init__(self)
     
-    logger.debug('Sniffing: [%s|%s|%s|%s|%s|%s|%s|%s|%s]' % (dev, buff, snaplen, timeout, promisc, online, pcap_file, pkt_start, pkt_stop))
+    logger.info("Sniffer initialization parameters : [%s|%s|%s|%s|%s|%s|%s|%s|%s]" % (dev, buff, snaplen, timeout, promisc, online, pcap_file, pkt_start, pkt_stop))
     
     pktman.debugmode(0)
     r = pktman.initialize(dev, buff, snaplen, timeout, promisc, online, pcap_file, pkt_start, pkt_stop)
     if (r['err_flag'] != 0):
-      logger.error('Errore inizializzazione dello Sniffer: %s' % str(r['err_str']))
-      raise Exception('Errore inizializzazione dello Sniffer')
+      logger.error("Errore inizializzazione dello Sniffer: %s" % str(r['err_str']))
+      raise Exception("Errore inizializzazione dello Sniffer")
 
     self._status = LOOP
     self._running = True
@@ -70,7 +70,12 @@ class Pcapper(Thread):
       self._produce()
       if (self._status != EAT):
         time.sleep(0.00001)
-    logger.debug('Exit sniffer! Stats: %s' % pktman.getstat())
+    stats = pktman.getstat()
+    statistics = "Sniffer Statistics:"
+    for key in stats:
+      statistics = statistics + "[ %s : %s ]" % (key,stats[key])
+    
+    logger.info(statistics)
     pktman.close()
     
     self._stop = time.time()
@@ -82,7 +87,7 @@ class Pcapper(Thread):
     self._status = _switch_status[LOOP]
 
   def stop_sniff(self):
-    logger.debug('Stop sniffing.')
+    logger.info("Sniffer stopping....")
     self._status = _switch_status[SNIFF]
 
   def get_stats(self):
@@ -92,7 +97,7 @@ class Pcapper(Thread):
       stats = self._analyzer.statistics
       packet_drop = pktman.getstat()['pkt_pcap_drop']
       stats.packet_drop = packet_drop
-      logger.info('Pacchetti persi: %s' % packet_drop)
+      #logger.info('Pacchetti persi: %s' % packet_drop)
       self._analyzer.reset()
       return stats
     else:

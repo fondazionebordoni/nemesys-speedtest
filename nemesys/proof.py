@@ -16,57 +16,70 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime
-from statistics import Statistics
-
 class Proof:
 
-  def __init__(self, type, start, value, bytes, counter_stats = Statistics(), errorcode = 0):
-    self._type = type
-    self._start = start
-    self._value = value
-    self._bytes = bytes
-    self._counter_stats = counter_stats
-    self._errorcode = errorcode
-
+  def __init__(self, test = {}):
+    self._test = {}
+    self.clear()
+    self.update(test)
+    
+  def update(self, test):
+    self._test.update(test)
+    
+  def clear(self):
+    self._test.clear()
+  
+  def dict(self):
+    return self._test
+  
+  
   @property
   def type(self):
-    return self._type
+    return self._test.get('type','test')
+  
+  @property
+  def done(self):
+    return self._test.get('done',0)
 
   @property
-  def start(self):
-    return self._start
-
-  @property
-  def value(self):
-    '''
-    Values must be saved in milliseconds.
-    '''
-    return self._value
+  def time(self):
+    #!# Values must be saved in milliseconds #!#
+    return self._test.get('time',0)
 
   @property
   def bytes(self):
-    return self._bytes
+    return self._test.get('bytes',0)
+  
+  @property
+  def bytesOth(self):
+    if self.type == 'download':
+      return self._test.get('stats',{}).byte_down_oth_net
+    elif self.type == 'upload':
+      return self._test.get('stats',{}).byte_up_oth_net
+    else:
+      return 0
 
   @property
   def counter_stats(self):
-      return self._counter_stats
+    return self._test.get('stats',{})
 
   @property
-  def errorcode(self):
-    return self._errorcode
+  def errorcode(self, errorcode=None):
+    if (errorcode != None):
+      if errorcode > 99999 or errorcode < 0:
+        errorcode = (errorcode - 90000) % 99999
+        # Faccio rimanere nelle ultime 4 cifre l'errore del test #
+      self._test['errorcode'] = errorcode
+    else:
+      return self._test.get('errorcode',0)
 
-  def seterrorcode(self, errorcode):
-    if errorcode > 99999 or errorcode < 0:
-      # Faccio rimanere nelle ultime 4 cifre l'errore del test
-      errorcode = (errorcode - 90000) % 99999
-    self._errorcode = errorcode
 
   def __str__(self):
-    return 'type: %s; start: %s; value: %1.3f; bytes: %d; counter_stats: {%s}; errorcode: %d' % (self.type, self.start.isoformat(), self.value, self.bytes, self.counter_stats, self.errorcode)
+    return '|Type:%s|Done:%s|Time:%1.3f|Bytes:%d|BytesOth:%d|Stats:%s|Errorcode:%d|' \
+            % (self.type, self.done, self.time, self.bytes, self.bytesOth, self.counter_stats, self.errorcode)
 
 if __name__ == '__main__':
-  t = Proof('download', datetime.now(), 20, 100000, None, 101)
-  print t
-  t = Proof('ping', datetime.now(), 10000, 999)
-  print t
+    test = Proof({'type':'download','time':8642,'bytes':50000,'stats':{},'errorcode':0})
+    print str(test)
+    
+    

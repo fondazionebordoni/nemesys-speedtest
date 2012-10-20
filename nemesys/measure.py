@@ -24,23 +24,37 @@ from profile import Profile
 from server import Server
 from proof import Proof
 from xml.dom.minidom import parseString
-from timeNtp import timestampNtp
-import platform
+
+# import xml.etree as et
+  
+  # ## {{{ http://code.activestate.com/recipes/577882/ (r2)
+  # def data2xml(d, name='data'):
+      # r = et.Element(name)
+      # return et.tostring(buildxml(r, d))
+
+  # def buildxml(r, d):
+      # if isinstance(d, dict):
+          # for k, v in d.iteritems():
+              # s = et.SubElement(r, k)
+              # buildxml(s, v)
+      # elif isinstance(d, tuple) or isinstance(d, list):
+          # for v in d:
+              # s = et.SubElement(r, 'i')
+              # buildxml(s, v)
+      # elif isinstance(d, basestring):
+          # r.text = d
+      # else:
+          # r.text = str(d)
+      # return r
+
+  # print data2xml({'a':[1,2,('c',{'d':'e'})],'f':'g'})
+  # # <data><a><i>1</i><i>2</i><i><i>c</i><i><d>e</d></i></i></a><f>g</f></data>
+  # ## end of http://code.activestate.com/recipes/577882/ }}}
 
 logger = logging.getLogger()
 
-def getos():
-
-  os = 'n.d.'
-  try:
-    os = '%s %s' % (platform.system(), platform.release())
-  except Exception as e:
-    logger.error('Impossibile determinare il tipo di sistema operativo: %s' % e)
-
-  return os
-
 class Measure:
-  def __init__(self, id, server, client, version = None, start = datetime.fromtimestamp(timestampNtp()).isoformat()):
+  def __init__(self, client, start, server, ip, os, version = None):
     '''
     Costruisce un oggetto Measure utilizzando i parametri ricevuti nella
     chiamata.
@@ -48,128 +62,153 @@ class Measure:
     la misura. L'id della misura viene postposto all'id del client per generare
     l'id del file di misura XML.
     '''
-    self._id = id
-    self._server = server
-    self._client = client
-    self._version = version
-    self._start = start
-    self._xml = self.getxml()
-
-  def getxml(self):
-    start = '''<measure xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xsi:noNamespaceSchemaLocation='measure.xsd'/>'''
-    xml = parseString(start)
-    measure = xml.getElementsByTagName('measure')[0]
-    measure.setAttribute('id', str(self._client.id) + str(self._id))
-    measure.setAttribute('start', str(self._start))
-
-    # TODO Aggiungere l'invio del mac address
-
-    # Header
-    # --------------------------------------------------------------------------
-    header = xml.createElement('header')
-
-    # Operator
-    operator = xml.createElement('operator')
-    operator.setAttribute('id', str(self._client.isp.id))
-    header.appendChild(operator)
-
-    # Client
-    client = xml.createElement('client')
-    client.setAttribute('id', str(self._client.id))
-
-    profile = xml.createElement('profile')
-    profile.setAttribute('id', str(self._client.profile.id))
-
-    upload = xml.createElement('upload')
-    upload.appendChild(xml.createTextNode(str(self._client.profile.upload)))
-    profile.appendChild(upload)
-
-    download = xml.createElement('download')
-    download.appendChild(xml.createTextNode(str(self._client.profile.download)))
-    profile.appendChild(download)
-
-    client.appendChild(profile)
-
-    geocode = xml.createElement('geocode')
-    geocode.appendChild(xml.createTextNode(str(self._client.geocode)))
-    client.appendChild(geocode)
-
-    geocode = xml.createElement('so')
-    geocode.appendChild(xml.createTextNode(str(getos())))
-    client.appendChild(geocode)
-
-    geocode = xml.createElement('version')
-    geocode.appendChild(xml.createTextNode(str(self._version)))
-    client.appendChild(geocode)
-
-    header.appendChild(client)
-
-    # Server
-    server = xml.createElement('server')
-    server.setAttribute('id', str(self._server.id))
-    header.appendChild(server)
-
-    measure.appendChild(header)
-
-    # Body
-    # --------------------------------------------------------------------------
-    measure.appendChild(xml.createElement('body'))
-    return xml
     
-  def savetest(self, test, prof):
+    self._client = client
+    self._start = start
+    self._server = server
+    self._ip = ip
+    self._os = os
+    self._version = version
+     
+    begin = '''<measure xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="measure.xsd"/>'''
+    self._xml = parseString(begin)
+    self._root = None
+    
+    self.header2xml()
+
+
+  def dict2node(self, node, parent=None):
+    xml = self._xml
+    if (parent==None):
+      parent = xml
+    
+    tagName = node.get('ID',{}).get('tag','')
+    tagAttr = node.get('ID',{}).get('attr',{})
+    
+    tag = xml.createElement(tagName)
+    
+    elements = parent.getElementsByTagName(tagName)
+    if (len(elements)>0):
+      for elem in elements:
+        if elem.parentNode.nodeName == parent.nodeName:
+          if (len(elements)==1) and (elem.attributes.length == 0):
+            tag = elem
+          elif elem.attributes.length == len(tagAttr):
+            match = 0
+            for attribute in tagAttr:
+              #logger.debug("Check if [ %s = %s ]" % (elem.getAttribute(attribute),str(tagAttr[attribute])))
+              if elem.getAttribute(attribute) == str(tagAttr[attribute]):
+                match += 1
+            if (match>0) and (match == len(tagAttr)):
+              tag = elem
+              for child in tag.childNodes:
+                tag.removeChild(child)
+              break
+      
+    attr = node.get('attr',{})
+    for attribute in attr:
+      tag.setAttribute(attribute,str(attr[attribute]))
+    
+    val = node.get('val',[])
+    for value in val:
+      if isinstance(value,dict):
+        newNode = self.dict2node(value, tag)
+        tag.appendChild(newNode)
+      else:
+        tag.appendChild(xml.createTextNode(str(value)))
+        
+    return tag
+    
+    
+  def header2xml(self):
+  
+    measureID = str(self._client.id) + str(self._start.strftime('%Y%m%d%H%M%S'))
+    measureStart = self._start.isoformat()
+    measureAttr = {'id':measureID, 'start':measureStart}
+    measureTagAttr = {'xmlns:xsi':'http://www.w3.org/2001/XMLSchema-instance', 'xsi:noNamespaceSchemaLocation':'measure.xsd'}
+    
+    header = {'ID':{'tag':'header'}}
+    body = {'ID':{'tag':'body'}}
+    
+    measure = {'ID':{'tag':'measure', 'attr':measureTagAttr}, 'attr':measureAttr, 'val':[header, body]}
+  
+    self._root = self.dict2node(measure)
+  
+    ## node = {'ID':{'tag':'', 'attr':{}}, 'attr':{}, 'val':[]} ##
+    ip = {'ID':{'tag':'ip'}, 'val':[self._ip]}
+    os = {'ID':{'tag':'os'}, 'val':[self._os]}
+    version = {'ID':{'tag':'version'}, 'val':[self._version]}
+    
+    client = {'ID':{'tag':'client'}, 'attr':{'id':self._client.id}, 'val':[ip, os, version]}
+    server = {'ID':{'tag':'server'}, 'attr':{'id':self._server.id}}
+    
+    header = {'ID':{'tag':'header'}, 'val':[server, client]}
+    
+    self.dict2node(header, self._root)
+    
+    
+  def savetest(self, test):
     '''
     Salva l'oggetto Test ricevuto nel file XML interno.
     '''
-    node = self.test2node(test, prof)
-    body = self._xml.getElementsByTagName('body')[0]
-    body.appendChild(node)
-
-  def test2node(self, test, prof):
-    xml = self._xml
-
-    t = xml.createElement('test')
-    t.setAttribute('type', str(test.type))
-
-    profiler = xml.createElement('profiler') 
+   
+    test_results = test.dict()
     
-    for key in prof:
-      res = xml.createElement(key)
-      res.appendChild(xml.createTextNode(str(prof[key]['value'])))
-      profiler.appendChild(res)
-      
-    t.appendChild(profiler)
+    ## node = {'ID':{'tag':'', 'attr':{}}, 'attr':{}, 'val':[]} ##
+    #errorcode = {'ID':{'tag':'errorcode'}, 'val':[test.errorcode]}
     
-    time = xml.createElement('time')
+    status = {-1:"none", 0:"false", 1:"true"}
+    
+    mobile = {'ID':{'tag':'interface'}, 'attr':{'type':'mobile'}, 'val':[status[test_results['Mobile']]]}
+    wireless = {'ID':{'tag':'interface'}, 'attr':{'type':'wireless'}, 'val':[status[test_results['Wireless']]]}
+    ethernet = {'ID':{'tag':'interface'}, 'attr':{'type':'ethernet'}, 'val':[status[test_results['Ethernet']]]}
+    interfaces = {'ID':{'tag':'interfaces'}, 'val':[]}
+    
+    for interface in [ethernet, wireless, mobile]:
+      if interface['val'][0] != 'none':
+        interfaces['val'].append(interface)
 
-    start = xml.createElement('start')
-    start.appendChild(xml.createTextNode(str(test.start.isoformat())))
-    time.appendChild(start)
+    traffic = {'ID':{'tag':'traffic'}, 'val':[test_results['Traffic']]}
+    hosts = {'ID':{'tag':'hosts'}, 'val':[test_results['Hosts']]}    
+    
+    ram = {'ID':{'tag':'ram'}, 'val':[test_results['RAM']]}
+    cpu = {'ID':{'tag':'cpu'}, 'val':[test_results['CPU']]}
+    
+    bytesOth = {'ID':{'tag':'byte'}, 'attr':{'type':'other'}, 'val':[test.bytesOth]}
+    bytesNem = {'ID':{'tag':'byte'}, 'attr':{'type':'nemesys'}, 'val':[test.bytes]}
 
-    end = xml.createElement('end')
-    end.appendChild(xml.createTextNode(str(datetime.fromtimestamp(timestampNtp()).isoformat())))
-    time.appendChild(end)
+    bytes = {'ID':{'tag':'bytes'}, 'val':[bytesNem, bytesOth]}
+    time = {'ID':{'tag':'time'}, 'val':[test.time]}
+    done = {'ID':{'tag':'done'}, 'val':[test.done]}
 
-    t.appendChild(time)
+    value = {'ID':{'tag':'value'}, 'val':[done, time, bytes]}
+    profiler = {'ID':{'tag':'profiler'}, 'val':[cpu, ram, interfaces, hosts, traffic]}
+    
+    test = {'ID':{'tag':'test'}, 'attr':{'type':test.type}, 'val':[profiler, value]}
+    
+    body = {'ID':{'tag':'body'}, 'val':[test]}
+    
+    self.dict2node(body, self._root)
+    
+    
+  def savetime(self, start_time, stop_time):
+    
+    stop = {'ID':{'tag':'stop'}, 'val':[stop_time.isoformat()]}
+    start = {'ID':{'tag':'start'}, 'val':[start_time.isoformat()]}
+    
+    time = {'ID':{'tag':'time'}, 'val':[start, stop]}
+    
+    header = {'ID':{'tag':'header'}, 'val':[time]}
+    
+    self.dict2node(header, self._root)
 
-    value = xml.createElement('value')
-    value.appendChild(xml.createTextNode(str(test.value)))
-    t.appendChild(value)
-
-    bytes = xml.createElement('byte')
-    bytes.appendChild(xml.createTextNode(str(test.bytes)))
-    t.appendChild(bytes)
-
-    error = test.errorcode
-    if (error != None):
-      errorcode = xml.createElement('errcode')
-      errorcode.appendChild(xml.createTextNode(str(error)))
-      t.appendChild(errorcode)
-
-    return t
+  def _int2status(self, int):
+    
+    return
 
   @property
   def id(self):
-    return self._id
+    return str(self._start.strftime('%Y%m%d%H%M%S'))
 
   @property
   def server(self):

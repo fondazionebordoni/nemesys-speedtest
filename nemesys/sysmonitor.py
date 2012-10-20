@@ -34,6 +34,8 @@ import sysmonitorexception
 import re
 import time
 
+import xmltodict
+
 platform_name = platform.system().lower()
 if platform_name == 'windows':
   from SysProf.windows import profiler
@@ -94,6 +96,15 @@ th_cpu = 85           # Massimo carico percentuale sulla CPU
 logger = logging.getLogger()
 errors = Errorcoder(paths.CONF_ERRORS)
 
+def interfaces():
+  data = _get_NetIF(1)
+  for device in data.findall('rete/NetworkDevice'):
+    dev = xmltodict.parse(ET.tostring(device))
+    dev = dev['NetworkDevice']
+    logger.info("============================================")
+    for key in dev: 
+      logger.info("| %s : %s"%(key,dev[key]))
+  logger.info("============================================")
 
 def _get_values(tagrisorsa, xmlresult, tag = tag_results):
   #' Estrae informazioni dal SystemProfiler '#
@@ -240,7 +251,7 @@ def _check_ethernet(res = RES_ETH):
 
   global CHECK_VALUES
 
-  CHECK_VALUES[res] = 'Not Present'
+  CHECK_VALUES[res] = -1
 
   check_info = 'Dispositivi ethernet non presenti.'
   data = _get_NetIF(1)
@@ -257,26 +268,26 @@ def _check_ethernet(res = RES_ETH):
           dev_type = dev_info['type']
           if (dev_type == 0 or dev_type == 14):
             status = int(device.find('Status').text)
-            if (status == 7 and CHECK_VALUES[res] != 'On Line'):
-              CHECK_VALUES[res] = 'Off Line'
+            if (status == 7 and CHECK_VALUES[res] != 1):
+              CHECK_VALUES[res] = 0
               check_info = 'Dispositivi ethernet non attivi.'
               raise sysmonitorexception.WARNETH
             elif (status == 2):
-              CHECK_VALUES[res] = 'On Line'
+              CHECK_VALUES[res] = 1
               check_info = 'Dispositivi ethernet attivi.'
               
       elif (platform.system().lower().startswith('lin')):
         status = device.find('Status').text
         isAct = device.find('isActive').text
-        if (status == 'Disabled' and CHECK_VALUES[res] != 'On Line'):  
-          CHECK_VALUES[res] = 'Off Line'
+        if (status == 'Disabled' and CHECK_VALUES[res] != 1):  
+          CHECK_VALUES[res] = 0
           check_info = 'Dispositivi ethernet non attivi.'
           raise sysmonitorexception.WARNETH
         elif (status == 'Enabled' and isAct == 'True'):
-          CHECK_VALUES[res] = 'On Line'
+          CHECK_VALUES[res] = 1
           check_info = 'Dispositivi ethernet attivi.'
             
-  if (CHECK_VALUES[res] == 'Not Present'):
+  if (CHECK_VALUES[res] == -1):
     raise sysmonitorexception.WARNETH
             
   return check_info
@@ -285,7 +296,7 @@ def _check_wireless(res = RES_WIFI):
 
   global CHECK_VALUES
 
-  CHECK_VALUES[res] = 'Not Present'
+  CHECK_VALUES[res] = -1
 
   check_info = 'Dispositivi wireless non presenti.'
   data = _get_NetIF(1)
@@ -302,21 +313,21 @@ def _check_wireless(res = RES_WIFI):
           dev_type = dev_info['type']
           if (dev_type == 0 or dev_type == 25):
             status = int(device.find('Status').text)
-            if (status == 7 and CHECK_VALUES[res] != 'On Line'):
-              CHECK_VALUES[res] = 'Off Line'
+            if (status == 7 and CHECK_VALUES[res] != 1):
+              CHECK_VALUES[res] = 0
               check_info = 'Dispositivi wireless non attivi.'
             elif (status == 2):
-              CHECK_VALUES[res] = 'On Line'
+              CHECK_VALUES[res] = 1
               check_info = 'Dispositivi wireless attivi.'
               raise sysmonitorexception.WARNWLAN
             
       elif (platform.system().lower().startswith('lin')):  
         status = device.find('Status').text
-        if (status == 'Disabled' and CHECK_VALUES[res] != 'On Line'):  
-          CHECK_VALUES[res] = 'Off Line'
+        if (status == 'Disabled' and CHECK_VALUES[res] != 1):  
+          CHECK_VALUES[res] = 0
           check_info = 'Dispositivi wireless non attivi.'
         elif (status == 'Enabled'):
-          CHECK_VALUES[res] = 'On Line'
+          CHECK_VALUES[res] = 1
           check_info = 'Dispositivi wireless attivi.'
           raise sysmonitorexception.WARNWLAN
             
@@ -326,12 +337,11 @@ def _check_hspa(res = RES_HSPA):
 
   global CHECK_VALUES
 
-  CHECK_VALUES[res] = 'Not Present'
+  CHECK_VALUES[res] = -1
   check_info = 'Dispositivi HSPA non presenti.'
   
   if (platform.system().lower().startswith('lin')):
-    CHECK_VALUES[res] = 'Off Line'
-    check_info = 'Dispositivi HSPA non attivi o non presenti.'
+    check_info = 'Dispositivi HSPA non presenti o non attivi.'
   
   data = _get_NetIF(1)
   
@@ -342,14 +352,14 @@ def _check_hspa(res = RES_HSPA):
     if (type == 'External Modem'):
       dev_id = device.find('ID').text
       if (re.search('USB',dev_id)):
-        CHECK_VALUES[res] = 'Off Line'
+        CHECK_VALUES[res] = 0
         check_info = 'Dispositivi HSPA non attivi.'
         dev_info = getDevInfo()
         if (dev_info != None):
           dev_type = dev_info['type']
           dev_mask = dev_info['mask']
           if (dev_type == 3 or dev_type == 17 or dev_mask == '255.255.255.255'):
-            CHECK_VALUES[res] = 'On Line'
+            CHECK_VALUES[res] = 1
             check_info = 'Dispositivi HSPA attivi.'
             raise sysmonitorexception.WARNHSPA
     
@@ -361,15 +371,15 @@ def _check_hspa(res = RES_HSPA):
           dev_type = dev_info['type']
           if (dev_type == 0 or dev_type == 17):
             status = int(device.find('Status').text)
-            if (status == 7 and CHECK_VALUES[res] != 'On Line'):
-              CHECK_VALUES[res] = 'Off Line'
+            if (status == 7 and CHECK_VALUES[res] != 1):
+              CHECK_VALUES[res] = 0
               check_info = 'Dispositivi HSPA non attivi.'
             elif (status == 2):
-              CHECK_VALUES[res] = 'On Line'
+              CHECK_VALUES[res] = 1
               raise sysmonitorexception.WARNHSPA
             
       elif (platform.system().lower().startswith('lin')):
-        CHECK_VALUES[res] = 'On Line'
+        CHECK_VALUES[res] = 1
         check_info = 'Dispositivi HSPA attivi.'
         raise sysmonitorexception.WARNHSPA
 
@@ -390,7 +400,7 @@ def _check_hosts(up = 2048, down = 2048, ispid = 'tlc003', arping = 1, res = RES
   mac = _get_mac(ip)
   mask = _get_mask(ip)
 
-  logger.info('| Dev: %s | Mac: %s | Ip: %s | Cidr Mask: %d |' % (dev, mac, ip, mask))
+  logger.info("Check Hosts su interfaccia %s con MAC %s e NET %s/%d" % (dev, mac, ip, mask))
 
   # Controllo se ho un indirizzo pubblico, in quel caso ritorno 1
   if bool(re.search('^10\.|^172\.(1[6-9]|2[0-9]|3[01])\.|^192\.168\.', ip)):
@@ -545,22 +555,22 @@ def _get_NetIF(type = 0):
     NETIF_TIME = now
   
   if ( (now-NETIF_TIME)>age or (NETIF_1 == None) or (NETIF_2 == None) ):
-     
     NETIF_TIME = now
     
-    profiler = LocalProfilerFactory.getProfiler()
-    NETIF_1 = profiler.profile(set(['rete']))
-      
-    NETIF_2 = {}
-    for ifName in netifaces.interfaces():
-      #logger.debug((ifName,netifaces.ifaddresses(ifName)))
-      mac = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_LINK, [{'addr':''}])]
-      ip = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'addr':''}])]
-      mask = [i.setdefault('netmask', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'netmask':''}])]
-      if mask[0] == '0.0.0.0':
-        mask = [i.setdefault('broadcast', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'broadcast':''}])]
-      NETIF_2[ifName] = {'mac':mac, 'ip':ip, 'mask':mask}
-    #logger.debug('Network Interfaces:\n %s' %NETIF_2)
+    if (type != 0):
+      profiler = LocalProfilerFactory.getProfiler()
+      NETIF_1 = profiler.profile(set(['rete']))
+    else:  
+      NETIF_2 = {}
+      for ifName in netifaces.interfaces():
+        #logger.debug((ifName,netifaces.ifaddresses(ifName)))
+        mac = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_LINK, [{'addr':''}])]
+        ip = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'addr':''}])]
+        mask = [i.setdefault('netmask', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'netmask':''}])]
+        if mask[0] == '0.0.0.0':
+          mask = [i.setdefault('broadcast', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'broadcast':''}])]
+        NETIF_2[ifName] = {'mac':mac, 'ip':ip, 'mask':mask}
+      #logger.debug('Network Interfaces:\n %s' %NETIF_2)
 
   if (type != 0):
     return NETIF_1
@@ -644,11 +654,6 @@ def _get_mask(ip = None, res = RES_MASK):
 
   cidrMask = 0
   dotMask = None
-
-  profiler = LocalProfilerFactory.getProfiler()
-  data = profiler.profile(set(['rete']))
-  for device in data.findall('rete/NetworkDevice'):
-    logger.debug(ET.tostring(device))
 
   netIF = _get_NetIF()
 

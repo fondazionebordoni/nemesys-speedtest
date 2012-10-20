@@ -26,6 +26,7 @@ class Task:
 
   def __init__(self, id, start, server, ftpdownpath, ftpuppath, upload=100,
                download=100, multiplier=5, ping=100, nicmp=4, delay=1, now=False, message=None):
+    
     self._id = id
     self._start = start
     self._server = server
@@ -97,14 +98,14 @@ class Task:
     Aggiorna il path del file da scaricare in modo da scaricare un file di
     dimensioni le più vicine possibili alla banda specificata.
     '''
-    logger.debug('Aggiornamento path per la banda in download')
+    logger.info('Aggiornamento path per la banda in download')
     try:
       BANDS.sort(reverse=True)
       for band in BANDS:
         if (band <= bandwidth):
           ind = self.ftpdownpath.rfind('/')
           self.ftpdownpath = "%s/%d.rnd" % (self.ftpdownpath[0:ind], band)
-          logger.debug("Aggiornato percorso del file da scaricare: %s" % self.ftpdownpath)
+          logger.info("Aggiornato percorso del file da scaricare: %s" % self.ftpdownpath)
           break 
     except Exception as e:
       logger.warning("Errore durante la modifica del percorso del file di download da scaricare. %s" % e)

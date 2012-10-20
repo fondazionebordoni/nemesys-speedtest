@@ -46,7 +46,7 @@ class Prospect:
       logger.debug('Trovato file con il progresso delle misure')
       self._xml = parse(paths.MEASURE_PROSPECT)
 
-    logger.debug('XML con lo stato delle misure:\n%s' % self._xml.toxml())
+    #logger.debug('XML con lo stato delle misure:\n%s' % self._xml.toxml())
 
   def _newxml(self):
     logger.debug('Creo il file dello stato delle misure.')
