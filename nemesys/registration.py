@@ -18,7 +18,7 @@ MAXretry = 3 ## numero massimo di tentativi prima di chiudere la finestra ##
 
 RegInfo = \
 { \
-"type":"info", \
+"style":wx.OK|wx.ICON_INFORMATION, \
 "title":"Informazioni sulla registrazione", \
 "message": \
 '''
@@ -34,14 +34,14 @@ il programma per procedere nuovamente all'inserimento.
 
 RegSuccess = \
 { \
-"type":"success", \
+"style":wx.OK|wx.ICON_EXCLAMATION, \
 "title":"Ne.Me.Sys. Speedtest Success", \
 "message":"\nCodice licenza corretto e verificato." \
 }
 
 ErrorCode = \
 { \
-"type":"error", \
+"style":wx.OK|wx.ICON_ERROR, \
 "title":"Ne.Me.Sys. Speedtest Error", \
 "message": \
 '''
@@ -53,21 +53,21 @@ area personale del sito www.misurainternet.it
 
 ErrorSave = \
 { \
-"type":"error", \
+"style":wx.OK|wx.ICON_ERROR, \
 "title":"Ne.Me.Sys. Speedtest Error", \
 "message":"\nErrore nel salvataggio del file di configurazione." \
 }
 
 ErrorDownload = \
 { \
-"type":"error", \
+"style":wx.OK|wx.ICON_ERROR, \
 "title":"Ne.Me.Sys. Speedtest Error", \
 "message":"\nErrore nel download del file di configurazione\no codice licenza non corretto." \
 }
 
 ErrorRetry = \
 { \
-"type":"error", \
+"style":wx.OK|wx.ICON_ERROR, \
 "title":"Ne.Me.Sys. Speedtest Error", \
 "message": \
 '''
@@ -77,8 +77,21 @@ del codice di licenza e di avere accesso alla rete.
 ''' % MAXretry
 }
 
+ErrorRegistration = \
+{ \
+"style":wx.OK|wx.ICON_ERROR, \
+"title":"Ne.Me.Sys. Speedtest Registration Error", \
+"message": "\nQuesta copia di Ne.Me.Sys Speedtest non risulta correttamente registrata." \
+}
 
-def getconf(serial, filepath, url):
+def showDialog(dialog):
+
+  msgBox = wx.MessageDialog(None, dialog['message'], dialog['title'], dialog['style'])
+  msgBox.ShowModal()
+  msgBox.Destroy()
+  
+  
+def getconf(code, filepath, url):
   ## Scarica il file di configurazione dalla url (HTTPS) specificata, salvandolo nel file specificato. ##
   ## Solleva eccezioni in caso di problemi o file ricevuto non corretto. ##
   
@@ -86,79 +99,76 @@ def getconf(serial, filepath, url):
   connection = httplib.HTTPSConnection(host=url.hostname)
   # Warning This does not do any verification of the server’s certificate. #
 
-  connection.request('GET', '%s?clientid=%s' % (url.path, serial))
+  connection.request('GET', '%s?clientid=%s' % (url.path, code))
   data = connection.getresponse().read()
   
   #logger.debug(data)
   
   # Controllo se nel file di configurazione è presente il codice di attivazione. #
-  if (data.find(serial) != -1):
+  if (data.find(code) != -1):
     data2file=open(filepath,'w')
     data2file.write(data)
   else:
     raise Exception('incorrect configuration file.')
 
   return os.path.exists(filepath)
-
-
-def showMessage(message):
-
-  if (message['type'] == 'error'):
-    ICON = wx.ICON_ERROR
-  elif (message['type'] == 'success'):
-    ICON = wx.ICON_EXCLAMATION
-  else:
-    ICON = wx.ICON_INFORMATION
   
-  msgBox = wx.MessageDialog(None, message['message'], message['title'], wx.OK|ICON)
-  msgBox.ShowModal()
-  msgBox.Destroy()
-    
-    
-def registration():
-  response = False
-  retry=0
-  showMessage(RegInfo)
-  for retry in range(MAXretry):
-    ## Prendo un codice licenza valido sintatticamente  ##
-    code = None
-    logger.info('Tentativo di registrazione %s di %s' % (retry+1, MAXretry))
-    message = "\n    Inserire un codice licenza per Ne.Me.Sys. Speedtest:    "
-    title = "Tentativo %s di %s" % (retry+1, MAXretry)
-    default = "scrivere o incollare qui il codice licenza"
-    dlg = wx.TextEntryDialog(None, message, title, default, wx.OK)
-    res = dlg.ShowModal()
-    code = dlg.GetValue()
-    dlg.Destroy()
-    logger.info("Codice licenza inserito dall'utente: %s" % code)
-    if (res != wx.ID_OK):
-      logger.warning('Registration aborted at attemp number %d' %(retry+1))
-      break
-    
-    filepath=paths.CONF_MAIN 
-    try:
-      if(code != None and len(code) == 32):
-        # Prendo il file di configurazione. #
-        response = getconf(code, filepath, configurationServer)
-        if (response == True):
-          logger.info('Configuration file successfully downloaded and saved')
-          showMessage(RegSuccess)
-          break
+  
+def registration(code):
+  if len(code)!=32:
+    regOK = False
+    logger.error("ClientID assente o di errata lunghezza")
+    retry=0
+    showDialog(RegInfo)
+    for retry in range(MAXretry):
+      ## Prendo un codice licenza valido sintatticamente  ##
+      code = None
+      logger.info('Tentativo di registrazione %s di %s' % (retry+1, MAXretry))
+      message = "\n    Inserire un codice licenza per Ne.Me.Sys. Speedtest:    "
+      title = "Tentativo %s di %s" % (retry+1, MAXretry)
+      default = "scrivere o incollare qui il codice licenza"
+      dlg = wx.TextEntryDialog(None, message, title, default, wx.OK)
+      res = dlg.ShowModal()
+      code = dlg.GetValue()
+      dlg.Destroy()
+      logger.info("Codice licenza inserito dall'utente: %s" % code)
+      if (res != wx.ID_OK):
+        logger.warning('Registration aborted at attemp number %d' %(retry+1))
+        break
+      
+      filepath=paths.CONF_MAIN 
+      try:
+        if(code != None and len(code) == 32):
+          # Prendo il file di configurazione. #
+          regOK = getconf(code, filepath, configurationServer)
+          if (regOK == True):
+            logger.info('Configuration file successfully downloaded and saved')
+            showDialog(RegSuccess)
+            break
+          else:
+            logger.error('Configuration file not correctly saved')
+            showDialog(ErrorSave)
         else:
-          logger.error('Configuration file not correctly saved')
-          showMessage(ErrorSave)
-      else:
-        logger.error('Wrong activation code')
-        showMessage(ErrorCode)
-    except Exception as error:
-      logger.error('Configuration file not downloaded or incorrect: %s' % error)
-      showMessage(ErrorDownload)
+          logger.error('Wrong license code')
+          showDialog(ErrorCode)
+      except Exception as error:
+        logger.error('Configuration file not downloaded or incorrect: %s' % error)
+        showDialog(ErrorDownload)
+      
+      if not ( retry+1 < MAXretry ):
+        showDialog(ErrorRetry)
+        
+    if not regOK:
+      logger.info('Verifica della registrazione del software fallita')
+      showDialog(ErrorRegistration)
     
-    if not ( retry+1 < MAXretry ):
-      showMessage(ErrorRetry)
+  else:
+    regOK = True
   
-  return response
+  return regOK
 
 
 if __name__ == '__main__':
-  getconf('ab0cd1ef2gh3ij4kl5mn6op7qr8st9uv', './../config/client.conf', 'https://finaluser.agcom244.fub.it/Config')
+  app = wx.PySimpleApp(0)
+  registration()
+  #getconf('ab0cd1ef2gh3ij4kl5mn6op7qr8st9uv', './../config/client.conf', 'https://finaluser.agcom244.fub.it/Config')

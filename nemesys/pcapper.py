@@ -86,7 +86,16 @@ class Pcapper(Thread):
     self._analyzer = analyzer
     self._status = _switch_status[LOOP]
 
-  def stop_sniff(self):
+  def stop_sniff(self, ftptype=None, bytes=0):
+    sizeOK = False
+    stats = self._analyzer.statistics
+    while not sizeOK:
+      if (ftptype == 'download'):
+        sizeOK = stats.payload_down_nem_net >= bytes
+      elif (ftptype == 'download'):
+        sizeOK = stats.payload_up_nem >= bytes
+      else:
+        sizeOK = True
     logger.info("Sniffer stopping....")
     self._status = _switch_status[SNIFF]
 

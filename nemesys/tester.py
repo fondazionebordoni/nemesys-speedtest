@@ -51,70 +51,7 @@ PROMISC = 1             # Promisc Mode ON/OFF
 logger = logging.getLogger()
 errors = Errorcoder(paths.CONF_ERRORS)
 
-def _ftp_down(ftp, file):
-  size = 0
-  elapsed = 0
-  
-  ftp.voidcmd('TYPE I')
-  conn = ftp.transfercmd('RETR %s' % file, rest=None)
-  
-  start = time.time()
-  while True:
-    data = conn.recv(8192)
-    stop = time.time()
-    elapsed = int((stop-start)*1000)
-    size += len(data)
-    if (elapsed > max_time):
-      break
-    elif not data:
-      break
-  
-  #logger.info("Elapsed: %s" % (stop-start))
-  try:
-    conn.close()
-    ftp.voidresp()
-    ftp.close()
-  except ftplib.all_errors as e:
-    if (e.args[0][:3] == '426'):
-      pass
-    else:
-      raise e
-  
-  return (size, elapsed)
-  
-def _ftp_up(ftp, file, path):
-  size = 0
-  elapsed = 0
-  
-  ftp.voidcmd('TYPE I')
-  conn = ftp.transfercmd('STOR %s' % path, rest=None)
-  
-  start = time.time()
-  while True:
-    data = file.read(8192*4)
-    if (data == None):
-      break
-    conn.sendall(data)
-    stop = time.time()
-    elapsed = int((stop-start)*1000)
-    size += len(data)
-    if (elapsed > max_time):
-      break
-  
-  #logger.info("Elapsed: %s" % (stop-start))
-  try:
-    conn.close()
-    ftp.voidresp()
-    ftp.close()
-  except ftplib.all_errors as e:
-    if (e.args[0][:3] == '426'):
-      pass
-    else:
-      raise e
-  
-  return (size, elapsed)
-  
-  
+
 class Tester:
 
   def __init__(self, if_ip, host, username = 'anonymous', password = 'anonymous@', timeout = 60):
@@ -125,7 +62,70 @@ class Tester:
     self._password = password
     self._timeout = timeout
     socket.setdefaulttimeout(self._timeout)
-
+    
+  def _ftp_down(self, ftp, file):
+    size = 0
+    elapsed = 0
+    
+    ftp.voidcmd('TYPE I')
+    conn = ftp.transfercmd('RETR %s' % file, rest=None)
+    
+    start = time.time()
+    while True:
+      data = conn.recv(8192)
+      stop = time.time()
+      elapsed = int((stop-start)*1000)
+      size += len(data)
+      if (elapsed > max_time):
+        break
+      elif not data:
+        break
+    
+    #logger.info("Elapsed: %s" % (stop-start))
+    try:
+      conn.close()
+      ftp.voidresp()
+      ftp.close()
+    except ftplib.all_errors as e:
+      if (e.args[0][:3] == '426'):
+        pass
+      else:
+        raise e
+    
+    return (size, elapsed)
+    
+  def _ftp_up(self, ftp, file, path):
+    size = 0
+    elapsed = 0
+    
+    ftp.voidcmd('TYPE I')
+    conn = ftp.transfercmd('STOR %s' % path, rest=None)
+    
+    start = time.time()
+    while True:
+      data = file.read(8192*4)
+      if (data == None):
+        break
+      conn.sendall(data)
+      stop = time.time()
+      elapsed = int((stop-start)*1000)
+      size += len(data)
+      if (elapsed > max_time):
+        break
+    
+    #logger.info("Elapsed: %s" % (stop-start))
+    try:
+      conn.close()
+      ftp.voidresp()
+      ftp.close()
+    except ftplib.all_errors as e:
+      if (e.args[0][:3] == '426'):
+        pass
+      else:
+        raise e
+    
+    return (size, elapsed)
+    
   def testftpdown(self, bytes, filename):
     global ftp, file, max_retry
     
@@ -160,12 +160,12 @@ class Tester:
       pcapper.sniff(Contabyte(self._if_ip, self._host.ip))
 
       # Il risultato deve essere espresso in millisecondi
-      (size, elapsed) = _ftp_down(ftp, file)
+      (size, elapsed) = self._ftp_down(ftp, file)
       test['bytes'] = size
       test['time'] = elapsed
       logger.info("Banda: (%s*8)/%s = %s Kbps" % (size,elapsed,(size*8)/elapsed))
       
-      pcapper.stop_sniff()
+      pcapper.stop_sniff(test['type'],test['bytes'])
       test['stats'] = pcapper.get_stats()
 
       logger.info('Test stopping.... ')
@@ -233,12 +233,12 @@ class Tester:
       pcapper.sniff(Contabyte(self._if_ip, self._host.ip))
 
       # Il risultato deve essere espresso in millisecondi
-      (size, elapsed) = _ftp_up(ftp, file, filepath)
+      (size, elapsed) = self._ftp_up(ftp, file, filepath)
       test['bytes'] = size
       test['time'] = elapsed
       logger.info("Banda: (%s*8)/%s = %s Kbps" % (size,elapsed,(size*8)/elapsed))
       
-      pcapper.stop_sniff()
+      pcapper.stop_sniff(test['type'],test['bytes'])
       test['stats'] = pcapper.get_stats()
 
       logger.info('Test stopping.... ')
