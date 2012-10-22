@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from sysmonitor import RES_OS, RES_IP, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
-from xmlutils import getvalues, getstarttime, getxml, xml2task
-from os import path, walk, listdir, remove
+from xmlutils import getvalues, getxml, xml2task
+from os import path, walk, listdir, remove, removedirs
 from sysProfiler import sysProfiler
 from threading import Thread, Event
 from timeNtp import timestampNtp
@@ -160,7 +160,9 @@ class speedTester(Thread):
         self._client.profile.upload = int(TASK_FILE)
       else:
         logger.info('Lo scheduler ha inviato un task vuoto.')
-      logger.info("TASK: [%s]" % task)
+      logger.info("--------[TASK]--------")
+      for key, val in task.dict.items():
+        logger.info("%s : %s" % (key, val))
     except Exception as e:
       logger.error('Impossibile scaricare lo scheduling. Errore: %s.' % e)
       return None
@@ -399,11 +401,9 @@ class speedTester(Thread):
         measure.savetime(start_time,stop_time)
         
         ## Salvataggio della misura ##
-        measure_file = self._save_measure(measure)
-        #report = self._upload(measure_file)
-        self._uploadall()
+        "TODO: measure.save"
+        self._save_measure(measure)
         ## Fine Salvataggio ##
-        
         
       except Exception as e:
         logger.warning('Misura sospesa per eccezione: %s.' % e)
@@ -422,22 +422,29 @@ class speedTester(Thread):
     # Aggiungi la data di fine in fondo al file
     f.write('\n<!-- [finished] %s -->' % datetime.fromtimestamp(timestampNtp()).isoformat())
     f.close()
+    
+    self._upload()
+    #report = self._upload(f.name)
+    
     return f.name
     
     
-  def _uploadall(self):
+  def _upload(self, fname = None, delete = True):
     '''
-    Cerca di spedire tutti i file di misura che trova nella cartella d'uscita
+    Cerca di spedire al repository entro il tempo messo a disposizione secondo il parametro httptimeout
+    uno o tutti i filename di misura che si trovano nella cartella d'uscita
     '''
-    
     for retry in range(UPLOAD_RETRY):
       allOK = True
       
       filenames = []
-      for root, dirs, files in walk(paths.OUTBOX_DIR):
-        for file in files:
-          if (re.search('measure_[0-9]{14}.xml',file) != None):
-            filenames.append(path.join(root, file))
+      if (fname != None):
+        filenames.append(fname)
+      else:  
+        for root, dirs, files in walk(paths.OUTBOX_DIR):
+          for file in files:
+            if (re.search('measure_[0-9]{14}.xml',file) != None):
+              filenames.append(path.join(root, file))
       
       len_filenames = len(filenames)
       
@@ -447,7 +454,29 @@ class speedTester(Thread):
           wx.CallAfter(self._gui._update_messages, "Salvataggio delle misure in corso....")
         
         for filename in filenames:
-          uploadOK = self._upload(filename)
+          uploadOK = False
+          
+          try:
+            # Crea il Deliverer che si occupera' della spedizione
+            zipname = self._deliverer.pack(filename)
+            response = self._deliverer.upload(zipname)
+
+            if (response != None):
+              (code, message) = self._parserepositorydata(response)
+              code = int(code)
+              logger.info('Risposta dal server di upload: [%d] %s' % (code, message))
+              uploadOK = not bool(code)
+              logger.debug(uploadOK)
+              
+          except Exception as e:
+            logger.error('Errore durante la spedizione del file delle misure %s: %s' % (filename, e))
+
+          finally:
+            if path.exists(filename) and uploadOK:
+              remove(filename)        # Elimino XML se esiste
+            if path.exists(zipname):
+              remove(zipname)         # Elimino ZIP se esiste
+              
           if uploadOK:
             logger.info('File %s spedito con successo.' % filename)
           else:
@@ -465,67 +494,33 @@ class speedTester(Thread):
             sleep(sleep_time)
           else:
             wx.CallAfter(self._gui._update_messages, "Impossibile salvare le misure.",'red')
-            title = "Salvataggio Misure"
-            message = \
-            '''
-            Non e' stato possibile salvare le misure per %s volte.
-            
-            Un nuovo tentativo verra' effettuato:
-            1) a seguito della prossima profilazione
-            2) a seguito della prossima misura
-            3) al prossimo riavvio di NeMeSys Speedtest
-            ''' % UPLOAD_RETRY
-            msgBox = wx.MessageDialog(None, message, title, wx.OK|wx.ICON_INFORMATION)
-            msgBox.ShowModal()
-            msgBox.Destroy()
+            if delete:
+              for filename in filenames:
+                if path.exists(filename):
+                  remove(filename)        # Elimino XML se esiste
+            else:
+              title = "Salvataggio Misure"
+              message = \
+              '''
+              Non e' stato possibile salvare le misure per %s volte.
+              
+              Un nuovo tentativo verra' effettuato:
+              1) a seguito della prossima profilazione
+              2) a seguito della prossima misura
+              3) al prossimo riavvio di NeMeSys Speedtest
+              ''' % UPLOAD_RETRY
+              msgBox = wx.MessageDialog(None, message, title, wx.OK|wx.ICON_INFORMATION)
+              msgBox.ShowModal()
+              msgBox.Destroy()
 
-          
       else:
         logger.info('Nessun file di misura ancora da spedire.') 
         break
-      
-      
-  def _upload(self, filename):
-    '''
-    Spedisce il filename di misura al repository entro il tempo messo a
-    disposizione secondo il parametro httptimeout
-    '''
-    
-    #return False
-    result = False
-
-    try:
-      # Crea il Deliverer che si occupera' della spedizione
-      zipname = self._deliverer.pack(filename)
-      response = self._deliverer.upload(zipname)
-
-      if (response != None):
-        (code, message) = self._parserepositorydata(response)
-        code = int(code)
-        logger.info('Risposta dal server di upload: [%d] %s' % (code, message))
-
-        # Se tutto e' andato bene sposto il file zip nella cartella "sent" e rimuovo l'xml
-        if (code == 0):
-          time = getstarttime(filename)
-          remove(filename)
-          self._movefiles(zipname)
-
-          result = True
-
-    except Exception as e:
-      logger.error('Errore durante la spedizione del file delle misure %s: %s' % (filename, e))
-
-    finally:
-      # Elimino lo zip del file di misura temporaneo
-      if path.exists(zipname):
-        remove(zipname)
-      # Elimino il file di misura 
-      if result and path.exists(filename):
-        remove(filename)
-
-      return result
-      
-      
+        
+    self._remEmptyDir(paths.OUTBOX_DIR)
+    self._remEmptyDir(paths.SENT_DIR)
+        
+        
   def _parserepositorydata(self, data):
     '''
     Valuta l'XML ricevuto dal repository, restituisce il codice e il messaggio ricevuto
@@ -565,3 +560,22 @@ class speedTester(Thread):
 
     except Exception as e:
       logger.error('Errore durante lo spostamento dei file di misura %s' % e)
+      
+  def _remEmptyDir(self, topdir):
+    for root, dirs, files in walk(topdir, topdown=False):
+      for dir in range(len(dirs)):
+        dirs[dir] = path.join(root,dirs[dir])
+        dirs.append(root)
+      for dir in dirs:  
+        if path.exists(dir):
+          if not listdir(dir):  #to check wither the dir is empty
+            logger.debug("Elimino la directory vuota: %s" % dir)
+            removedirs(dir)
+          
+if __name__ == "__main__":
+  sleep(8)
+  test = speedTester(None)
+  test._remEmptyDir(paths.OUTBOX_DIR)
+  test._remEmptyDir(paths.SENT_DIR)
+          
+          

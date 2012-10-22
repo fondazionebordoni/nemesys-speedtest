@@ -100,10 +100,11 @@ def interfaces():
   data = _get_NetIF(1)
   for device in data.findall('rete/NetworkDevice'):
     dev = xmltodict.parse(ET.tostring(device))
+    logger.debug(dev)
     dev = dev['NetworkDevice']
     logger.info("============================================")
-    for key in dev: 
-      logger.info("| %s : %s"%(key,dev[key]))
+    for key, val in dev.items(): 
+      logger.info("| %s : %s" % (key, val))
   logger.info("============================================")
 
 def _get_values(tagrisorsa, xmlresult, tag = tag_results):

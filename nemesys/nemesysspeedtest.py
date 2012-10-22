@@ -353,13 +353,8 @@ class NemesysSpeedtestGUI(wx.Frame):
         self.messages_area.ScrollLines(-1)
         self.messages_area.SetStyle(start, end, wx.TextAttr(color))
       self._stream_flag.clear()
-
-
-
-
-
-
-    
+      
+      
 def sleeper():
     sleep(.001)
     return 1 # don't forget this otherwise the timeout will be removed
