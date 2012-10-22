@@ -42,7 +42,8 @@ class Deliverer:
     Effettua l'upload del file. Restituisce la risposta ricevuta dal repository o None se c'è stato un problema.
     '''
     response = None
-    logger.info('Invio del file %s a %s' % (filename, self._url))
+    logger.info('Invio a WEB: %s' % self._url)
+    logger.info('Del file ZIP: %s' % filename)
     try:
       with open(filename, 'rb') as file:
         body = file.read()
@@ -99,7 +100,9 @@ class Deliverer:
       zipname = None
     else:
       zip.close()
-      logger.debug("File %s compresso correttamente in %s" % (filename, zipname))
+      logger.info("XML: %s" % filename)
+      logger.info("Compresso correttamente in")
+      logger.info("ZIP: %s" % zipname)
 
     # A questo punto ho un xml e uno zip
     return zipname

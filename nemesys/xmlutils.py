@@ -43,6 +43,7 @@ att_now = 'now'
 tag_serverid = 'srvid'
 tag_serverip = 'srvip'
 tag_servername = 'srvname'
+tag_srvlocation = 'srvlocation'
 tag_ftpdownpath = 'ftpdownpath'
 tag_ftpuppath = 'ftpuppath'
 tag_message = 'message'
@@ -118,9 +119,11 @@ def xml2task(data):
 
   # Aggancio dei dati opzionali
   servername = None
+  srvlocation = None
   message = None
   try:
     servername = getvalues(node, tag_servername)
+    srvlocation = getvalues(node, tag_srvlocation)
     multiplier = node.getElementsByTagName(tag_upload)[0].getAttribute(att_multiplier)
     nicmp = node.getElementsByTagName(tag_ping)[0].getAttribute(att_icmp)
     delay = node.getElementsByTagName(tag_ping)[0].getAttribute(att_delay)
@@ -131,54 +134,39 @@ def xml2task(data):
 
   # Verifica che i dati siano compatibili
   # Dati numerici/booleani
+  
+  PING = "il numero di ping da effettuare" 
+  DOWNLOAD = "il numero di download da effettuare"
+  UPLOAD = "il numero di upload da effettuare"
+  MULTIPLIER = "il multiplicatore per la grandezza del file di upload (default = 10)"
+  NICMP = "il numero di pacchetti icmp per la prova ping da effettuare (default = 4)"
+  DELAY = "il valore di delay, in secondi, tra un ping e l'altro (default = 1)"
+  NOW = "indicazione se il task deve essere iniziato subito (default = 0)"
+  
   try:
-    if (len(upload) <= 0):
-      logger.error('L\'XML non contiene il numero di upload da effettuare')
-      raise Exception('Le informazioni per la programmazione delle misure sono errate.')
-    else:
-      upload = int(upload)
-
-    if (len(download) <= 0):
-      logger.error('L\'XML non contiene il numero di download da effettuare')
-      raise Exception()
-    else:
-      download = int(download)
-
-    if (len(ping) <= 0):
-      logger.error('L\'XML non contiene il numero di ping da effettuare')
-      raise Exception()
-    else:
-      ping = int(ping)
-
-    if (len(multiplier) <= 0):
-      logger.info('L\'XML non contiene il multiplicatore per la grandezza del file di upload (default = 5)')
-      multiplier = 5
-    else:
-      multiplier = int(multiplier)
-
-    if (len(nicmp) <= 0):
-      logger.info('L\'XML non contiene il numero di pacchetti icmp per la prova ping da effettuare (default = 4)')
-      nicmp = 4
-    else:
-      nicmp = int(nicmp)
-
-    if (len(delay) <= 0):
-      logger.info('L\'XML non contiene il valore di delay, in secondi, tra un ping e l\'altro (default = 1)')
-      delay = 1
-    else:
-      delay = int(delay)
-
-    if (len(now) <= 0):
-      logger.info('L\'XML non contiene indicazione se il task deve essere iniziato subito (default = 0)')
-      now = False
-    else:
-      now = bool(now)
-
-  # TODO Testare catena di eccezioni
-  except TypeError:
-    logger.error('Errore durante la verifica della compatibilità dei dati numerici di task')
-    raise Exception()
-
+    
+    results = [ping, download, upload, multiplier, nicmp, delay, now]
+    strings = [PING, DOWNLOAD, UPLOAD, MULTIPLIER, NICMP, DELAY, NOW]
+    defaults = [None, None, None, "10", "4", "1", "0"]
+    
+    for index in range(len(results)):
+      value = re.sub("\D", "", results[index])
+      if (len(value)<=0):
+        logger.error("Il file XML non contiene %s" % strings[index])
+        if (defaults[index] != None):
+          value = defaults[index]
+        else:
+          raise Exception()
+      results[index] = int(value)
+            
+    ping = results[0]
+    download = results[1]
+    upload = results[2]
+    multiplier = results[3]
+    nicmp = results[4]
+    delay = results[5]
+    now = results[6]
+      
   except Exception:
     raise Exception('Le informazioni per la programmazione delle misure sono errate.')
 
@@ -191,11 +179,12 @@ def xml2task(data):
     print data
     raise Exception('Le informazioni orarie per la programmazione delle misure sono errate.')
 
-  # Ip
-  # TODO Controllare validità dati IP
+  ##TODO: Controllare validità dati IP##
 
-  server = Server(serverid, serverip, servername)
-  return Task(id=id, start=start, server=server, ftpdownpath=ftpdownpath, ftpuppath=ftpuppath, upload=upload, download=download, multiplier=multiplier, ping=ping, nicmp=nicmp, delay=delay, now=now, message=message)
+  server = Server(serverid, serverip, servername, srvlocation)
+  task = Task(id=id, start=start, server=server, ftpdownpath=ftpdownpath, ftpuppath=ftpuppath, upload=upload, download=download, multiplier=multiplier, ping=ping, nicmp=nicmp, delay=delay, now=bool(now), message=message)
+  
+  return task 
 
 def getvalues(node, tag=None):
 
@@ -344,6 +333,7 @@ if __name__ == '__main__':
    <srvid>fubsrvrmnmx03</srvid>
    <srvip>193.104.137.133</srvip>
    <srvname>NAMEX</srvname>
+   <srvlocation>Roma</srvlocation>
    <ftpuppath>/upload/1.rnd</ftpuppath>
    <ftpdownpath>/download/8000.rnd</ftpdownpath>
   </task>

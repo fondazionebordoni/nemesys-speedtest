@@ -20,16 +20,21 @@ from host import Host
 
 class Server(Host):
 
-  def __init__(self, id, ip, name=None):
+  def __init__(self, id, ip, name=None, location=None):
     Host.__init__(self, ip=ip, name=name)
     self._id = id
+    self._location = location
 
   @property
   def id(self):
     return self._id
+  
+  @property
+  def location(self):
+    return self._location
 
   def __str__(self):
-    return 'id: %s; ip: %s; name: %s' % (self.id, self.ip, self.name)
+    return 'id: %s; ip: %s; name: %s; location: %s' % (self.id, self.ip, self.name, self.location)
 
 if __name__ == '__main__':
   s = Server('namexrm', '192.168.1.1', 'Namex server')

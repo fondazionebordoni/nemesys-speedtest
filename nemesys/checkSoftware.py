@@ -7,9 +7,11 @@ from nemesysParser import parse
 from logger import logging
 import webbrowser
 import httputils
-import paths
 import re
 import wx
+
+## OPTIONAL ##
+# from usbkey import check_usb, move_on_key
 
 logger = logging.getLogger()
 
@@ -51,7 +53,7 @@ class checkSoftware():
       data = connection.getresponse().read()
       
       #### FAKE REPLY ####
-      data = "1.0.5:88"
+      data = "1.0.4:none"
       ####################
       
       data = data.split(":")
@@ -59,9 +61,9 @@ class checkSoftware():
       #### VERSION ####
       version = re.search('(\.?\d+)+',data[0])
       '''
-      una stringa di uno o più numeri                     \d+
+      una stringa di uno o piu' numeri                    \d+
       ozionalmente preceduta da un punto                  \.?
-      che si ripeta più volte                             (\.?\d+)+
+      che si ripeta piu' volte                            (\.?\d+)+
       '''
       if (version != None):
         self._lastVersion = version.string
@@ -74,7 +76,8 @@ class checkSoftware():
           "title":"Ne.Me.Sys. Speedtest %s" % self._thisVersion, \
           "message": \
           '''
-          E' disponibile la nuova versione: Ne.Me.Sys Speedtest %s
+          E' disponibile una nuova versione:
+          Ne.Me.Sys Speedtest %s
 
           E' possibile effetuare il download dalla relativa sezione
           nell'area privata del sito www.misurainternet.it
@@ -101,7 +104,7 @@ class checkSoftware():
       #### DEADLINE ####
       deadline = re.search('(-?\d+)(?!.)',data[1])
       '''
-      una stringa di uno o più numeri                     \d+
+      una stringa di uno o piu' numeri                    \d+
       ozionalmente preceduta da un segno meno             -?
       ma che non abbia alcun carattere dopo               (?!.) 
       '''
@@ -118,7 +121,7 @@ class checkSoftware():
           "message": \
           '''
           Questa versione di Ne.Me.Sys. Speedtest
-          potrà essere utilizzata ancora per %s giorni.
+          potra' essere utilizzata ancora per %s giorni.
           ''' % self._stillDay
           }
           res = self._showDialog(beforeDeadline)
@@ -133,8 +136,8 @@ class checkSoftware():
           "message": \
           '''
           Questa versione di Ne.Me.Sys. Speedtest
-          è scaduta da %s giorni e pertanto
-          non potrà più essere utilizzata.
+          e' scaduta da %s giorni e pertanto
+          non potra' piu' essere utilizzata.
           ''' % self._stillDay
           }
           res = self._showDialog(afterDeadline)

@@ -80,7 +80,7 @@ def check_paths():
       check.append('Creata la cartella %s' % dir)
   
   if (len(check)<1):
-    check.append('Tutte le cartelle utili al programma sono già esistenti.')
+    check.append("Tutte le cartelle utili al programma sono gia' esistenti.")
     
   return check
   

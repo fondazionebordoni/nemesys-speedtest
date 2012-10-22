@@ -165,7 +165,7 @@ class Tester:
       test['time'] = elapsed
       logger.info("Banda: (%s*8)/%s = %s Kbps" % (size,elapsed,(size*8)/elapsed))
       
-      pcapper.stop_sniff(test['type'],test['bytes'])
+      pcapper.stop_sniff()
       test['stats'] = pcapper.get_stats()
 
       logger.info('Test stopping.... ')
@@ -238,7 +238,7 @@ class Tester:
       test['time'] = elapsed
       logger.info("Banda: (%s*8)/%s = %s Kbps" % (size,elapsed,(size*8)/elapsed))
       
-      pcapper.stop_sniff(test['type'],test['bytes'])
+      pcapper.stop_sniff()
       test['stats'] = pcapper.get_stats()
 
       logger.info('Test stopping.... ')

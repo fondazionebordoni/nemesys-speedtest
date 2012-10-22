@@ -1088,7 +1088,7 @@ UINT select_device(char *dev)
       /* DEBUG BEGIN */
       if(DEBUG_MODE && (fopen_s(&debug_log,"pktman.txt","a") == 0))
       {
-        fprintf(debug_log,"\n[%i] Trovato Device n�%i [%s]\n",indice,sel_dev,devices[sel_dev].name);
+        fprintf(debug_log,"\n[%i] Trovato Device numero %i [%s]\n",indice,sel_dev,devices[sel_dev].name);
         fclose(debug_log);
         debug_log = NULL;
       }
@@ -1104,7 +1104,7 @@ UINT select_device(char *dev)
     /* DEBUG BEGIN */
     if(DEBUG_MODE && (fopen_s(&debug_log,"pktman.txt","a") == 0))
     {
-      fprintf(debug_log,"\n[%i] Scelto Device n�%i [%s]\n",indice,sel_dev,devices[sel_dev].name);
+      fprintf(debug_log,"\n[%i] Scelto Device numero %i [%s]\n",indice,sel_dev,devices[sel_dev].name);
       fclose(debug_log);
       debug_log = NULL;
     }
