@@ -36,11 +36,6 @@ import sys
 import time
 import errno
 
-ftp = None
-file = None
-filepath = None
-max_retry = 8
-max_time = 12000  #240000
 
 #Parametri Sniffer:
 BUFF = 22 * 1024000     # MegaByte
@@ -54,21 +49,28 @@ errors = Errorcoder(paths.CONF_ERRORS)
 
 class Tester:
 
-  def __init__(self, if_ip, host, username = 'anonymous', password = 'anonymous@', timeout = 60):
+  def __init__(self, if_ip, host, username = 'anonymous', password = 'anonymous@', timeout = 11):
     self._if_ip = if_ip
     self._nic_if = getDev(if_ip)
     self._host = host
+    
+    self._ftp = None
+    self._file = None
+    self._filepath = None
+    self._maxRetry = 8
+    
     self._username = username
     self._password = password
-    self._timeout = timeout
+    self._timeout = (timeout * 1000)
     socket.setdefaulttimeout(self._timeout)
     
-  def _ftp_down(self, ftp, file):
+    
+  def _ftp_down(self):
     size = 0
     elapsed = 0
-    
-    ftp.voidcmd('TYPE I')
-    conn = ftp.transfercmd('RETR %s' % file, rest=None)
+        
+    self._ftp.voidcmd('TYPE I')
+    conn = self._ftp.transfercmd('RETR %s' % self._file, rest=None)
     
     start = time.time()
     while True:
@@ -76,7 +78,7 @@ class Tester:
       stop = time.time()
       elapsed = int((stop-start)*1000)
       size += len(data)
-      if (elapsed > max_time):
+      if (elapsed > self._timeout):
         break
       elif not data:
         break
@@ -84,8 +86,8 @@ class Tester:
     #logger.info("Elapsed: %s" % (stop-start))
     try:
       conn.close()
-      ftp.voidresp()
-      ftp.close()
+      self._ftp.voidresp()
+      self._ftp.close()
     except ftplib.all_errors as e:
       if (e.args[0][:3] == '426'):
         pass
@@ -94,30 +96,30 @@ class Tester:
     
     return (size, elapsed)
     
-  def _ftp_up(self, ftp, file, path):
+  def _ftp_up(self):
     size = 0
     elapsed = 0
     
-    ftp.voidcmd('TYPE I')
-    conn = ftp.transfercmd('STOR %s' % path, rest=None)
+    self._ftp.voidcmd('TYPE I')
+    conn = self._ftp.transfercmd('STOR %s' % self._filepath, rest=None)
     
     start = time.time()
     while True:
-      data = file.read(8192*4)
+      data = self._file.read(8192*4)
       if (data == None):
         break
       conn.sendall(data)
       stop = time.time()
       elapsed = int((stop-start)*1000)
       size += len(data)
-      if (elapsed > max_time):
+      if (elapsed > self._timeout):
         break
     
     #logger.info("Elapsed: %s" % (stop-start))
     try:
       conn.close()
-      ftp.voidresp()
-      ftp.close()
+      self._ftp.voidresp()
+      self._ftp.close()
     except ftplib.all_errors as e:
       if (e.args[0][:3] == '426'):
         pass
@@ -126,8 +128,7 @@ class Tester:
     
     return (size, elapsed)
     
-  def testftpdown(self, bytes, filename):
-    global ftp, file, max_retry
+  def testftpdown(self, bytes, filename, timeout = 11):
     
     test = {}
     test['type'] = 'download'
@@ -136,13 +137,13 @@ class Tester:
     test['stats'] = {}
     test['errorcode'] = 0
 
-    file = filename
-    timeout = max(self._timeout, 1)
+    self._file = filename
+    self._timeout = (timeout * 1000)
 
     try:
       # TODO Il timeout non viene onorato in Python 2.6: http://bugs.python.org/issue8493
-      #ftp = FTP(self._host.ip, self._username, self._password, timeout=timeout)
-      ftp = FTP(self._host.ip, self._username, self._password)
+      #self._ftp = FTP(self._host.ip, self._username, self._password, timeout=timeout)
+      self._ftp = FTP(self._host.ip, self._username, self._password)
     except ftplib.all_errors as e:
       test['errorcode'] = errors.geterrorcode(e)
       error = '[%s] Impossibile aprire la connessione FTP: %s' % (test['errorcode'], e)
@@ -160,7 +161,7 @@ class Tester:
       pcapper.sniff(Contabyte(self._if_ip, self._host.ip))
 
       # Il risultato deve essere espresso in millisecondi
-      (size, elapsed) = self._ftp_down(ftp, file)
+      (size, elapsed) = self._ftp_down()
       test['bytes'] = size
       test['time'] = elapsed
       logger.info("Banda: (%s*8)/%s = %s Kbps" % (size,elapsed,(size*8)/elapsed))
@@ -177,12 +178,12 @@ class Tester:
     except ftplib.all_errors as e:
       pcapper.stop()
       pcapper.join()
-      if ((max_retry > 0) and (e.args[0] == errno.EWOULDBLOCK)):
-        max_retry -= 1
-        logger.error("[%s] FTP socket error: %s [remaining retry: %d]" % (e.args[0], e, max_retry))
+      if ((self._maxRetry > 0) and (e.args[0] == errno.EWOULDBLOCK)):
+        self._maxRetry -= 1
+        logger.error("[%s] FTP socket error: %s [remaining retry: %d]" % (e.args[0], e, self._maxRetry))
         return self.testftpdown(bytes, filename)
       else:
-        max_retry = 8
+        self._maxRetry = 8
         test['errorcode'] = errors.geterrorcode(e)
         error = '[%s] Impossibile effettuare il test %s: %s' % (test['errorcode'], test['type'], e)
         logger.error(error)
@@ -194,13 +195,11 @@ class Tester:
       logger.error(error)
       raise Exception(error)
 
-    max_retry = 8
+    self._maxRetry = 8
        
     return Proof(test)
 
-  def testftpup(self, bytes, path):
-    global ftp, file, filepath  
-    filepath = path
+  def testftpup(self, bytes, path, timeout = 11):
     
     test = {}
     test['type'] = 'upload'
@@ -209,13 +208,14 @@ class Tester:
     test['stats'] = {}
     test['errorcode'] = 0
 
-    file = Fakefile(bytes)
-    timeout = max(self._timeout, 1)
+    self._file = Fakefile(bytes)
+    self._filepath = path
+    self._timeout = (timeout * 1000)
 
     try:
       # TODO Il timeout non viene onorato in Python 2.6: http://bugs.python.org/issue8493
-      #ftp = FTP(self._host.ip, self._username, self._password, timeout=timeout)
-      ftp = FTP(self._host.ip, self._username, self._password)
+      #self._ftp = FTP(self._host.ip, self._username, self._password, timeout=timeout)
+      self._ftp = FTP(self._host.ip, self._username, self._password)
     except ftplib.all_errors as e:
       test['errorcode'] = errors.geterrorcode(e)
       error = '[%s] Impossibile aprire la connessione FTP: %s' % (test['errorcode'], e)
@@ -233,7 +233,7 @@ class Tester:
       pcapper.sniff(Contabyte(self._if_ip, self._host.ip))
 
       # Il risultato deve essere espresso in millisecondi
-      (size, elapsed) = self._ftp_up(ftp, file, filepath)
+      (size, elapsed) = self._ftp_up()
       test['bytes'] = size
       test['time'] = elapsed
       logger.info("Banda: (%s*8)/%s = %s Kbps" % (size,elapsed,(size*8)/elapsed))

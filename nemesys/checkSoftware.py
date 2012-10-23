@@ -23,7 +23,7 @@ area_privata = "https://www.misurainternet.it/login_form.php"
 
 
 
-class checkSoftware():
+class CheckSoftware():
 
   def __init__(self, version):
     
@@ -53,7 +53,7 @@ class checkSoftware():
       data = connection.getresponse().read()
       
       #### FAKE REPLY ####
-      data = "1.0.4:none"
+      data = "1.0.6:24"
       ####################
       
       data = data.split(":")
@@ -167,5 +167,5 @@ class checkSoftware():
     
 if __name__ == '__main__':
   app = wx.PySimpleApp(0)
-  checker = checkSoftware("1.0.4")
+  checker = CheckSoftware("1.0.4")
   checker.checkIT()

@@ -31,26 +31,21 @@ import re
 from task import Task   #for Fake Task#
 
 
-__version__ = '1.0.4'
-
 logger = logging.getLogger()
 
 TASK_FILE = '40000'
 
-# Tempo di attesa tra una misura e la successiva in caso di misura fallita
-TIME_LAG = 5
 PING = 'ping'
 DOWN = 'down'
 UP = 'up'
-# Soglia per il rapporto tra traffico 'spurio' e traffico totale
-TH_TRAFFIC = 0.1
-TH_TRAFFIC_INV = 0.9
-# Soglia per numero di pacchetti persi
-TH_PACKETDROP = 0.05
-MAX_TEST_ERROR = 5
 
-UPLOAD_RETRY = 3
+TH_PACKETDROP = 0.05    # Soglia per numero di pacchetti persi #
+TH_TRAFFIC = 0.1        # Soglia per il rapporto tra traffico 'spurio' e traffico totale #
+TH_INVERTED = 0.9       # Soglia per il rapporto tra traffico 'spurio' e traffico totale nella direzione opposta a quella di test #
 
+TIME_LAG = 5            # Tempo di attesa tra una misura e la successiva in caso di misura fallita #
+MAX_TEST_RETRY = 3
+MAX_SEND_RETRY = 3
 
 
 def getclient(options):
@@ -63,10 +58,11 @@ def getclient(options):
                 password = options.password)
 
 
-class speedTester(Thread):
+class SpeedTester(Thread):
 
-  def __init__(self, gui):
+  def __init__(self, gui, version):
     Thread.__init__(self)
+    
     paths_check = paths.check_paths()
     for check in paths_check:
       logger.info(check)
@@ -75,9 +71,10 @@ class speedTester(Thread):
     self._outbox = paths.OUTBOX_DAY_DIR
 
     self._gui = gui
+    self._version = version
     self._profiler = sysProfiler(self._gui, 'tester')
 
-    (options, args, md5conf) = parse(__version__)
+    (options, args, md5conf) = parse(self._version)
 
     self._client = getclient(options)
     self._scheduler = options.scheduler
@@ -151,18 +148,19 @@ class speedTester(Thread):
     connection = httputils.getverifiedconnection(url = url, certificate = certificate, timeout = self._httptimeout)
 
     try:
-      connection.request('GET', '%s?clientid=%s&version=%s&confid=%s' % (url.path, self._client.id, __version__, self._md5conf))
+      connection.request('GET', '%s?clientid=%s&version=%s&confid=%s' % (url.path, self._client.id, self._version, self._md5conf))
       data = connection.getresponse().read()
       #logger.debug(data)
       task = xml2task(data)
       if (task != None):
         task.ftpdownpath = '/download/'+TASK_FILE+'.rnd'
         self._client.profile.upload = int(TASK_FILE)
+        logger.info("--------[ TASK ]--------")
+        for key, val in task.dict.items():
+          logger.info("%s : %s" % (key, val))
+        logger.info("------------------------")
       else:
         logger.info('Lo scheduler ha inviato un task vuoto.')
-      logger.info("--------[TASK]--------")
-      for key, val in task.dict.items():
-        logger.info("%s : %s" % (key, val))
     except Exception as e:
       logger.error('Impossibile scaricare lo scheduling. Errore: %s.' % e)
       return None
@@ -217,7 +215,7 @@ class speedTester(Thread):
       if traffic_ratio < 0:
         wx.CallAfter(self._gui._update_messages, 'Errore durante la verifica del traffico di misura: impossibile salvare i dati.', 'red')
         return continue_testing
-      elif traffic_ratio < TH_TRAFFIC and packet_ratio_inv < TH_TRAFFIC_INV:
+      elif traffic_ratio < TH_TRAFFIC and packet_ratio_inv < TH_INVERTED:
         # Dato da salvare sulla misura
         # test.bytes = byte_all
         info = 'Traffico internet non legato alla misura: percentuali %s/%s' % (value1, value2)
@@ -267,7 +265,7 @@ class speedTester(Thread):
       # Esecuzione del test
       test = None
       error = 0
-      while (error < MAX_TEST_ERROR and test == None):
+      while (error < MAX_TEST_RETRY and test == None):
         self._profiler.set_check(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA]))
         profiler = self._profiler.get_results()
         sleep(1)
@@ -277,22 +275,28 @@ class speedTester(Thread):
         try:
           test_done += 1
           message =  "Tentativo numero %s con %s riusciti su %s da collezionare" % (test_done,test_good,test_todo)
+          
+          if (test_done > 1):
+            timeout = (task.multiplier * 2)
+          else:
+            timeout = (task.multiplier + 2)
+          
           if type == PING:
             logger.info("[PING] "+message+" [PING]")
             test = tester.testping()
           elif type == DOWN:
             logger.info("[DOWNLOAD] "+message+" [DOWNLOAD]")
-            test = tester.testftpdown(self._client.profile.download * task.multiplier * 1000 / 8, task.ftpdownpath)
+            test = tester.testftpdown(self._client.profile.download * task.multiplier * 1000 / 8, task.ftpdownpath, timeout)
           elif type == UP:
             logger.info("[UPLOAD] "+message+" [UPLOAD]")
-            test = tester.testftpup(self._client.profile.upload * task.multiplier * 1000 / 8, task.ftpuppath)
+            test = tester.testftpup(self._client.profile.upload * task.multiplier * 1000 / 8, task.ftpuppath, timeout)
           else:
             logger.warn("Tipo di test da effettuare non definito!")
         except Exception as e:
           if (self._running.isSet()):
             error += 1
           else:
-            error = MAX_TEST_ERROR
+            error = MAX_TEST_RETRY
           test = None
           wx.CallAfter(self._gui._update_messages, "Errore durante l'esecuzione di un test: %s" % e, 'red')
           wx.CallAfter(self._gui._update_messages, "Ripresa del test tra %d secondi" % TIME_LAG)
@@ -373,7 +377,7 @@ class speedTester(Thread):
         tester = Tester(if_ip = ip, host = task.server, timeout = self._testtimeout,
                    username = self._client.username, password = self._client.password)
 
-        measure = Measure(self._client, start_time, task.server, ip, os, __version__)
+        measure = Measure(self._client, start_time, task.server, ip, os, self._version)
         #logger.debug("\n\n%s\n\n",str(measure))
         
         test_types = [PING,DOWN,UP]
@@ -434,7 +438,7 @@ class speedTester(Thread):
     Cerca di spedire al repository entro il tempo messo a disposizione secondo il parametro httptimeout
     uno o tutti i filename di misura che si trovano nella cartella d'uscita
     '''
-    for retry in range(UPLOAD_RETRY):
+    for retry in range(MAX_SEND_RETRY):
       allOK = True
       
       filenames = []
@@ -466,7 +470,7 @@ class speedTester(Thread):
               code = int(code)
               logger.info('Risposta dal server di upload: [%d] %s' % (code, message))
               uploadOK = not bool(code)
-              logger.debug(uploadOK)
+              #logger.debug(uploadOK)
               
           except Exception as e:
             logger.error('Errore durante la spedizione del file delle misure %s: %s' % (filename, e))
@@ -488,8 +492,8 @@ class speedTester(Thread):
           wx.CallAfter(self._gui._update_messages, "Salvataggio completato con successo.",'green')
           break
         else:
-          wx.CallAfter(self._gui._update_messages, "Tentativo di salvataggio numero %s di %s fallito." % (retry+1, UPLOAD_RETRY),'red')
-          if (retry+1)<UPLOAD_RETRY:
+          wx.CallAfter(self._gui._update_messages, "Tentativo di salvataggio numero %s di %s fallito." % (retry+1, MAX_SEND_RETRY),'red')
+          if (retry+1)<MAX_SEND_RETRY:
             wx.CallAfter(self._gui._update_messages, "Nuovo tentativo fra %s secondi." % sleep_time,'red')
             sleep(sleep_time)
           else:
@@ -508,7 +512,7 @@ class speedTester(Thread):
               1) a seguito della prossima profilazione
               2) a seguito della prossima misura
               3) al prossimo riavvio di NeMeSys Speedtest
-              ''' % UPLOAD_RETRY
+              ''' % MAX_SEND_RETRY
               msgBox = wx.MessageDialog(None, message, title, wx.OK|wx.ICON_INFORMATION)
               msgBox.ShowModal()
               msgBox.Destroy()
@@ -569,12 +573,12 @@ class speedTester(Thread):
       for dir in dirs:  
         if path.exists(dir):
           if not listdir(dir):  #to check wither the dir is empty
-            logger.debug("Elimino la directory vuota: %s" % dir)
+            logger.info("Elimino la directory vuota: %s" % dir)
             removedirs(dir)
           
 if __name__ == "__main__":
   sleep(8)
-  test = speedTester(None)
+  test = SpeedTester(None)
   test._remEmptyDir(paths.OUTBOX_DIR)
   test._remEmptyDir(paths.SENT_DIR)
           

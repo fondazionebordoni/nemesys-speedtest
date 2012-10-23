@@ -100,7 +100,6 @@ def interfaces():
   data = _get_NetIF(1)
   for device in data.findall('rete/NetworkDevice'):
     dev = xmltodict.parse(ET.tostring(device))
-    logger.debug(dev)
     dev = dev['NetworkDevice']
     logger.info("============================================")
     for key, val in dev.items(): 
@@ -456,12 +455,12 @@ def _check_traffic(sec = 2, res = RES_TRAFFIC):
     start_time = time.time()
     pcapper.start()
     pcapper.sniff(Contabyte(ip, '0.0.0.0'))
-    #logger.debug("Checking Traffic for %d seconds...." % sec)
+    #logger.info("Checking Traffic for %d seconds...." % sec)
     time.sleep(sec)
     pcapper.stop_sniff()
     stats = pcapper.get_stats()
     total_time = int((time.time() - start_time) * 1000)
-    logger.debug('Checked Traffic for %s ms' % total_time)
+    logger.info('Checked Traffic for %s ms' % total_time)
     pcapper.stop()
     pcapper.join()
     
