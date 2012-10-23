@@ -102,7 +102,7 @@ def getconf(code, filepath, url):
   connection.request('GET', '%s?clientid=%s' % (url.path, code))
   data = connection.getresponse().read()
   
-  logger.debug(data)
+  #logger.debug(data)
   
   # Controllo se nel file di configurazione è presente il codice di attivazione. #
   if (data.find(code) != -1):

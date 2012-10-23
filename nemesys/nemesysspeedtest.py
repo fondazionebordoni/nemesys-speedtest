@@ -33,6 +33,15 @@ class NemesysSpeedtestGUI(wx.Frame):
     self._profiler = None
     self._button_play = False
     self._button_check = False
+    
+    self._message = \
+'''
+  Benvenuto in Ne.Me.Sys Speedtest versione %s
+
+  1) Premendo il tasto CHECK avvierai la profilazione della macchina per la misura.
+
+  2) Premendo il tasto PLAY avvierai una profilazione e il test di misura completo.
+''' % self._version
 
     # begin wxGlade: Frame.__init__
     wx.Frame.__init__(self, *args, **kwds)
@@ -66,7 +75,7 @@ class NemesysSpeedtestGUI(wx.Frame):
     self.label_rr_ping = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
     self.label_rr_down = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
     self.label_rr_up = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
-    self.messages_area = wx.TextCtrl(self, -1, "Ne.Me.Sys. Speedtest v.%s" % self._version, style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_WORDWRAP)
+    self.messages_area = wx.TextCtrl(self, -1, "%s" % self._message, style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_WORDWRAP)
     self.label_interface = wx.StaticText(self, -1, "", style = wx.ALIGN_CENTRE)
     self.grid_sizer_1 = wx.FlexGridSizer(2, 7, 0, 0)
     self.grid_sizer_2 = wx.FlexGridSizer(2, 3, 0, 0)
@@ -178,7 +187,7 @@ class NemesysSpeedtestGUI(wx.Frame):
     self.Layout()
     # end wxGlade
 
-    self._check(None)
+    #self._check(None)
 
   def _on_close(self, event):
     logger.info("Richiesta di close")

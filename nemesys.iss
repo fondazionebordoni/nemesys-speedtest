@@ -47,7 +47,7 @@ italian.AdminPrivilegesRequired=Errore nell'installazione.%nSono necessarie le c
 Name: italian; MessagesFile: compiler:Languages\Italian.isl
 
 [Tasks]
-Name: quicklaunchicon; Description: {cm:CreateQuickLaunchIcon}; GroupDescription: {cm:AdditionalIcons}; Flags: unchecked; OnlyBelowVersion: 0,6.1
+Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1; Languages: italian
 
 [Files]
 ;Source: {#MyAppDir}\nemesys\winpcap\WinPcap.exe; Flags: dontcopy
@@ -79,15 +79,16 @@ Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}; Filen
 Filename: {sys}\netsh.exe; Parameters: " int ip set global taskoffload=disabled"; Description: "Disable TCP Task Offload"; Flags: RunHidden RunAsCurrentUser; 
 Filename: {sys}\netsh.exe; Parameters: " firewall add allowedprogram ""{app}\dist\NemesysSpeedtest.exe"" ""NemesysSpeedtest"" ENABLE CUSTOM 193.104.137.0/24 ALL"; Description: "Enable NemesysSpeedtest traffic"; Flags: RunHidden RunAsCurrentUser; 
 Filename: {sys}\netsh.exe; Parameters: " advfirewall firewall add rule name=""NemesysSpeedtest"" dir=out action=allow program=""{app}\dist\NemesysSpeedtest.exe"" enable=yes"; Description: "Enable NemesysSpeedtest traffic"; Flags: RunHidden RunAsCurrentUser; MinVersion: 0,6.1.7600; 
+Filename: {app}\dist\NemesysSpeedtest.exe; Parameters: start; Description: "Avvia NeMeSys Speedtest"; Flags: PostInstall runmaximized RunAsCurrentUser; StatusMsg: "Avvia NeMeSys Speedtest";
 ;Filename: {app}\dist\Nemesys.exe; Parameters: "--startup auto install"; Description: "Installazione del servizio Nemesys."; StatusMsg: "Installazione del servizio Nemesys"; Flags: RunHidden RunAsCurrentUser; 
-;Filename: {app}\dist\Nemesys.exe; Parameters: start; Description: "Avvia il servizio Nemesys"; Flags: PostInstall RunHidden RunAsCurrentUser; StatusMsg: "Avvia il servizio Nemesys"; 
+;Filename: {app}\dist\Nemesys.exe; Parameters: start; Description: "Avvia il servizio Nemesys"; Flags: PostInstall RunHidden RunAsCurrentUser; StatusMsg: "Avvia il servizio Nemesys";
+
  
 [UninstallRun]
 Filename: taskkill; Parameters: /f /im NemesysSpeedtest.exe; WorkingDir: {sys}; Flags: runminimized RunAsCurrentUser
 Filename: {sys}\netsh.exe; Parameters: " firewall delete allowedprogram program=""{app}\dist\NemesysSpeedtest.exe"""; Flags: RunHidden RunAsCurrentUser; 
 ;Filename: {app}\dist\Nemesys.exe; Parameters: " --wait 25 stop"; Flags: runminimized RunAsCurrentUser
 ;Filename: {app}\dist\NemesysSpeedtest.exe; Parameters: " remove"; Flags: runminimized RunAsCurrentUser
-
 
 [UninstallDelete]
 ;Type: files; Name: {app}\dist\cfg\*
