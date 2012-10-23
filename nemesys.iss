@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Ne.Me.Sys Speedtest"
-#define MyAppVersion "1.0"
+#define MyAppVersion "1.0.5"
 #define MyAppPublisher "Fondazione Ugo Bordoni"
 #define MyAppURL "http://www.misurainternet.it/"
 #define MyAppExeName "NemesysSpeedtest"
@@ -31,7 +31,7 @@ AllowNoIcons=true
 InfoBeforeFile={#MyAppDir}\EULA
 LicenseFile={#MyAppDir}\LICENSE
 OutputDir={#MyAppDir}
-OutputBaseFilename={#MyAppExeName}_v.{#myAppVersion}-{#BuildNum}
+OutputBaseFilename={#MyAppExeName}_v.{#myAppVersion}_b.{#BuildNum}
 SolidCompression=true
 VersionInfoCopyright=(c) 2010-2011 Fondazione Ugo Bordoni
 PrivilegesRequired=admin
@@ -59,16 +59,14 @@ Source: {#MyAppDir}\nemesys.ico; DestDir: {app}; Flags: ignoreversion
 Source: {#MyAppDir}\COPYING; DestDir: {app}; Flags: ignoreversion
 Source: {#MyAppDir}\LICENSE; DestDir: {app}; Flags: ignoreversion
 Source: {#MyAppDir}\config\errorcodes.conf; DestDir: {app}\config; Flags: ignoreversion
-Source: {#MyAppDir}\config\client.conf; DestDir: {app}\config; Flags: ignoreversion
-Source: {#MyAppDir}\outbox\prospect.xsl; DestDir: {app}\outbox; Flags: ignoreversion
+;Source: {#MyAppDir}\config\client.conf; DestDir: {app}\config; Flags: ignoreversion
+;Source: {#MyAppDir}\outbox\prospect.xsl; DestDir: {app}\outbox; Flags: ignoreversion
 Source: {#MyAppDir}\icons\*.png; DestDir: {app}\icons; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Dirs]
-;Name: {app}\include
-;Name: {app}\lib
-Name: {app}\outbox
-Name: {app}\sent
+;Name: {app}\outbox
+;Name: {app}\sent
 Name: {app}\logs
 
 [Icons]
@@ -93,24 +91,22 @@ Filename: {sys}\netsh.exe; Parameters: " firewall delete allowedprogram program=
 
 [UninstallDelete]
 ;Type: files; Name: {app}\dist\cfg\*
-Type: files; Name: {app}\dist\*
-Type: files; Name: {app}\config\*
-Type: files; Name: {app}\docs\*
-Type: files; Name: {app}\icons\*
-Type: files; Name: {app}\outbox\*
-Type: files; Name: {app}\sent\*
-Type: files; Name: {app}\logs\*
+;Type: files; Name: {app}\dist\*
+;Type: files; Name: {app}\config\*
+;Type: files; Name: {app}\docs\*
+;Type: files; Name: {app}\icons\*
+;Type: files; Name: {app}\logs\*
+;Type: files; Name: {app}\outbox\*
+;Type: files; Name: {app}\sent\*
 ;Type: dirifempty; Name: {app}\dist\cfg
-Type: dirifempty; Name: {app}\dist
-Type: dirifempty; Name: {app}\config
-Type: dirifempty; Name: {app}\docs
-Type: dirifempty; Name: {app}\icons
-Type: dirifempty; Name: {app}\include
-Type: dirifempty; Name: {app}\lib
-Type: dirifempty; Name: {app}\sent
-Type: filesandordirs; Name: {app}\outbox
+Type: filesandordirs; Name: {app}\dist
+Type: filesandordirs; Name: {app}\config
+Type: filesandordirs; Name: {app}\docs
+Type: filesandordirs; Name: {app}\icons
 Type: filesandordirs; Name: {app}\logs
-Type: dirifempty; Name: {app}
+Type: filesandordirs; Name: {app}\outbox
+Type: filesandordirs; Name: {app}\sent
+Type: filesandordirs; Name: {app}
 
 [Registry]
 ;root: HKLM; subkey: SYSTEM\CurrentControlSet\Services\Nemesys; valuetype: expandsz; valuename: ImagePath; valuedata: {app}; Flags: UninsDeleteKey DeleteKey
