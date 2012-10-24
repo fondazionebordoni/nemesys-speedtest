@@ -49,16 +49,6 @@ MAX_TEST_RETRY = 3
 MAX_SEND_RETRY = 3
 
 
-def getclient(options):
-
-  profile = Profile(id = None, upload = options.bandwidthup,
-                    download = options.bandwidthdown)
-  isp = Isp('fub001')
-  return Client(id = options.clientid, profile = profile, isp = isp,
-                geocode = None, username = 'speedtest',
-                password = options.password)
-
-
 class SpeedTester(Thread):
 
   def __init__(self, gui, version):
@@ -78,7 +68,7 @@ class SpeedTester(Thread):
     parser = OptionParser(version = self._version, description = '')
     (options, args, md5conf) = parser.parse()
 
-    self._client = getclient(options)
+    self._client = self._getclient(options)
     self._scheduler = options.scheduler
     self._repository = options.repository
     self._tasktimeout = options.tasktimeout
@@ -95,7 +85,17 @@ class SpeedTester(Thread):
     self._running.clear()
     logger.info("Chiusura del tester")
     #wx.CallAfter(self._gui._update_messages, "Attendere la chiusura del programma...")
-  
+
+
+  def _getclient(self, options):
+
+    profile = Profile(id = None, upload = options.bandwidthup,
+                      download = options.bandwidthdown)
+    isp = Isp('fub001')
+    return Client(id = options.clientid, profile = profile, isp = isp,
+                  geocode = None, username = 'speedtest',
+                  password = options.password)
+
   
   def _get_server(self, servers = set([Server('NAMEX', '193.104.137.133', 'NAP di Roma'), Server('MIX', '193.104.137.4', 'NAP di Milano')])):
 
@@ -153,15 +153,14 @@ class SpeedTester(Thread):
       certificate = self._client.isp.certificate
       
       connection = httputils.getverifiedconnection(url = url, certificate = certificate, timeout = self._httptimeout)
-      logger.debug('%s?clientid=%s&version=%s&confid=%s' % (url.path, self._client.id, self._version, self._md5conf))
       connection.request('GET', '%s?clientid=%s&version=%s&confid=%s' % (url.path, self._client.id, self._version, self._md5conf))
       
       data = connection.getresponse().read()
-      logger.debug(data)
+      #logger.debug(data)
       
       "TODO: invertire questi due quando verrà risolto il problema sul server"
-      #task = xml2task(data)
-      task = Task(11, '2011-11-11 11:11:11', Server('fubsrvrmnmx03', '193.104.137.133', 'NAMEX', 'Roma'), '/download/40000.rnd', 'upload/1111.rnd', 4, 4, 10, 4, 4, 0, True)
+      task = xml2task(data)
+      #task = Task(11, '2011-11-11 11:11:11', Server('fubsrvrmnmx03', '193.104.137.133', 'NAMEX', 'Roma'), '/download/40000.rnd', 'upload/1111.rnd', 4, 4, 10, 4, 4, 0, True)
       
       if (task == None): 
         logger.info('Lo scheduler ha inviato un task vuoto.')

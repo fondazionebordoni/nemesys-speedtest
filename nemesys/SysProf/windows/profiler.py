@@ -11,8 +11,7 @@ import win32com.client
 import time
 import socket
 import xml.etree.ElementTree as ET
-from ctypes import *
-from ctypes.wintypes import DWORD, ULONG
+from ctypes.wintypes import DWORD, Structure, windll, byref
 import struct
 import pythoncom
 

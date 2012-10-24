@@ -8,8 +8,8 @@ from speedTester import SpeedTester
 from sysProfiler import sysProfiler
 from collections import deque
 from datetime import datetime
+from platform import system
 from logger import logging
-from sys import platform
 from time import sleep
 from os import path
 
@@ -343,7 +343,7 @@ class NemesysSpeedtestGUI(wx.Frame):
     logger.info('Messagio all\'utente: "%s"' % message)
     self._stream.append((message, color))
     if (not self._stream_flag.isSet()):
-      if (platform.startswith('win')):
+      if (system().lower().startswith('win')):
         writer = Thread(target = self._writer)
         writer.start()
       else:
@@ -386,7 +386,7 @@ if __name__ == "__main__":
 
   if check:
     interfaces()
-    if (platform.startswith('win')):
+    if (system().lower().startswith('win')):
       wx.CallLater(200, sleeper)
     wx.InitAllImageHandlers()
     GUI = NemesysSpeedtestGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))

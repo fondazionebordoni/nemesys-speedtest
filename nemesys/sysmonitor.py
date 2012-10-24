@@ -22,13 +22,13 @@ from logger import logging
 from errorcoder import Errorcoder
 from xml.etree import ElementTree as ET
 from contabyte import Contabyte
+from platform import system
 from pcapper import Pcapper
 
 import checkhost
 import pktman
 import netifaces
 import paths
-import platform
 import socket
 import sysmonitorexception
 import re
@@ -36,13 +36,12 @@ import time
 
 import xmltodict
 
-platform_name = platform.system().lower()
-if platform_name == 'windows':
+if (system().lower().startswith('win')):
   from SysProf.windows import profiler
-elif platform_name == 'darwin':
-  from SysProf.darwin import profiler
-else:
+elif (system().lower().startswith('lin')):
   from SysProf.linux import profiler
+else:
+  from SysProf.darwin import profiler
 
 
 STRICT_CHECK = True
@@ -261,7 +260,7 @@ def _check_ethernet(res = RES_ETH):
     type = device.find('Type').text
     if (type == 'Ethernet 802.3'):
       
-      if (platform.system().lower().startswith('win')):
+      if (system().lower().startswith('win')):
         guid = device.find('GUID').text
         dev_info = getDevInfo(guid)
         if (dev_info != None):
@@ -276,7 +275,7 @@ def _check_ethernet(res = RES_ETH):
               CHECK_VALUES[res] = 1
               check_info = 'Dispositivi ethernet attivi.'
               
-      elif (platform.system().lower().startswith('lin')):
+      elif (system().lower().startswith('lin')):
         status = device.find('Status').text
         isAct = device.find('isActive').text
         if (status == 'Disabled' and CHECK_VALUES[res] != 1):  
@@ -306,7 +305,7 @@ def _check_wireless(res = RES_WIFI):
     type = device.find('Type').text
     if (type == 'Wireless'):
       
-      if (platform.system().lower().startswith('win')):
+      if (system().lower().startswith('win')):
         guid = device.find('GUID').text
         dev_info = getDevInfo(guid)
         if (dev_info != None):
@@ -321,7 +320,7 @@ def _check_wireless(res = RES_WIFI):
               check_info = 'Dispositivi wireless attivi.'
               raise sysmonitorexception.WARNWLAN
             
-      elif (platform.system().lower().startswith('lin')):  
+      elif (system().lower().startswith('lin')):  
         status = device.find('Status').text
         if (status == 'Disabled' and CHECK_VALUES[res] != 1):  
           CHECK_VALUES[res] = 0
@@ -340,7 +339,7 @@ def _check_hspa(res = RES_HSPA):
   CHECK_VALUES[res] = -1
   check_info = 'Dispositivi HSPA non presenti.'
   
-  if (platform.system().lower().startswith('lin')):
+  if (system().lower().startswith('lin')):
     check_info = 'Dispositivi HSPA non presenti o non attivi.'
   
   data = _get_NetIF(1)
@@ -364,7 +363,7 @@ def _check_hspa(res = RES_HSPA):
             raise sysmonitorexception.WARNHSPA
     
     elif (type == 'WWAN'):
-      if (platform.system().lower().startswith('win')):
+      if (system().lower().startswith('win')):
         guid = device.find('GUID').text
         dev_info = getDevInfo(guid)
         if (dev_info != None):
@@ -378,7 +377,7 @@ def _check_hspa(res = RES_HSPA):
               CHECK_VALUES[res] = 1
               raise sysmonitorexception.WARNHSPA
             
-      elif (platform.system().lower().startswith('lin')):
+      elif (system().lower().startswith('lin')):
         CHECK_VALUES[res] = 1
         check_info = 'Dispositivi HSPA attivi.'
         raise sysmonitorexception.WARNHSPA
@@ -407,10 +406,9 @@ def _check_hosts(up = 2048, down = 2048, ispid = 'tlc003', arping = 1, res = RES
 
     value = checkhost.countHosts(ip, mask, up, down, ispid, th_host, arping, mac, dev)
     
-    if (value >= th_host):
-      other = value - th_host
-    else:
-      other = value
+    other = value - th_host
+    if (other < 0):
+      other = 0
     
     logger.info('Trovati %d host in rete che eccedono la soglia.' % other)
 
@@ -578,7 +576,7 @@ def _get_NetIF(type = 0):
     return NETIF_2
 
 
-def _get_ActiveIp(host = 'finaluser.agcom244.fub.it', port = 443):
+def _get_ActiveIp(host = 'speedtest.agcom244.fub.it', port = 443):
 
   #logger.debug('Determinazione dell\'IP attivo verso Internet')
   try:

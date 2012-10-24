@@ -16,9 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from server import Server
-from logger import logging
 from collections import OrderedDict
+from logger import logging
+from server import Server
+
+
 
 BANDS = [128, 256, 384, 400, 512, 640, 704, 768, 832, 1000, 1200, 1250, 1280, 1500, 1600, 1750, 2000, 2250, 2500, 2750, 3000, 3250, 3500, 4000, 4096, 4500, 5000, 5500, 6000, 6122, 6500, 7000, 7168, 7500, 8000, 8500, 8192, 9000, 9500, 10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 20480, 22000, 24000, 26000, 28000, 30000, 32000, 34000, 36000, 38000, 40000]
 logger = logging.getLogger()
@@ -130,7 +132,7 @@ class Task:
     ('Upload file',self.ftpuppath),\
     ('Multiplier',self.multiplier),\
     ('Now parameter',self.now),\
-    ('Message',self.message)\
+    ('Message',self.message) \
     ])
     return task 
       

@@ -13,6 +13,7 @@ from ..RisorsaFactory import Risorsa
 from ..NemesysException import RisorsaException
 import xml.etree.ElementTree as ET
 import psutil, os
+import platform
 import dmidecode
 import netifaces
 import socket
@@ -60,8 +61,7 @@ class sistemaOperativo(Risorsa):
         self._params = ['version']
 
     def version (self):
-        val = os.uname()
-        valret = val[3] + ' with ' + val[0] + ' ' + val[2]
+        valret = platform.platform()
         return self.xmlFormat('OperatingSystem', valret)
 
 class disco(Risorsa):
