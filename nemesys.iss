@@ -143,7 +143,7 @@ begin
     end
   else
     begin
-      MsgBox('Installazione del software NeMeSys terminata poichè si è scelto di non installare le Microsoft Network Monitor',mbInformation, MB_OK);
+      MsgBox('Installazione del software NeMeSys terminata poichÃ© si Ã¨ scelto di non installare le Microsoft Network Monitor',mbInformation, MB_OK);
       WizardForm.Close;
     end;
 end;
