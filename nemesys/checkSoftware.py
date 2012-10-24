@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from optionParser import OptionParser
 from registration import registration
 from urlparse import urlparse
-from nemesysParser import parse
 from logger import logging
 import webbrowser
 import httputils
@@ -18,16 +18,16 @@ logger = logging.getLogger()
 #Data di scadenza
 dead_date = 22221111
 
-url_version = "https://speedtest.agcom244.fub.it/version"
-area_privata = "https://www.misurainternet.it/login_form.php"
-
+url_version = "https://speedtest.agcom244.fub.it/Version"
+area_privata = "https://www.misurainternet.it"    # /login_form.php"
 
 
 class CheckSoftware():
 
   def __init__(self, version):
     
-    (options, args, md5conf) = parse(version)
+    parser = OptionParser(version = version, description = '')
+    (options, args, md5conf) = parser.parse()
     self._httptimeout = options.httptimeout
     self._clientid = options.clientid
     self._thisVersion = version
@@ -41,7 +41,8 @@ class CheckSoftware():
     res = msgBox.ShowModal()
     msgBox.Destroy()
     return res
-    
+  
+     
   def _softwareVersion(self):
     versionOK = True
     deadlineOK = True
@@ -51,11 +52,8 @@ class CheckSoftware():
     try:
       connection.request('GET', '%s?speedtest=true&version=%s' % (url.path, self._thisVersion))
       data = connection.getresponse().read()
-      
-      #### FAKE REPLY ####
-      data = "1.0.6:24"
-      ####################
-      
+      #data = "1.0.6:8"    # FAKE REPLY #
+      #logger.debug(data)
       data = data.split(":")
       
       #### VERSION ####
@@ -164,7 +162,10 @@ class CheckSoftware():
       if not checkOK:
         break
     return checkOK
-    
+
+
+
+
 if __name__ == '__main__':
   app = wx.PySimpleApp(0)
   checker = CheckSoftware("1.0.4")

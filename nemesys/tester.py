@@ -26,7 +26,6 @@ from host import Host
 from logger import logging
 from optparse import OptionParser
 from pcapper import Pcapper
-from proof import Proof
 from sysmonitor import getIp, getDev
 import ftplib
 import paths
@@ -197,7 +196,7 @@ class Tester:
 
     self._maxRetry = 8
        
-    return Proof(test)
+    return test
 
   def testftpup(self, bytes, path, timeout = 11):
     
@@ -261,7 +260,7 @@ class Tester:
       logger.error(error)
       raise Exception(error)
 
-    return Proof(test)
+    return test
 
 
   def testping(self):
@@ -284,7 +283,7 @@ class Tester:
       logger.error(error)
       raise Exception(error)
 
-    return Proof(test)
+    return test
 
 
 def main():

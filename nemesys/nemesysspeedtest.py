@@ -369,8 +369,10 @@ class NemesysSpeedtestGUI(wx.Frame):
 def sleeper():
     sleep(.001)
     return 1 # don't forget this otherwise the timeout will be removed
-    
-    
+  
+  
+  
+  
 if __name__ == "__main__":
 
   version = __version__
