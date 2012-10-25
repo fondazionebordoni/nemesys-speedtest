@@ -67,7 +67,7 @@ Source: {#MyAppDir}\icons\*.png; DestDir: {app}\icons; Flags: ignoreversion recu
 [Dirs]
 ;Name: {app}\outbox
 ;Name: {app}\sent
-Name: {app}\logs
+;Name: {app}\logs
 
 [Icons]
 Name: {group}\{#MyAppName}; Filename: {app}\dist\NemesysSpeedtest.exe
