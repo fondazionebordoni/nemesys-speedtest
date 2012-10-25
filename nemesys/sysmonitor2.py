@@ -150,7 +150,6 @@ class sysMonitor(Thread):
   
   
   def _get_status(self, res):
-  
     #logger.debug('Recupero stato della risorsa %s' % res)
     data = ET.ElementTree()
   
@@ -174,7 +173,7 @@ class sysMonitor(Thread):
   
   
   def _get_string_tag(self, tag, value, res):
-  
+    
     values = self._get_status(res)
   
     try:
@@ -244,7 +243,22 @@ class sysMonitor(Thread):
       return NETIF_2
   
   
+  def getDevInfo(self, dev = None):
+    
+    dev_info = None
+    
+    if dev == None:
+      dev = self._get_ActiveIp()
+  
+    dev_info = pktman.getdev(dev)
+    if (dev_info['err_flag'] != 0):
+      dev_info = None
+      
+    return dev_info
+  
+  
   def _get_os(self, res = RES_OS):
+    
     try:
       
       value = self._get_string_tag(tag_sys.split('.', 1)[1], 1, tag_sys.split('.', 1)[0])
@@ -263,16 +277,285 @@ class sysMonitor(Thread):
       self._system[res][VALUE] = value
       self._system[res][INFO] = info
       self._system[res][TIME] = time.time()
+  
+  
+  def _check_cpu(self, res = RES_CPU):
+    
+    try:
+      
+      num_check = 0
+      tot_value = 0
+      
+      value = None
+      
+      for check in range(4):
+        value = self._get_float_tag(tag_cpu.split('.', 1)[1], th_cpu - 1, tag_cpu.split('.', 1)[0])
+        if value != None:  
+          tot_value += value 
+          num_check += 1
+          if value < th_cpu:
+            break
+      
+      value = tot_value / float(num_check)
+      if value < 0 or value > 100:
+        raise sysmonitorexception.BADCPU
+      if value > th_cpu:
+        raise sysmonitorexception.WARNCPU
+    
+      info = 'Utilizzato il %s%% del processore' % value
+      status = True
+    
+    except Exception as e:
+      
+      info = e
+      status = False
+      #raise e
+      
+    finally:
+      
+      self._system[res][STATUS] = status
+      self._system[res][VALUE] = value
+      self._system[res][INFO] = info
+      self._system[res][TIME] = time.time()
+  
+  
+  def _check_mem(self, res = RES_RAM):
+    
+    try:
+      
+      for check in range(3):
+        value = None
+        avMem = self._get_float_tag(tag_avMem.split('.')[1], th_avMem + 1, tag_avMem.split('.')[0])
+        if avMem != None:
+          value = avMem
+          if avMem < 0:
+            raise sysmonitorexception.BADMEM
+          if avMem < th_avMem:
+            raise sysmonitorexception.LOWMEM
+          break
+        else:
+          avMem = 'unknow'
+          value = avMem
+    
+      for check in range(3):
+        value = None
+        memLoad = self._get_float_tag(tag_memLoad.split('.')[1], th_memLoad - 1, tag_memLoad.split('.')[0])
+        if memLoad != None:
+          value = memLoad
+          if memLoad < 0 or memLoad > 100:
+            raise sysmonitorexception.INVALIDMEM
+          if memLoad > th_memLoad:
+            raise sysmonitorexception.OVERMEM
+          break
+        else:
+          memLoad = 'unknow'
+          value = memLoad
+    
+      info = 'Utilizzato il %s%% di %d GB della memoria' % (memLoad, avMem / (1000*1000*1000))
+      status = True
+    
+    except Exception as e:
+      
+      info = e
+      status = False
+      #raise e
+      
+    finally:
+      
+      self._system[res][STATUS] = status
+      self._system[res][VALUE] = value
+      self._system[res][INFO] = info
+      self._system[res][TIME] = time.time()
+  
+  
+  def _check_ethernet(self, res = RES_ETH):
+  
+    try:
+  
+      value = -1
+      info = 'Dispositivi ethernet non presenti.'
+      devices = self._get_NetIF(True)
+      
+      for device in devices.findall('rete/NetworkDevice'):
+        #logger.debug(ET.tostring(device))
+        type = device.find('Type').text
+        if (type == 'Ethernet 802.3'):
+          
+          if (system().lower().startswith('win')):
+            guid = device.find('GUID').text
+            dev_info = self.getDevInfo(guid)
+            if (dev_info != None):
+              dev_type = dev_info['type']
+              if (dev_type == 0 or dev_type == 14):
+                status = int(device.find('Status').text)
+                if (status == 7 and value != 1):
+                  value = 0
+                  info = 'Dispositivi ethernet non attivi.'
+                  raise sysmonitorexception.WARNETH
+                elif (status == 2):
+                  value = 1
+                  info = 'Dispositivi ethernet attivi.'
+                  
+          elif (system().lower().startswith('lin')):
+            status = device.find('Status').text
+            isAct = device.find('isActive').text
+            if (status == 'Disabled' and value != 1):  
+              value = 0
+              info = 'Dispositivi ethernet non attivi.'
+              raise sysmonitorexception.WARNETH
+            elif (status == 'Enabled' and isAct == 'True'):
+              value = 1
+              info = 'Dispositivi ethernet attivi.'
+                
+      if (value == -1):
+        raise sysmonitorexception.WARNETH
+                
+      status = True
+    
+    except Exception as e:
+      
+      info = e
+      status = False
+      #raise e
+      
+    finally:
+      
+      self._system[res][STATUS] = status
+      self._system[res][VALUE] = value
+      self._system[res][INFO] = info
+      self._system[res][TIME] = time.time()
+  
+  
+  def _check_wireless(self, res = RES_WIFI):
+  
+    try:
+      
+      value = -1
+      info = 'Dispositivi wireless non presenti.'
+      devices = self._get_NetIF(True)
+      
+      for device in devices.findall('rete/NetworkDevice'):
+        #logger.debug(ET.tostring(device))
+        type = device.find('Type').text
+        if (type == 'Wireless'):
+          
+          if (system().lower().startswith('win')):
+            guid = device.find('GUID').text
+            dev_info = self.getDevInfo(guid)
+            if (dev_info != None):
+              dev_type = dev_info['type']
+              if (dev_type == 0 or dev_type == 25):
+                status = int(device.find('Status').text)
+                if (status == 7 and value != 1):
+                  value = 0
+                  info = 'Dispositivi wireless non attivi.'
+                elif (status == 2):
+                  value = 1
+                  info = 'Dispositivi wireless attivi.'
+                  raise sysmonitorexception.WARNWLAN
+                
+          elif (system().lower().startswith('lin')):  
+            status = device.find('Status').text
+            if (status == 'Disabled' and value != 1):  
+              value = 0
+              info = 'Dispositivi wireless non attivi.'
+            elif (status == 'Enabled'):
+              value = 1
+              info = 'Dispositivi wireless attivi.'
+              raise sysmonitorexception.WARNWLAN
+                
+      status = True
+    
+    except Exception as e:
+      
+      info = e
+      status = False
+      #raise e
+      
+    finally:
+      
+      self._system[res][STATUS] = status
+      self._system[res][VALUE] = value
+      self._system[res][INFO] = info
+      self._system[res][TIME] = time.time()
 
-
+  
+  def _check_hspa(self, res = RES_HSPA):
+  
+    try:
+      
+      value = -1
+      info = 'Dispositivi HSPA non presenti.'
+      
+      if (system().lower().startswith('lin')):
+        info = 'Dispositivi HSPA non presenti o non attivi.'
+      
+      devices = self._get_NetIF(True)
+      
+      for device in devices.findall('rete/NetworkDevice'):
+        #logger.debug(ET.tostring(device))
+        type = device.find('Type').text
+        
+        if (type == 'External Modem'):
+          dev_id = device.find('ID').text
+          if (re.search('USB',dev_id)):
+            value = 0
+            info = 'Dispositivi HSPA non attivi.'
+            dev_info = self.getDevInfo()
+            if (dev_info != None):
+              dev_type = dev_info['type']
+              dev_mask = dev_info['mask']
+              if (dev_type == 3 or dev_type == 17 or dev_mask == '255.255.255.255'):
+                value = 1
+                info = 'Dispositivi HSPA attivi.'
+                raise sysmonitorexception.WARNHSPA
+        
+        elif (type == 'WWAN'):
+          if (system().lower().startswith('win')):
+            guid = device.find('GUID').text
+            dev_info = self.getDevInfo(guid)
+            if (dev_info != None):
+              dev_type = dev_info['type']
+              if (dev_type == 0 or dev_type == 17):
+                status = int(device.find('Status').text)
+                if (status == 7 and value != 1):
+                  value = 0
+                  info = 'Dispositivi HSPA non attivi.'
+                elif (status == 2):
+                  value = 1
+                  raise sysmonitorexception.WARNHSPA
+                
+          elif (system().lower().startswith('lin')):
+            value = 1
+            info = 'Dispositivi HSPA attivi.'
+            raise sysmonitorexception.WARNHSPA
+    
+      status = True
+    
+    except Exception as e:
+      
+      info = e
+      status = False
+      #raise e
+      
+    finally:
+      
+      self._system[res][STATUS] = status
+      self._system[res][VALUE] = value
+      self._system[res][INFO] = info
+      self._system[res][TIME] = time.time()
+  
+  
   def _check_hosts(self, up = 2048, down = 2048, ispid = 'tlc003', arping = 1, res = RES_HOSTS):
     try:
       
       value = None
         
       ip = self.getIp()
-      dev = self.getDev(ip)
-      mac = self._get_mac(ip)
+      self._getDev(ip)
+      dev = self._system[RES_DEV][VALUE]
+      self._get_mac(ip)
+      mac = self._system[RES_MAC][VALUE]
       mask = self._get_mask(ip)
     
       logger.info("Check Hosts su interfaccia %s con MAC %s e NET %s/%d" % (dev, mac, ip, mask))
@@ -327,31 +610,45 @@ class sysMonitor(Thread):
 
 
   def _get_mac(self, ip = None , res = RES_MAC):
-  
-    #value
-  
-    #value[res] = None
-  
-    if ip == None:
-      ip = self._get_ActiveIp()
-  
-    mac = None
-    netIF = self._get_NetIF(False)
-  
-    for interface in netIF:
-      if (netIF[interface]['ip'][0] == ip):
-        #logger.debug('| Ip: %s | Mac: %s |' % (ip,netIF[interface]['mac'][0]))
-        mac = netIF[interface]['mac'][0]
-  
-    if (mac == None):
-      logger.error('Impossibile recuperare il valore del mac address dell\'IP %s' % ip)
-      raise sysmonitorexception.BADMAC
-  
-    #value[res] = mac
-  
-    return mac
+    
+    try:
+      
+      value = None
+      
+      if ip == None:
+        ip = self._get_ActiveIp()
+      
+      netIF = self._get_NetIF(False)
+      
+      for interface in netIF:
+        if (netIF[interface]['ip'][0] == ip):
+          #logger.debug('| Ip: %s | Mac: %s |' % (ip,netIF[interface]['mac'][0]))
+          value = netIF[interface]['mac'][0]
+          if (value != None):
+            value = value.upper()
+          info = "Mac address dell'interfaccia di rete: %s" % value
+      
+      if (value == None):
+        info = "Impossibile recuperare il valore del mac address dell'IP %s" % ip
+        logger.error(info)
+        raise sysmonitorexception.BADMAC
+      
+      status = True
 
-
+    except Exception as e:
+      
+      info = e
+      status = False
+      #raise e
+      
+    finally:
+      
+      self._system[res][STATUS] = status
+      self._system[res][VALUE] = value
+      self._system[res][INFO] = info
+      self._system[res][TIME] = time.time()
+  
+  
   def _check_ip_syntax(self, ip):
   
     try:
@@ -476,54 +773,67 @@ class sysMonitor(Thread):
     return cidrMask
   
   
-  def getDev(self, ip = None, res = RES_DEV):
+  def _getDev(self, ip = None, res = RES_DEV):
   
-    #value
-  
-    #value[res] = None
-  
-    dev = None
-  
-    if ip == None:
-      ip = self._get_ActiveIp()
-  
-    netIF = self._get_NetIF(False)
-  
-    for interface in netIF:
-      if (netIF[interface]['ip'][0] == ip):
-        #logger.debug('| Ip: %s | Find on Dev: %s |' % (ip,interface))
-        dev = interface
-  
-    if (dev == None):
-      logger.error('Impossibile recuperare il nome del Device associato all\'IP %s' % ip)
-      raise sysmonitorexception.UNKDEV
-  
-    #value[res] = dev
-  
-    return dev
+    try:
+      
+      value = None
+      
+      if ip == None:
+        ip = self._get_ActiveIp()
+    
+      netIF = self._get_NetIF(False)
+    
+      for interface in netIF:
+        if (netIF[interface]['ip'][0] == ip):
+          #logger.debug('| Ip: %s | Find on Dev: %s |' % (ip,interface))
+          value = interface
+          info = "Interfaccia di rete: %s" % value
+    
+      if (value == None):
+        info = 'Impossibile recuperare il nome del Device associato all\'IP %s' % ip
+        logger.error(info)
+        raise sysmonitorexception.UNKDEV
+      
+      status = True
 
-  def checkres(self, res):
+    except Exception as e:
+      
+      info = e
+      status = False
+      #raise e
+      
+    finally:
+      
+      self._system[res][STATUS] = status
+      self._system[res][VALUE] = value
+      self._system[res][INFO] = info
+      self._system[res][TIME] = time.time()
+  
+  
+  def checkres(self, res, *args):
     
     available_check = OrderedDict \
     ([ \
     (RES_OS,self._get_os),\
-    (RES_CPU,None),\
-    (RES_RAM,None),\
-    (RES_ETH,None),\
-    (RES_WIFI,None),\
-    (RES_HSPA,None),\
-    (RES_DEV,None),\
-    (RES_MAC,None),\
+    (RES_CPU,self._check_cpu),\
+    (RES_RAM,self._check_mem),\
+    (RES_ETH,self._check_ethernet),\
+    (RES_WIFI,self._check_wireless),\
+    (RES_HSPA,self._check_hspa),\
+    (RES_DEV,self._getDev),\
+    (RES_MAC,self._get_mac),\
     (RES_IP,None),\
     (RES_MASK,None),\
     (RES_HOSTS,self._check_hosts),\
     (RES_TRAFFIC,None) \
     ])
     
-    available_check[res]()
+    available_check[res](*args)
     
     return self._system[res]
-
+  
+  
   def checkset(self, check_set = set()):
   
     #value
@@ -532,7 +842,7 @@ class sysMonitor(Thread):
     available_check = OrderedDict \
     ([ \
     (RES_OS,self._get_os),\
-    (RES_CPU,None),\
+    (RES_CPU,self._check_cpu),\
     (RES_RAM,None),\
     (RES_ETH,None),\
     (RES_WIFI,None),\
@@ -544,6 +854,7 @@ class sysMonitor(Thread):
     (RES_HOSTS,self._check_hosts),\
     (RES_TRAFFIC,None) \
     ])
+  
   
 #    available_check = \
 #    { \
@@ -558,7 +869,7 @@ class sysMonitor(Thread):
 #     RES_MAC:{'prio':9, 'meth':self._get_mac}, \
 #     RES_IP:{'prio':10, 'meth':self.getIp}, \
 #     RES_MASK:{'prio':11, 'meth':self._get_mask}, \
-#     RES_DEV:{'prio':12, 'meth':self.getDev}, \
+#     RES_DEV:{'prio':12, 'meth':self._getDev}, \
 #     #'sys':{'prio':13,'meth':self._get_Sys} \
 #     }
   
@@ -608,9 +919,43 @@ class sysMonitor(Thread):
   
 if __name__ == "__main__":
   monitor = sysMonitor()
-  monitor.interfaces()
+  #monitor.interfaces()
+  
+  result = monitor.checkres(RES_DEV, "192.168.23.129")
+  for key, val in result.items(): 
+    logger.info("| %s\t: %s" % (key, val))
+  logger.info("--------")
+  
+  result = monitor.checkres(RES_MAC, "192.168.23.129")
+  for key, val in result.items(): 
+    logger.info("| %s\t: %s" % (key, val))
+  logger.info("--------")
+  
+  result = monitor.checkres(RES_ETH)
+  for key, val in result.items(): 
+    logger.info("| %s\t: %s" % (key, val))
+  logger.info("--------")
+  
+  result = monitor.checkres(RES_WIFI)
+  for key, val in result.items(): 
+    logger.info("| %s\t: %s" % (key, val))
+  logger.info("--------")
+  
+  result = monitor.checkres(RES_HSPA)
+  for key, val in result.items(): 
+    logger.info("| %s\t: %s" % (key, val))
+  logger.info("--------")
+  
+  #for i in range(8):
+  result = monitor.checkres(RES_RAM)
+  for key, val in result.items(): 
+    logger.info("| %s\t: %s" % (key, val))
+  logger.info("--------")
+  #time.sleep(0.2)
+  
   result = monitor.checkres(RES_HOSTS)
   for key, val in result.items(): 
-    logger.info("| %s : %s" % (key, val))
+    logger.info("| %s\t: %s" % (key, val))
+  logger.info("--------")
   
   

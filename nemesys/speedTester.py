@@ -158,7 +158,6 @@ class SpeedTester(Thread):
       data = connection.getresponse().read()
       #logger.debug(data)
       
-      "TODO: invertire questi due quando verrà risolto il problema sul server"
       task = xml2task(data)
       #task = Task(11, '2011-11-11 11:11:11', Server('fubsrvrmnmx03', '193.104.137.133', 'NAMEX', 'Roma'), '/download/40000.rnd', 'upload/1111.rnd', 4, 4, 10, 4, 4, 0, True)
       

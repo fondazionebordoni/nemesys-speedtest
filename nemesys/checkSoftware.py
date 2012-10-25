@@ -54,6 +54,11 @@ class CheckSoftware():
       data = connection.getresponse().read()
       #data = "1.0.6:8"    # FAKE REPLY #
       #logger.debug(data)
+      
+      if (re.search('(\.?\d+)+:(-?\d+)+',data) == None):
+        logger.warning("Non è stato possibile controllare la versione per risposta errata del server.")
+        return True
+      
       data = data.split(":")
       
       #### VERSION ####
