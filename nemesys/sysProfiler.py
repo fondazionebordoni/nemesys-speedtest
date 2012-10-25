@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from sysmonitor import checkset, RES_OS, RES_IP, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
+from sysmonitor import checkset, RES_OS, RES_IP, RES_MAC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_HOSTS, RES_TRAFFIC
 from threading import Thread, Event
 from time import sleep
 # from usbkey import check_usb, move_on_key
@@ -12,16 +12,17 @@ import wx
 
 logger = logging.getLogger()
 
+ALL_RES = [RES_OS, RES_IP, RES_MAC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_HOSTS, RES_TRAFFIC]
 
 class sysProfiler(Thread):
 
-  def __init__(self, gui, type = 'check', checkable_set = set([RES_OS, RES_IP, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_HOSTS, RES_TRAFFIC])):
+  def __init__(self, gui, type = 'check', checkable_set = set(ALL_RES)):
     Thread.__init__(self)
 
     self._gui = gui
     self._type = type
     self._checkable_set = checkable_set
-    self._available_check = {RES_OS:1, RES_IP:2, RES_CPU:3, RES_RAM:4, RES_ETH:5, RES_WIFI:6, RES_HSPA:7, RES_HOSTS:8, RES_TRAFFIC:9}
+    self._available_check = {RES_OS:1, RES_IP:2, RES_MAC:3, RES_CPU:4, RES_RAM:5, RES_ETH:6, RES_WIFI:7, RES_HSPA:8, RES_HOSTS:9, RES_TRAFFIC:10}
 
     self._events = {}
     self._results = {}
@@ -66,7 +67,7 @@ class sysProfiler(Thread):
 
             if self._events[res].isSet():
               del self._events[res]
-              if (self._type == 'tester'):
+              if (self._type == 'tester') or (res == RES_IP) or (res == RES_MAC):
                 message_flag = False
               else:
                 message_flag = True
@@ -87,7 +88,7 @@ class sysProfiler(Thread):
   def stop(self):
     self._cycle.clear()
 
-  def set_check(self, checkable_set = set([RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_HOSTS, RES_TRAFFIC])):
+  def set_check(self, checkable_set = set(ALL_RES)):
     self._checkable_set = checkable_set
     self._checkset_flag.set()
 

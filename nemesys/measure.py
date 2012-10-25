@@ -54,7 +54,7 @@ from xml.dom.minidom import parseString
 logger = logging.getLogger()
 
 class Measure:
-  def __init__(self, client, start, server, ip, os, version = None):
+  def __init__(self, client, start, server, ip, os, mac, version = None):
     '''
     Costruisce un oggetto Measure utilizzando i parametri ricevuti nella
     chiamata.
@@ -68,6 +68,7 @@ class Measure:
     self._server = server
     self._ip = ip
     self._os = os
+    self._mac = mac
     self._version = version
      
     begin = '''<measure xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="measure.xsd"/>'''
@@ -135,11 +136,12 @@ class Measure:
     self._root = self.dict2node(measure)
   
     ## node = {'ID':{'tag':'', 'attr':{}}, 'attr':{}, 'val':[]} ##
+    mac = {'ID':{'tag':'mac'}, 'val':[self._mac]}
     ip = {'ID':{'tag':'ip'}, 'val':[self._ip]}
     os = {'ID':{'tag':'os'}, 'val':[self._os]}
     version = {'ID':{'tag':'version'}, 'val':[self._version]}
     
-    client = {'ID':{'tag':'client'}, 'attr':{'id':self._client.id}, 'val':[ip, os, version]}
+    client = {'ID':{'tag':'client'}, 'attr':{'id':self._client.id}, 'val':[mac, ip, os, version]}
     server = {'ID':{'tag':'server'}, 'attr':{'id':self._server.id}}
     
     header = {'ID':{'tag':'header'}, 'val':[server, client]}

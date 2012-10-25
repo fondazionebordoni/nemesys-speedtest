@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from sysmonitor import RES_OS, RES_IP, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
+from sysmonitor import RES_OS, RES_IP, RES_MAC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
 from xmlutils import getvalues, getxml, xml2task
 from os import path, walk, listdir, remove, removedirs
 from optionParser import OptionParser
@@ -248,7 +248,7 @@ class SpeedTester(Thread):
   def _get_bandwith(self, test):
 
     if test.time > 0:
-      return int(round(test.bytes * 8 / test.time))
+      return float(test.bytes * 8 / test.time)
     else:
       raise Exception("Errore durante la valutazione del test")
   
@@ -365,7 +365,7 @@ class SpeedTester(Thread):
     wx.CallAfter(self._gui.update_gauge)
 
     # Profilazione
-    self._profiler.set_check(set([RES_OS, RES_IP]))
+    self._profiler.set_check(set([RES_OS, RES_IP, RES_MAC]))
     self._profiler.start()
     profiler = self._profiler.get_results()
     sleep(1)
@@ -384,11 +384,11 @@ class SpeedTester(Thread):
         
         start_time = datetime.fromtimestamp(timestampNtp())
 
-        (ip, os) = (profiler[RES_IP], profiler[RES_OS])
+        (ip, os, mac) = (profiler[RES_IP], profiler[RES_OS], profiler[RES_MAC])
         tester = Tester(if_ip = ip, host = task.server, timeout = self._testtimeout,
                    username = self._client.username, password = self._client.password)
 
-        measure = Measure(self._client, start_time, task.server, ip, os, self._version)
+        measure = Measure(self._client, start_time, task.server, ip, os, mac, self._version)
         #logger.debug("\n\n%s\n\n",str(measure))
         
         test_types = [PING,DOWN,UP]
@@ -403,10 +403,10 @@ class SpeedTester(Thread):
             wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.time, 'green')
             wx.CallAfter(self._gui._update_ping, test.time)
           elif (type == DOWN):
-            wx.CallAfter(self._gui._update_messages, "Download bandwith %s kbps" % self._get_bandwith(test), 'green')
+            wx.CallAfter(self._gui._update_messages, "Download bandwith %.2f kbps" % self._get_bandwith(test), 'green')
             wx.CallAfter(self._gui._update_down, self._get_bandwith(test))
           elif (type == UP):
-            wx.CallAfter(self._gui._update_messages, "Upload bandwith %s kbps" % self._get_bandwith(test), 'green')
+            wx.CallAfter(self._gui._update_messages, "Upload bandwith %.2f kbps" % self._get_bandwith(test), 'green')
             wx.CallAfter(self._gui._update_up, self._get_bandwith(test))
           # else:
             # raise Exception("chiave USB mancante")
@@ -414,6 +414,8 @@ class SpeedTester(Thread):
         
         stop_time = datetime.fromtimestamp(timestampNtp())
         measure.savetime(start_time,stop_time)
+        
+        logger.debug(measure)
         
         ## Salvataggio della misura ##
         "TODO: measure.save"

@@ -60,7 +60,7 @@ class Tester:
     
     self._username = username
     self._password = password
-    self._timeout = (timeout * 1000)
+    self._timeout = float(timeout * 1000)
     socket.setdefaulttimeout(self._timeout)
     
     
@@ -75,7 +75,7 @@ class Tester:
     while True:
       data = conn.recv(8192)
       stop = time.time()
-      elapsed = int((stop-start)*1000)
+      elapsed = float((stop-start)*1000)
       size += len(data)
       if (elapsed > self._timeout):
         break
@@ -109,7 +109,7 @@ class Tester:
         break
       conn.sendall(data)
       stop = time.time()
-      elapsed = int((stop-start)*1000)
+      elapsed = float((stop-start)*1000)
       size += len(data)
       if (elapsed > self._timeout):
         break
@@ -137,7 +137,7 @@ class Tester:
     test['errorcode'] = 0
 
     self._file = filename
-    self._timeout = (timeout * 1000)
+    self._timeout = float(timeout * 1000)
 
     try:
       # TODO Il timeout non viene onorato in Python 2.6: http://bugs.python.org/issue8493
@@ -209,7 +209,7 @@ class Tester:
 
     self._file = Fakefile(bytes)
     self._filepath = path
-    self._timeout = (timeout * 1000)
+    self._timeout = float(timeout * 1000)
 
     try:
       # TODO Il timeout non viene onorato in Python 2.6: http://bugs.python.org/issue8493

@@ -76,7 +76,7 @@ class NemesysSpeedtestGUI(wx.Frame):
     self.label_rr_down = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
     self.label_rr_up = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
     self.messages_area = wx.TextCtrl(self, -1, "%s" % self._message, style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_WORDWRAP)
-    self.label_interface = wx.StaticText(self, -1, "", style = wx.ALIGN_CENTRE)
+    self.label_interface = wx.StaticText(self, -1, "Ne.Me.Sys. Speedtest Versione %s\nQui verranno visualizzati i risultati della misura" %self._version, style = wx.ALIGN_CENTRE)
     self.grid_sizer_1 = wx.FlexGridSizer(2, 7, 0, 0)
     self.grid_sizer_2 = wx.FlexGridSizer(2, 3, 0, 0)
 
@@ -251,11 +251,11 @@ class NemesysSpeedtestGUI(wx.Frame):
     self.bitmap_button_check.Enable()
 
   def _update_down(self, downwidth):
-    self.label_rr_down.SetLabel("%d kbps" % downwidth)
+    self.label_rr_down.SetLabel("%.2f kbps" % downwidth)
     self.Layout()
 
   def _update_up(self, upwidth):
-    self.label_rr_up.SetLabel("%d kbps" % upwidth)
+    self.label_rr_up.SetLabel("%.2f kbps" % upwidth)
     self.Layout()
 
   def _update_ping(self, rtt):
