@@ -123,8 +123,24 @@ class sysMonitor(Thread):
     (RES_HOSTS,self._blank),\
     (RES_TRAFFIC,self._blank) \
     ])
-
     
+    self._checks = OrderedDict \
+    ([ \
+    (RES_OS,self._get_os),\
+    (RES_CPU,self._check_cpu),\
+    (RES_RAM,self._check_mem),\
+    (RES_ETH,self._check_ethernet),\
+    (RES_WIFI,self._check_wireless),\
+    (RES_HSPA,self._check_hspa),\
+    (RES_DEV,self._getDev),\
+    (RES_MAC,self._get_mac),\
+    (RES_IP,self.getIp),\
+    (RES_MASK,self._get_mask),\
+    (RES_HOSTS,self._check_hosts),\
+    (RES_TRAFFIC,self._check_traffic) \
+    ])
+  
+  
   def interfaces(self):
     devices = self._get_NetIF()
     for device in devices.findall('rete/NetworkDevice'):
@@ -168,24 +184,24 @@ class sysMonitor(Thread):
     except Exception as e:
       logger.error('Non sono riuscito a trovare lo stato del computer con SystemProfiler: %s.' % e)
       raise sysmonitorexception.FAILPROF
-  
+    
     return self._get_values(res, data)
   
   
   def _get_string_tag(self, tag, value, res):
     
     values = self._get_status(res)
-  
+    
     try:
       value = str(values[tag])
     except Exception as e:
       logger.error('Errore in lettura del paramentro "%s" di SystemProfiler: %s' % (tag, e))
       if STRICT_CHECK:
         raise sysmonitorexception.FAILREADPARAM
-  
+        
     if value == 'None':
       return None
-  
+    
     return value
   
   
@@ -207,54 +223,6 @@ class sysMonitor(Thread):
         raise sysmonitorexception.FAILREADPARAM
   
     return value
-  
-  
-  def _get_NetIF(self, from_profiler = True):
-  
-    global NETIF_TIME, NETIF_1, NETIF_2
-  
-    age = 4 #seconds
-    now = time.time()
-    
-    if ( NETIF_TIME == None ):
-      NETIF_TIME = now
-    
-    if ( (now-NETIF_TIME)>age or (NETIF_1 == None) or (NETIF_2 == None) ):
-      NETIF_TIME = now
-      
-      if from_profiler:
-        profiler = LocalProfilerFactory.getProfiler()
-        NETIF_1 = profiler.profile(set(['rete']))
-      else:  
-        NETIF_2 = {}
-        for ifName in netifaces.interfaces():
-          #logger.debug((ifName,netifaces.ifaddresses(ifName)))
-          mac = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_LINK, [{'addr':''}])]
-          ip = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'addr':''}])]
-          mask = [i.setdefault('netmask', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'netmask':''}])]
-          if mask[0] == '0.0.0.0':
-            mask = [i.setdefault('broadcast', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'broadcast':''}])]
-          NETIF_2[ifName] = {'mac':mac, 'ip':ip, 'mask':mask}
-        #logger.debug('Network Interfaces:\n %s' %NETIF_2)
-  
-    if from_profiler:
-      return NETIF_1
-    else:
-      return NETIF_2
-  
-  
-  def getDevInfo(self, dev = None):
-    
-    dev_info = None
-    
-    if dev == None:
-      dev = self._get_ActiveIp()
-  
-    dev_info = pktman.getdev(dev)
-    if (dev_info['err_flag'] != 0):
-      dev_info = None
-      
-    return dev_info
   
   
   def _get_os(self, res = RES_OS):
@@ -465,7 +433,7 @@ class sysMonitor(Thread):
               raise sysmonitorexception.WARNWLAN
                 
       status = True
-    
+      
     except Exception as e:
       
       info = e
@@ -478,7 +446,7 @@ class sysMonitor(Thread):
       self._system[res][VALUE] = value
       self._system[res][INFO] = info
       self._system[res][TIME] = time.time()
-
+  
   
   def _check_hspa(self, res = RES_HSPA):
   
@@ -531,7 +499,7 @@ class sysMonitor(Thread):
             raise sysmonitorexception.WARNHSPA
     
       status = True
-    
+      
     except Exception as e:
       
       info = e
@@ -551,12 +519,14 @@ class sysMonitor(Thread):
       
       value = None
         
-      ip = self.getIp()
+      self.getIp()
+      ip = self._system[RES_IP][VALUE]
       self._getDev(ip)
       dev = self._system[RES_DEV][VALUE]
       self._get_mac(ip)
       mac = self._system[RES_MAC][VALUE]
-      mask = self._get_mask(ip)
+      self._get_mask(ip)
+      mask = self._system[RES_MASK][VALUE]
     
       logger.info("Check Hosts su interfaccia %s con MAC %s e NET %s/%d" % (dev, mac, ip, mask))
     
@@ -591,7 +561,7 @@ class sysMonitor(Thread):
         info = 'La scheda di rete in uso ha un IP pubblico. Non controllo il numero degli altri host in rete.'
         
       status = True
-
+      
     except Exception as e:
       
       info = e
@@ -604,11 +574,112 @@ class sysMonitor(Thread):
       self._system[res][VALUE] = value
       self._system[res][INFO] = info
       self._system[res][TIME] = time.time()
-
-
-
-
-
+  
+  
+  def _check_traffic(self, sec = 2, res = RES_TRAFFIC):
+    
+    try:
+      
+      value = 'unknown'
+      
+      self.getIp()
+      ip = self._system[RES_IP][VALUE]
+      self._getDev(ip)
+      dev = self._system[RES_DEV][VALUE]
+      
+      buff = 8 * 1024 * 1024
+      pcapper = Pcapper(dev, buff, 150)
+      start_time = time.time()
+      pcapper.start()
+      pcapper.sniff(Contabyte(ip, '0.0.0.0'))
+      #logger.info("Checking Traffic for %d seconds...." % sec)
+      pcapper.stop_sniff(2.2)
+      stats = pcapper.get_stats()
+      total_time = (time.time() - start_time) * 1000
+      logger.info('Checked Traffic for %s ms' % total_time)
+      pcapper.stop()
+      pcapper.join()
+      
+      UP_kbps = stats.byte_up_all * 8 / total_time
+      DOWN_kbps = stats.byte_down_all * 8 / total_time
+      
+      value = (DOWN_kbps, UP_kbps)
+      info = "%.1f kbps in download e %.1f kbps in upload di traffico globale attuale sull'interfaccia di rete in uso." % (DOWN_kbps, UP_kbps)
+      
+#      if (int(UP_kbps) < 20 and int(DOWN_kbps) < 200):
+#        value = 'LOW'
+#      elif (int(UP_kbps) < 180 and int(DOWN_kbps) < 1800):
+#        value = 'MEDIUM'
+#      else:
+#        value = 'HIGH'
+#      
+#      if (value != 'LOW'):
+#        raise Exception(check_info)
+      
+      status = True
+      
+    except Exception as e:
+      
+      info = e
+      status = False
+      #raise e
+      
+    finally:
+      
+      self._system[res][STATUS] = status
+      self._system[res][VALUE] = value
+      self._system[res][INFO] = info
+      self._system[res][TIME] = time.time()
+  
+  
+  def _get_NetIF(self, from_profiler = True):
+  
+    global NETIF_TIME, NETIF_1, NETIF_2
+  
+    age = 4 #seconds
+    now = time.time()
+    
+    if ( NETIF_TIME == None ):
+      NETIF_TIME = now
+    
+    if ( (now-NETIF_TIME)>age or (NETIF_1 == None) or (NETIF_2 == None) ):
+      NETIF_TIME = now
+      
+      if from_profiler:
+        profiler = LocalProfilerFactory.getProfiler()
+        NETIF_1 = profiler.profile(set(['rete']))
+      else:  
+        NETIF_2 = {}
+        for ifName in netifaces.interfaces():
+          #logger.debug((ifName,netifaces.ifaddresses(ifName)))
+          mac = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_LINK, [{'addr':''}])]
+          ip = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'addr':''}])]
+          mask = [i.setdefault('netmask', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'netmask':''}])]
+          if mask[0] == '0.0.0.0':
+            mask = [i.setdefault('broadcast', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'broadcast':''}])]
+          NETIF_2[ifName] = {'mac':mac, 'ip':ip, 'mask':mask}
+        #logger.debug('Network Interfaces:\n %s' %NETIF_2)
+  
+    if from_profiler:
+      return NETIF_1
+    else:
+      return NETIF_2
+  
+  
+  def getDevInfo(self, dev = None):
+    
+    dev_info = None
+    
+    if dev == None:
+      dev = self._get_ActiveIp()
+  
+    dev_info = pktman.getdev(dev)
+    if (dev_info['err_flag'] != 0):
+      dev_info = None
+      
+    return dev_info
+  
+  
   def _get_mac(self, ip = None , res = RES_MAC):
     
     try:
@@ -634,7 +705,81 @@ class sysMonitor(Thread):
         raise sysmonitorexception.BADMAC
       
       status = True
-
+      
+    except Exception as e:
+      
+      info = e
+      status = False
+      #raise e
+      
+    finally:
+      
+      self._system[res][STATUS] = status
+      self._system[res][VALUE] = value
+      self._system[res][INFO] = info
+      self._system[res][TIME] = time.time()
+  
+  
+  def getIp(self, res = RES_IP):
+    
+    try:
+      
+      value = None
+      netIF = self._get_NetIF(False)
+      activeIp = self._get_ActiveIp()
+    
+      for interface in netIF:
+        if (netIF[interface]['ip'][0] == activeIp):
+          #logger.debug('| Active Ip: %s | Find Ip: %s |' % (activeIp,netIF[interface]['ip'][0]))
+          value = activeIp
+          info = "IPv4 dell'interfaccia di rete: %s" % value
+    
+      if (value == None):
+        raise sysmonitorexception.UNKIP
+      
+      status = True
+      
+    except Exception as e:
+      
+      info = e
+      status = False
+      #raise e
+      
+    finally:
+      
+      self._system[res][STATUS] = status
+      self._system[res][VALUE] = value
+      self._system[res][INFO] = info
+      self._system[res][TIME] = time.time()
+  
+  
+  def _get_mask(self, ip = None, res = RES_MASK):
+    
+    try:
+      
+      if ip == None:
+        ip = self._get_ActiveIp()
+    
+      value = 0
+      dotMask = None
+    
+      netIF = self._get_NetIF(False)
+    
+      for interface in netIF:
+        if (netIF[interface]['ip'][0] == ip):
+          #logger.debug('| Ip: %s | Mask: %s |' % (ip,netIF[interface]['mask'][0]))
+          dotMask = netIF[interface]['mask'][0]
+          #value = dotMask
+          value = self._mask_conversion(dotMask)
+    
+      if (value <= 0):
+        value = 32
+        logger.error('Maschera forzata a 32. Impossibile recuperare il valore della maschera dell\'IP %s' % ip)
+        #raise sysmonitorexception.BADMASK
+      
+      info = "Il valore della maschera di rete relativa all'IP %s e' %s [cidr %s]" % (ip, dotMask, value)
+      status = True
+      
     except Exception as e:
       
       info = e
@@ -706,7 +851,7 @@ class sysMonitor(Thread):
 
 
   def _get_ActiveIp(self, host = 'speedtest.agcom244.fub.it', port = 443):
-  
+    
     #logger.debug('Determinazione dell\'IP attivo verso Internet')
     try:
       s = socket.socket(socket.AF_INET)
@@ -714,63 +859,17 @@ class sysMonitor(Thread):
       value = s.getsockname()[0]
     except socket.gaierror:
       raise sysmonitorexception.WARNLINK
-      
+    
     if not self._check_ip_syntax(value):
       raise sysmonitorexception.UNKIP
-  
+    
     return value
 
 
-  def getIp(self, res = RES_IP):
-  
-    #value
-  
-    #value[res] = None
-  
-    ip = None
-    netIF = self._get_NetIF(False)
-    activeIp = self._get_ActiveIp()
-  
-    for interface in netIF:
-      if (netIF[interface]['ip'][0] == activeIp):
-        #logger.debug('| Active Ip: %s | Find Ip: %s |' % (activeIp,netIF[interface]['ip'][0]))
-        ip = activeIp
-  
-    if (ip == None):
-      raise sysmonitorexception.UNKIP
-  
-    #value[res] = ip
-  
-    return ip
+
   
   
-  def _get_mask(self, ip = None, res = RES_MASK):
-  
-    #value
-  
-    #value[res] = None
-  
-    if ip == None:
-      ip = self._get_ActiveIp()
-  
-    cidrMask = 0
-    dotMask = None
-  
-    netIF = self._get_NetIF(False)
-  
-    for interface in netIF:
-      if (netIF[interface]['ip'][0] == ip):
-        #logger.debug('| Ip: %s | Mask: %s |' % (ip,netIF[interface]['mask'][0]))
-        dotMask = netIF[interface]['mask'][0]
-        #value[res] = dotMask
-        cidrMask = self._mask_conversion(dotMask)
-  
-    if (cidrMask <= 0):
-      cidrMask = 32
-      logger.error('Maschera forzata a 32. Impossibile recuperare il valore della maschera dell\'IP %s' % ip)
-      #raise sysmonitorexception.BADMASK
-  
-    return cidrMask
+
   
   
   def _getDev(self, ip = None, res = RES_DEV):
@@ -813,106 +912,61 @@ class sysMonitor(Thread):
   
   def checkres(self, res, *args):
     
-    available_check = OrderedDict \
-    ([ \
-    (RES_OS,self._get_os),\
-    (RES_CPU,self._check_cpu),\
-    (RES_RAM,self._check_mem),\
-    (RES_ETH,self._check_ethernet),\
-    (RES_WIFI,self._check_wireless),\
-    (RES_HSPA,self._check_hspa),\
-    (RES_DEV,self._getDev),\
-    (RES_MAC,self._get_mac),\
-    (RES_IP,None),\
-    (RES_MASK,None),\
-    (RES_HOSTS,self._check_hosts),\
-    (RES_TRAFFIC,None) \
-    ])
-    
-    available_check[res](*args)
+    self._checks[res](*args)
     
     return self._system[res]
   
   
-  def checkset(self, check_set = set()):
-  
-    #value
-    #value = {}
-
-    available_check = OrderedDict \
-    ([ \
-    (RES_OS,self._get_os),\
-    (RES_CPU,self._check_cpu),\
-    (RES_RAM,None),\
-    (RES_ETH,None),\
-    (RES_WIFI,None),\
-    (RES_HSPA,None),\
-    (RES_DEV,None),\
-    (RES_MAC,None),\
-    (RES_IP,None),\
-    (RES_MASK,None),\
-    (RES_HOSTS,self._check_hosts),\
-    (RES_TRAFFIC,None) \
-    ])
-  
-  
-#    available_check = \
-#    { \
-#     RES_OS:{'prio':1, 'meth':}, \
-#     RES_CPU:{'prio':2, 'meth':self._check_cpu}, \
-#     RES_RAM:{'prio':3, 'meth':self._check_mem}, \
-#     RES_ETH:{'prio':4, 'meth':self._check_ethernet}, \
-#     RES_WIFI:{'prio':5, 'meth':self._check_wireless}, \
-#     RES_HSPA:{'prio':6, 'meth':self._check_hspa}, \
-#     RES_HOSTS:{'prio':7, 'meth':self._check_hosts}, \
-#     RES_TRAFFIC:{'prio':8, 'meth':self._check_traffic}, \
-#     RES_MAC:{'prio':9, 'meth':self._get_mac}, \
-#     RES_IP:{'prio':10, 'meth':self.getIp}, \
-#     RES_MASK:{'prio':11, 'meth':self._get_mask}, \
-#     RES_DEV:{'prio':12, 'meth':self._getDev}, \
-#     #'sys':{'prio':13,'meth':self._get_Sys} \
-#     }
-  
-    system_profile = {}
-  
-    if (len(check_set) > 0):
-      checks = (check_set & set(available_check.keys()))
-  
-      unavailable_check = check_set - set(available_check.keys())
-      if (unavailable_check):
-        for res in list(unavailable_check):
-          system_profile[res] = {}
-          system_profile[res]['status'] = None
-          system_profile[res]['value'] = None
-          system_profile[res]['info'] = 'Risorsa non disponibile'
-  
-    else:
-      checks = set(available_check.keys())
-  
-    #logger.debug('Check Order: %s' % sorted(available_check, key = lambda check: available_check[check]['prio']))
-    for check in sorted(available_check, key = lambda check: available_check[check]['prio']):
-      if check in checks:
-  
-        try:
-          info = None
-          status = None
-          info = available_check[check]['meth']()
-          if (info != None):
-            status = True
-        except Exception as e:
-          # errorcode = errors.geterrorcode(e)
-          # logger.error('Errore [%d]: %s' % (errorcode, e))
-          info = e
-          status = False
-  
-        system_profile[check] = {}
-        system_profile[check]['status'] = status
-        system_profile[check]['value'] = None
-        system_profile[check]['info'] = str(info)
-        #logger.info('%s: %s' % (check, system_profile[check]))
-        #logger.debug(CHECK_VALUES)
-  
-    return system_profile  
+  def checkall(self):
+    
+    for check in self._checks:
+      result = self.checkres(check)
+      logger.debug("--------[ %s ]--------" % check)
+      for key, val in result.items(): 
+        logger.info("| %s\t: %s" % (key, val))
+      logger.debug("--------[ %s ]--------" % check)
+      
+    
+#    system_profile = {}
+#  
+#    if (len(check_set) > 0):
+#      checks = (check_set & set(available_check.keys()))
+#  
+#      unavailable_check = check_set - set(available_check.keys())
+#      if (unavailable_check):
+#        for res in list(unavailable_check):
+#          system_profile[res] = {}
+#          system_profile[res]['status'] = None
+#          system_profile[res]['value'] = None
+#          system_profile[res]['info'] = 'Risorsa non disponibile'
+#  
+#    else:
+#      checks = set(available_check.keys())
+#  
+#    #logger.debug('Check Order: %s' % sorted(available_check, key = lambda check: available_check[check]['prio']))
+#    for check in sorted(available_check, key = lambda check: available_check[check]['prio']):
+#      if check in checks:
+#  
+#        try:
+#          info = None
+#          status = None
+#          info = available_check[check]['meth']()
+#          if (info != None):
+#            status = True
+#        except Exception as e:
+#          # errorcode = errors.geterrorcode(e)
+#          # logger.error('Errore [%d]: %s' % (errorcode, e))
+#          info = e
+#          status = False
+#  
+#        system_profile[check] = {}
+#        system_profile[check]['status'] = status
+#        system_profile[check]['value'] = None
+#        system_profile[check]['info'] = str(info)
+#        #logger.info('%s: %s' % (check, system_profile[check]))
+#        #logger.debug(CHECK_VALUES)
+#  
+#    return system_profile  
   
   
   
@@ -921,41 +975,53 @@ if __name__ == "__main__":
   monitor = sysMonitor()
   #monitor.interfaces()
   
-  result = monitor.checkres(RES_DEV, "192.168.23.129")
-  for key, val in result.items(): 
-    logger.info("| %s\t: %s" % (key, val))
-  logger.info("--------")
+  monitor.checkall()
   
-  result = monitor.checkres(RES_MAC, "192.168.23.129")
-  for key, val in result.items(): 
-    logger.info("| %s\t: %s" % (key, val))
-  logger.info("--------")
-  
-  result = monitor.checkres(RES_ETH)
-  for key, val in result.items(): 
-    logger.info("| %s\t: %s" % (key, val))
-  logger.info("--------")
-  
-  result = monitor.checkres(RES_WIFI)
-  for key, val in result.items(): 
-    logger.info("| %s\t: %s" % (key, val))
-  logger.info("--------")
-  
-  result = monitor.checkres(RES_HSPA)
-  for key, val in result.items(): 
-    logger.info("| %s\t: %s" % (key, val))
-  logger.info("--------")
-  
-  #for i in range(8):
-  result = monitor.checkres(RES_RAM)
-  for key, val in result.items(): 
-    logger.info("| %s\t: %s" % (key, val))
-  logger.info("--------")
-  #time.sleep(0.2)
-  
-  result = monitor.checkres(RES_HOSTS)
-  for key, val in result.items(): 
-    logger.info("| %s\t: %s" % (key, val))
-  logger.info("--------")
+#  result = monitor.checkres(RES_IP)
+#  for key, val in result.items(): 
+#    logger.info("| %s\t: %s" % (key, val))
+#  logger.info("--------")
+#  
+#  result = monitor.checkres(RES_DEV, "172.16.181.129")
+#  for key, val in result.items(): 
+#    logger.info("| %s\t: %s" % (key, val))
+#  logger.info("--------")
+#  
+#  result = monitor.checkres(RES_MAC, "172.16.181.129")
+#  for key, val in result.items(): 
+#    logger.info("| %s\t: %s" % (key, val))
+#  logger.info("--------")
+#  
+#  result = monitor.checkres(RES_MASK, "172.16.181.129")
+#  for key, val in result.items(): 
+#    logger.info("| %s\t: %s" % (key, val))
+#  logger.info("--------")
+#  
+#  result = monitor.checkres(RES_ETH)
+#  for key, val in result.items(): 
+#    logger.info("| %s\t: %s" % (key, val))
+#  logger.info("--------")
+#  
+#  result = monitor.checkres(RES_WIFI)
+#  for key, val in result.items(): 
+#    logger.info("| %s\t: %s" % (key, val))
+#  logger.info("--------")
+#  
+#  result = monitor.checkres(RES_HSPA)
+#  for key, val in result.items(): 
+#    logger.info("| %s\t: %s" % (key, val))
+#  logger.info("--------")
+#  
+#  #for i in range(8):
+#  result = monitor.checkres(RES_RAM)
+#  for key, val in result.items(): 
+#    logger.info("| %s\t: %s" % (key, val))
+#  logger.info("--------")
+#  #time.sleep(0.2)
+#  
+#  result = monitor.checkres(RES_HOSTS)
+#  for key, val in result.items(): 
+#    logger.info("| %s\t: %s" % (key, val))
+#  logger.info("--------")
   
   

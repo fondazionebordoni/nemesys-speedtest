@@ -86,8 +86,8 @@ class Pcapper(Thread):
     self._analyzer = analyzer
     self._status = _switch_status[LOOP]
 
-  def stop_sniff(self):
-    time.sleep(0.8)
+  def stop_sniff(self, sleep_time = 0.8):
+    time.sleep(sleep_time)
     logger.info("Sniffer stopping....")
     self._status = _switch_status[SNIFF]
 
