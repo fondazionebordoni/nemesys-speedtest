@@ -40,7 +40,7 @@ if (system().lower().startswith('win')):
   from SysProf.windows import profiler
 elif (system().lower().startswith('lin')):
   from SysProf.linux import profiler
-else:
+elif (system().lower().startswith('dar')):
   from SysProf.darwin import profiler
 
 
@@ -277,12 +277,23 @@ def _check_ethernet(res = RES_ETH):
               
       elif (system().lower().startswith('lin')):
         status = device.find('Status').text
-        isAct = device.find('isActive').text
+        active = device.find('isActive').text
         if (status == 'Disabled' and CHECK_VALUES[res] != 1):  
           CHECK_VALUES[res] = 0
           check_info = 'Dispositivi ethernet non attivi.'
           raise sysmonitorexception.WARNETH
-        elif (status == 'Enabled' and isAct == 'True'):
+        elif (status == 'Enabled' and active == 'True'):
+          CHECK_VALUES[res] = 1
+          check_info = 'Dispositivi ethernet attivi.'
+
+      elif (system().lower().startswith('dar')):  
+        status = device.find('Status').text
+        active = device.find('isActive').text
+        if (CHECK_VALUES[res] != 1):  
+          CHECK_VALUES[res] = 0
+          check_info = 'Dispositivi ethernet non attivi.'
+          raise sysmonitorexception.WARNETH
+        elif (status == 'Enabled' and active == 'True'):
           CHECK_VALUES[res] = 1
           check_info = 'Dispositivi ethernet attivi.'
             
@@ -329,7 +340,18 @@ def _check_wireless(res = RES_WIFI):
           CHECK_VALUES[res] = 1
           check_info = 'Dispositivi wireless attivi.'
           raise sysmonitorexception.WARNWLAN
-            
+
+      elif (system().lower().startswith('dar')):  
+        status = device.find('Status').text
+        active = device.find('isActive').text
+        if (CHECK_VALUES[res] != 1):  
+          CHECK_VALUES[res] = 0
+          check_info = 'Dispositivi wireless non attivi.'
+        elif (status == 'Enabled' and active == 'True'):
+          CHECK_VALUES[res] = 1
+          check_info = 'Dispositivi wireless attivi.'
+          raise sysmonitorexception.WARNWLAN
+                    
   return check_info
 
 def _check_hspa(res = RES_HSPA):
@@ -381,6 +403,17 @@ def _check_hspa(res = RES_HSPA):
         CHECK_VALUES[res] = 1
         check_info = 'Dispositivi HSPA attivi.'
         raise sysmonitorexception.WARNHSPA
+      
+      elif (system().lower().startswith('dar')):  
+        status = device.find('Status').text
+        active = device.find('isActive').text
+        if (CHECK_VALUES[res] != 1):  
+          CHECK_VALUES[res] = 0
+          check_info = 'Dispositivi HSPA non attivi.'
+        elif (status == 'Enabled' and active == 'True'):
+          CHECK_VALUES[res] = 1
+          check_info = 'Dispositivi HSPA attivi.'
+          raise sysmonitorexception.WARNHSPA
 
   return check_info
   
