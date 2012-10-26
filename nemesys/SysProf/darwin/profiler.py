@@ -163,10 +163,6 @@ class rete(Risorsa):
                     prev_key = n.text     
                 if capture and (n.tag == 'string' or n.tag == 'integer'):
                     descriptors[prev_key] = n.text
-            
-            print        
-            print descriptors
-            print
                             
             if 'Addresses' in descriptors:
                 devStatus = 'Enabled'
