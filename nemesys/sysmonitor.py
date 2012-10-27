@@ -289,13 +289,13 @@ def _check_ethernet(res = RES_ETH):
       elif (system().lower().startswith('dar')):  
         status = device.find('Status').text
         active = device.find('isActive').text
-        if (CHECK_VALUES[res] != 1):  
+        if (status == 'Enabled' and active == 'True'):
+          CHECK_VALUES[res] = 1
+          check_info = 'Dispositivi ethernet attivi.'
+        elif (CHECK_VALUES[res] != 1):  
           CHECK_VALUES[res] = 0
           check_info = 'Dispositivi ethernet non attivi.'
           raise sysmonitorexception.WARNETH
-        elif (status == 'Enabled' and active == 'True'):
-          CHECK_VALUES[res] = 1
-          check_info = 'Dispositivi ethernet attivi.'
             
   if (CHECK_VALUES[res] == -1):
     raise sysmonitorexception.WARNETH
@@ -344,13 +344,13 @@ def _check_wireless(res = RES_WIFI):
       elif (system().lower().startswith('dar')):  
         status = device.find('Status').text
         active = device.find('isActive').text
-        if (CHECK_VALUES[res] != 1):  
-          CHECK_VALUES[res] = 0
-          check_info = 'Dispositivi wireless non attivi.'
-        elif (status == 'Enabled' and active == 'True'):
+        if (status == 'Enabled' and active == 'True'):
           CHECK_VALUES[res] = 1
           check_info = 'Dispositivi wireless attivi.'
           raise sysmonitorexception.WARNWLAN
+        elif (CHECK_VALUES[res] != 1):
+          CHECK_VALUES[res] = 0
+          check_info = 'Dispositivi wireless non attivi.'
                     
   return check_info
 
@@ -404,16 +404,17 @@ def _check_hspa(res = RES_HSPA):
         check_info = 'Dispositivi HSPA attivi.'
         raise sysmonitorexception.WARNHSPA
       
-      elif (system().lower().startswith('dar')):  
+      elif (system().lower().startswith('dar')):
         status = device.find('Status').text
         active = device.find('isActive').text
-        if (CHECK_VALUES[res] != 1):  
-          CHECK_VALUES[res] = 0
-          check_info = 'Dispositivi HSPA non attivi.'
-        elif (status == 'Enabled' and active == 'True'):
+        if (status == 'Enabled' and active == 'True'):
           CHECK_VALUES[res] = 1
           check_info = 'Dispositivi HSPA attivi.'
           raise sysmonitorexception.WARNHSPA
+        elif (CHECK_VALUES[res] != 1):  
+          CHECK_VALUES[res] = 0
+          check_info = 'Dispositivi HSPA non attivi.'
+
 
   return check_info
   
@@ -588,19 +589,19 @@ def _get_NetIF(type = 0):
   if ( (now-NETIF_TIME)>age or (NETIF_1 == None) or (NETIF_2 == None) ):
     NETIF_TIME = now
     
-    if (type != 0):
-      profiler = LocalProfilerFactory.getProfiler()
-      NETIF_1 = profiler.profile(set(['rete']))
-    else:  
-      NETIF_2 = {}
-      for ifName in netifaces.interfaces():
-        #logger.debug((ifName,netifaces.ifaddresses(ifName)))
-        mac = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_LINK, [{'addr':''}])]
-        ip = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'addr':''}])]
-        mask = [i.setdefault('netmask', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'netmask':''}])]
-        if mask[0] == '0.0.0.0':
-          mask = [i.setdefault('broadcast', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'broadcast':''}])]
-        NETIF_2[ifName] = {'mac':mac, 'ip':ip, 'mask':mask}
+  if (type != 0):
+    profiler = LocalProfilerFactory.getProfiler()
+    NETIF_1 = profiler.profile(set(['rete']))
+  else:  
+    NETIF_2 = {}
+    for ifName in netifaces.interfaces():
+      #logger.debug((ifName,netifaces.ifaddresses(ifName)))
+      mac = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_LINK, [{'addr':''}])]
+      ip = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'addr':''}])]
+      mask = [i.setdefault('netmask', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'netmask':''}])]
+      if mask[0] == '0.0.0.0':
+        mask = [i.setdefault('broadcast', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'broadcast':''}])]
+      NETIF_2[ifName] = {'mac':mac, 'ip':ip, 'mask':mask}
       #logger.debug('Network Interfaces:\n %s' %NETIF_2)
 
   if (type != 0):
@@ -740,6 +741,12 @@ def getDevInfo(dev = None):
   dev_info = pktman.getdev(dev)
   if (dev_info['err_flag'] != 0):
     dev_info = None
+  if (dev_info.get('descr', 'none') == 'none'):
+    data = _get_NetIF(1)
+    for device in data.findall('rete/NetworkDevice'):
+      if (device.find('Device').text == dev):
+        dev_info['type'] = 'none'
+        dev_info['descr'] = "%s (%s)" % (device.find('Name').text, device.find('Type').text)
 
   return dev_info
 

@@ -171,15 +171,21 @@ class rete(Risorsa):
 
             if descriptors['type'].lower() == 'ethernet':
                 devType = 'Ethernet 802.3'
+                if descriptors['_name'].lower() == 'mbbethernet':
+                    devType = 'WWAN'
             elif descriptors['type'].lower() == 'airport':
                 devType = 'Wireless'
+            elif descriptors['type'].lower() == 'ppp (pppserial)':
+                devType = 'WWAN'
             else:
                 devType = 'Other'
                 
-            devxml.append(self.xmlFormat('Name', descriptors['interface']))
+            devxml.append(self.xmlFormat('Name', descriptors['_name']))
+            devxml.append(self.xmlFormat('Device', descriptors['interface']))
             devxml.append(self.xmlFormat('Status', devStatus))
             devxml.append(self.xmlFormat('isActive', devIsAct))
             devxml.append(self.xmlFormat('Type', devType))
+            devxml.append(self.xmlFormat('IpAddress', descriptors.get('Addresses','unknown')))
             devxml.append(self.xmlFormat('MACAddress', descriptors.get('MAC Address','unknown')))
             
             maindevxml.append(devxml)

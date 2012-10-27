@@ -99,7 +99,10 @@ class NemesysSpeedtestGUI(wx.Frame):
   def __set_properties(self):
     # begin wxGlade: Frame.__set_properties
     self.SetTitle("Ne.Me.Sys Speedtest")
-    self.SetSize((750, 500))
+    dimension = (750,500)
+    if (system().lower().startswith('dar')):
+      dimension = (750,550)
+    self.SetSize(dimension)
     self.bitmap_button_play.SetMinSize((120, 120))
     self.bitmap_button_check.SetMinSize((40, 120))
     self.bitmap_5.SetMinSize((95, 70))
