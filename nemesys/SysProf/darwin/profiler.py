@@ -185,8 +185,8 @@ class rete(Risorsa):
             devxml.append(self.xmlFormat('Status', devStatus))
             devxml.append(self.xmlFormat('isActive', devIsAct))
             devxml.append(self.xmlFormat('Type', devType))
-            devxml.append(self.xmlFormat('IpAddress', descriptors.get('Addresses','unknown')))
-            devxml.append(self.xmlFormat('MACAddress', descriptors.get('MAC Address','unknown')))
+            devxml.append(self.xmlFormat('IPaddress', descriptors.get('Addresses','unknown')))
+            devxml.append(self.xmlFormat('MACaddress', descriptors.get('MAC Address','unknown')))
             
             maindevxml.append(devxml)
             del devxml

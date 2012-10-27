@@ -128,12 +128,11 @@ class rete(Risorsa):
                     #print des, '=', val[des]
 
                 devxml = ET.Element('NetworkDevice')
-                devxml.append(self.xmlFormat('Name', dev))
 
                 if val['operstate'] == "up":
-                    devxml.append(self.xmlFormat('Status', 'Enabled'))
+                    devStatus = 'Enabled'
                 else:
-                    devxml.append(self.xmlFormat('Status', 'Disabled'))
+                    devStatus = 'Disabled'
                     
                 if (val['type'] == '1'):
                     val['type'] = 'Ethernet 802.3'
@@ -143,11 +142,15 @@ class rete(Risorsa):
                 for word in wireless:
                     if word in val['uevent']:
                         val['type'] = 'Wireless'
-                        
-                devxml.append(self.xmlFormat('Type', val['type']))
-                devxml.append(self.xmlFormat('MACAddress', val['address']))
-                devxml.append(self.xmlFormat('IP', ipdev))
+                
+                devxml.append(self.xmlFormat('Name', dev))
+                devxml.append(self.xmlFormat('Device', dev))
+                devxml.append(self.xmlFormat('Status', devStatus))
                 devxml.append(self.xmlFormat('isActive', devIsAct))
+                devxml.append(self.xmlFormat('Type', val['type']))
+                devxml.append(self.xmlFormat('IPaddress', ipdev))
+                devxml.append(self.xmlFormat('MACaddress', val['address']))
+                
                 maindevxml.append(devxml)
                 del devxml
 
