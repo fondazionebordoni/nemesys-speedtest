@@ -26,7 +26,6 @@ from host import Host
 from logger import logging
 from optparse import OptionParser
 from pcapper import Pcapper
-from sysmonitor import getIp, getDev
 import ftplib
 import paths
 import ping
@@ -48,9 +47,10 @@ errors = Errorcoder(paths.CONF_ERRORS)
 
 class Tester:
 
-  def __init__(self, if_ip, host, username = 'anonymous', password = 'anonymous@', timeout = 11):
-    self._if_ip = if_ip
-    self._nic_if = getDev(if_ip)
+  def __init__(self, dev, ip, host, username = 'anonymous', password = 'anonymous@', timeout = 11):
+    
+    self._nic_if = dev
+    self._if_ip = ip
     self._host = host
     
     self._ftp = None

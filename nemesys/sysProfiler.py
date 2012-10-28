@@ -1,122 +1,115 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from sysmonitor import checkset, RES_OS, RES_IP, RES_MAC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_HOSTS, RES_TRAFFIC
+from sysMonitor import SysMonitor, RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC
+from collections import OrderedDict
 from threading import Thread, Event
 from time import sleep
-# from usbkey import check_usb, move_on_key
 from logger import logging
-import sysmonitor
 import wx
 
 
 logger = logging.getLogger()
 
-ALL_RES = [RES_OS, RES_IP, RES_MAC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_HOSTS, RES_TRAFFIC]
+ALL_RES = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC]
+MESSAGE = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_IP, RES_HOSTS, RES_TRAFFIC]
 
 class sysProfiler(Thread):
 
-  def __init__(self, gui, type = 'check', checkable_set = set(ALL_RES)):
+  def __init__(self, gui, mode = 'check', checkable_set = set(ALL_RES)):
     Thread.__init__(self)
-
+    
     self._gui = gui
-    self._type = type
+    self._mode = mode
+    self._settings = [False,False,False,False]
+    
     self._checkable_set = checkable_set
-    self._available_check = {RES_OS:1, RES_IP:2, RES_MAC:3, RES_CPU:4, RES_RAM:5, RES_ETH:6, RES_WIFI:7, RES_HSPA:8, RES_HOSTS:9, RES_TRAFFIC:10}
-
-    self._events = {}
-    self._results = {}
-    self._cycle = Event()
+    self._available_check = OrderedDict \
+    ([ \
+    (RES_DEV, None),\
+    (RES_MAC, None),\
+    (RES_IP, None),\
+    (RES_MASK, None),\
+    (RES_OS, None),\
+    (RES_CPU, None),\
+    (RES_RAM, None),\
+    (RES_ETH, None),\
+    (RES_WIFI, None),\
+    (RES_HSPA, None),\
+    (RES_HOSTS, None),\
+    (RES_TRAFFIC, None) \
+    ])
+    
+    self._events = OrderedDict([])
+    self._results = OrderedDict([])
+    
+    self._cycle_flag = Event()
     self._results_flag = Event()
-    self._checkset_flag = Event()
-    self._usbkey_ok = False
+    self._checkres_flag = Event()
+    
     self._device = None
-
+    
+    self._checker = SysMonitor()
+    
   def run(self):
-
-    self._cycle.set()
-
-    while (self._cycle.isSet()):
+    
+    self._cycle_flag.set()
+    
+    while (self._cycle_flag.isSet()):
+      
+      ## settings = [message, cycle, return, device] ##
+      if (self._mode == 'check'):
+        self._settings = [True,False,True,True]
+      elif (self._mode == 'tester'):
+        self._settings = [False,True,False,False]
+      
       self._results_flag.clear()
-      self._checkset_flag.clear()
-
-      if (self._type != 'tester'):
-        self._usbkey_ok = self._check_usbkey()
+      self._checkres_flag.clear()
+      
+      self._check_device()
+        
+      self._events.clear()
+      self._results.clear()
+      
+      for res in self._available_check:
+        if self._checkres_flag.isSet():
+          self._events.clear()
+          self._results.clear()
+          break
+        if res in self._checkable_set:
+          res_flag = Event()
+          self._events[res] = res_flag
+          self._events[res].clear()
+          self._check_resource(res)
+          self._events[res].wait()
+          del self._events[res]
+          message_flag = self._settings[0]
+          if (res in MESSAGE):
+            wx.CallAfter(self._gui.set_resource_info, res, self._results[res], message_flag)
+        
+      self._results_flag.set()
+      
+      if self._settings[1]:
+        sleep(0.8)
       else:
-        self._usbkey_ok = True
+        self._cycle_flag.clear()
 
-      if (self._usbkey_ok and self._type != 'usbkey'):
-        result = checkset(set([RES_IP]))
-        self._results.update(result)
-        self._check_device()
-        
-      if (self._usbkey_ok or self._type == 'usbkey'):
-        self._events.clear()
-        self._results.clear()
-
-        for res in sorted(self._available_check, key = lambda res: self._available_check[res]):
-          if self._checkset_flag.isSet():
-            self._events.clear()
-            self._results.clear()
-            break
-          if res in self._checkable_set:
-            res_flag = Event()
-            self._events[res] = res_flag
-            self._events[res].clear()
-            self._check_resource(res)
-
-            if self._events[res].isSet():
-              del self._events[res]
-              if (self._type == 'tester') or (res == RES_IP) or (res == RES_MAC):
-                message_flag = False
-              else:
-                message_flag = True
-              wx.CallAfter(self._gui.set_resource_info, res, self._results[res], message_flag)
-        
-        self._results_flag.set()
-
-        if (self._type != 'tester'):
-          self._cycle.clear()
-        else:
-          sleep(1)
-
-    if (self._usbkey_ok and self._type == 'check'):
+    if self._settings[2]:
 #      self._tester = _Tester(self._gui)
 #      self._tester._uploadall()
       wx.CallAfter(self._gui._after_check)
-
-  def stop(self):
-    self._cycle.clear()
-
-  def set_check(self, checkable_set = set(ALL_RES)):
-    self._checkable_set = checkable_set
-    self._checkset_flag.set()
-
+  
   def _check_resource(self, resource):
-    result = checkset(set([resource]))
-    self._results.update(result)
+    val = self._checker.checkres(resource)
+    self._results[resource] = val
     self._events[resource].set()
-
-  def get_results(self):
-    self._results_flag.wait()
-    self._results_flag.clear()
-    if self._checkset_flag.isSet():
-      self._results_flag.wait()
-      self._results_flag.clear()
-    if (self._type == 'usbkey'):
-      results = self._usbkey_ok
-    else:
-      results = {}
-      for key in self._results:
-        results[key] = self._results[key]['value']
-    return results
-
+  
   def _check_device(self):
     try:
-      ip = self._results[RES_IP]['value']
-      id = sysmonitor.getDev(ip)
+      ip = self._checker.checkres(RES_IP)['value']
+      dev = self._checker.checkres(RES_DEV, ip)['value']
     except Exception as e:
-      info = {'status':False, 'value':-1, 'info':''}
+      info = {'status':False, 'value':-1, 'info':e}
       wx.CallAfter(self._gui.set_resource_info, RES_ETH, info, False)
       wx.CallAfter(self._gui.set_resource_info, RES_WIFI, info, False)
       wx.CallAfter(self._gui.set_resource_info, RES_HSPA, info, False)
@@ -124,9 +117,9 @@ class sysProfiler(Thread):
       return
       
     if (self._device == None):
-      self._device = id
-      if (self._type != 'tester'):
-        dev_info = sysmonitor.getDevInfo(id)
+      self._device = dev
+      if self._settings[3]:
+        dev_info = self._checker._getDevInfo(dev)
         dev_type = dev_info['type']
         if (dev_type == 14):
           dev_descr = "rete locale via cavo ethernet"
@@ -141,21 +134,28 @@ class sysProfiler(Thread):
         if (dev_info['descr'] != 'none'):
           dev_descr = dev_info['descr'] 
         wx.CallAfter(self._gui._update_messages, "Interfaccia di rete in esame: %s" % dev_descr, 'green')
-        wx.CallAfter(self._gui._update_messages, "Indirizzo IP dell'interfaccia di rete in esame: %s" % ip, 'green')
         
-    elif (id != self._device):
-      self._cycle.clear()
-      self._usbkey_ok = False
+    elif (dev != self._device):
+      self._cycle_flag.clear()
       wx.CallAfter(self._gui._update_messages, "Test interrotto per variazione interfaccia di rete di riferimento.", 'red')
       wx.CallAfter(self._gui.stop)
-      
-         
-  def _check_usbkey(self):
-    check = True
-    # if (not check_usb()):
-      # self._cycle.clear()
-      # logger.info('Verifica della presenza della chiave USB fallita')
-      # wx.CallAfter(self._gui._update_messages, "Per l'utilizzo di questo software occorre disporre della opportuna chiave USB. Inserire la chiave nel computer e riavviare il programma.", 'red')
-    return check
+  
+  def get_results(self):
+    self._results_flag.wait()
+    self._results_flag.clear()
+    if self._checkres_flag.isSet():
+      self._results_flag.wait()
+      self._results_flag.clear()
+    results = {}
+    for key in self._results:
+      results[key] = self._results[key].get('value',None)
+    return results
+  
+  def set_check(self, checkable_set = set(ALL_RES)):
+    self._checkable_set = checkable_set
+    self._checkres_flag.set()
+  
+  def stop(self):
+    self._cycle_flag.clear()
   
   

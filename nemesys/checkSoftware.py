@@ -159,6 +159,15 @@ class CheckSoftware():
     return regOK
     
     
+  def _check_usbkey(self):
+    check = True
+    # if (not check_usb()):
+      # self._cycle.clear()
+      # logger.info('Verifica della presenza della chiave USB fallita')
+      # wx.CallAfter(self._gui._update_messages, "Per l'utilizzo di questo software occorre disporre della opportuna chiave USB. Inserire la chiave nel computer e riavviare il programma.", 'red')
+    return check
+    
+    
   def checkIT(self):
     checkOK = False
     check_list = {1:self._softwareVersion,2:self._isRegistered}

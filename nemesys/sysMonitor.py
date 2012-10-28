@@ -17,8 +17,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from collections import OrderedDict
-from threading import Thread
-
 
 from SysProf.NemesysException import LocalProfilerException, RisorsaException, FactoryException
 from SysProf import LocalProfilerFactory
@@ -44,11 +42,11 @@ if (system().lower().startswith('win')):
   from SysProf.windows import profiler
 elif (system().lower().startswith('lin')):
   from SysProf.linux import profiler
-else:
+elif (system().lower().startswith('dar')):
   from SysProf.darwin import profiler
 
 
-STRICT_CHECK = True
+
 
 CHECK_ALL = "ALL"
 CHECK_MEDIUM = "MEDIUM"
@@ -71,24 +69,19 @@ VALUE = 'value'
 INFO = 'info'
 TIME = 'time'
 
-NETIF_TIME = None
-NETIF_1 = None
-NETIF_2 = None
-
 tag_results = 'SystemProfilerResults'
 tag_threshold = 'SystemProfilerThreshold'
 tag_avMem = 'RAM.totalPhysicalMemory'
 tag_memLoad = 'RAM.RAMUsage'
 tag_wireless = 'wireless.ActiveWLAN'
 tag_ip = 'ipAddr' #to check
-tag_sys = 'sistemaOperativo.OperatingSystem'
+tag_os = 'sistemaOperativo.OperatingSystem'
 tag_cpu = 'CPU.cpuLoad'
 tag_mac = 'rete.NetworkDevice/MACAddress'
 tag_activeNic = 'rete.NetworkDevice/isActive'
 tag_cores = 'CPU.cores'
 tag_proc = 'CPU.processor'
 tag_hosts = 'hostNumber'
-#tag_wireless = 'rete.NetworkDevice/Type'
 
 
 #' SOGLIE '#
@@ -102,26 +95,38 @@ th_cpu = 85           # Massimo carico percentuale sulla CPU
 logger = logging.getLogger()
 errors = Errorcoder(paths.CONF_ERRORS)
 
-  
-class sysMonitor(Thread):
+
+def interfaces():
+  monitor = SysMonitor()
+  devices = monitor._get_NetIF(True)
+  for device in devices.findall('rete/NetworkDevice'):
+    dev = xmltodict.parse(ET.tostring(device))
+    dev = dev['NetworkDevice']
+    logger.info("============================================")
+    for key, val in dev.items(): 
+      logger.info("| %s : %s" % (key, val))
+  logger.info("============================================")
+
+
+class SysMonitor():
   def __init__(self):
     
-    self._blank = OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])
+    self._strict_check = True
     
     self._system = OrderedDict \
     ([ \
-    (RES_OS,self._blank),\
-    (RES_CPU,self._blank),\
-    (RES_RAM,self._blank),\
-    (RES_ETH,self._blank),\
-    (RES_WIFI,self._blank),\
-    (RES_HSPA,self._blank),\
-    (RES_DEV,self._blank),\
-    (RES_MAC,self._blank),\
-    (RES_IP,self._blank),\
-    (RES_MASK,self._blank),\
-    (RES_HOSTS,self._blank),\
-    (RES_TRAFFIC,self._blank) \
+    (RES_OS, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
+    (RES_CPU, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
+    (RES_RAM, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
+    (RES_ETH, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
+    (RES_WIFI, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
+    (RES_HSPA, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
+    (RES_DEV, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
+    (RES_MAC, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
+    (RES_IP, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
+    (RES_MASK, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
+    (RES_HOSTS, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
+    (RES_TRAFFIC, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])) \
     ])
     
     self._checks = OrderedDict \
@@ -134,22 +139,36 @@ class sysMonitor(Thread):
     (RES_HSPA,self._check_hspa),\
     (RES_DEV,self._getDev),\
     (RES_MAC,self._get_mac),\
-    (RES_IP,self.getIp),\
+    (RES_IP,self._get_ip),\
     (RES_MASK,self._get_mask),\
     (RES_HOSTS,self._check_hosts),\
     (RES_TRAFFIC,self._check_traffic) \
     ])
+    
+    
+    self._net_if = {'netifaces':None, 'profiler':None, 'time':None}
   
   
-  def interfaces(self):
-    devices = self._get_NetIF()
-    for device in devices.findall('rete/NetworkDevice'):
-      dev = xmltodict.parse(ET.tostring(device))
-      dev = dev['NetworkDevice']
-      logger.info("============================================")
-      for key, val in dev.items(): 
-        logger.info("| %s : %s" % (key, val))
+  def _clear(self):
+    for res in self._system:
+      self._system[res].update(OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ]))
+    #self._logger_dict(self._system)
+  
+  
+  def _logger_dict(self, dictionary):
     logger.info("============================================")
+    for key, val in dictionary.items(): 
+      logger.info("----[ %s ]----" % key)
+      for k, v in val.items():
+        logger.info("\t%s = %s" % (k,v))
+  
+  
+  def _store(self, res, status, value, info):
+    self._system[res][STATUS] = status
+    self._system[res][VALUE] = value
+    self._system[res][INFO] = info
+    self._system[res][TIME] = None #time.time()
+    #self._logger_dict(self._system)
   
   
   def _get_values(self, tagrisorsa, xmlresult, tag = tag_results):
@@ -161,7 +180,7 @@ class sysMonitor(Thread):
     except Exception as e:
       logger.warning('Errore durante il recupero dello stato del computer. %s' % e)
       raise Exception('Errore durante il recupero dello stato del computer.')
-  
+    
     return values
   
   
@@ -196,7 +215,7 @@ class sysMonitor(Thread):
       value = str(values[tag])
     except Exception as e:
       logger.error('Errore in lettura del paramentro "%s" di SystemProfiler: %s' % (tag, e))
-      if STRICT_CHECK:
+      if self._strict_check:
         raise sysmonitorexception.FAILREADPARAM
         
     if value == 'None':
@@ -219,7 +238,7 @@ class sysMonitor(Thread):
       value = None
     except Exception as e:
       logger.error('Errore in lettura del paramentro "%s" di SystemProfiler: %s' % (tag, e))
-      if STRICT_CHECK:
+      if self._strict_check:
         raise sysmonitorexception.FAILREADPARAM
   
     return value
@@ -229,7 +248,7 @@ class sysMonitor(Thread):
     
     try:
       
-      value = self._get_string_tag(tag_sys.split('.', 1)[1], 1, tag_sys.split('.', 1)[0])
+      value = self._get_string_tag(tag_os.split('.', 1)[1], 1, tag_os.split('.', 1)[0])
       info = ("Sistema Operativo %s" % value)
       status = True 
       
@@ -241,10 +260,7 @@ class sysMonitor(Thread):
       
     finally:
       
-      self._system[res][STATUS] = status
-      self._system[res][VALUE] = value
-      self._system[res][INFO] = info
-      self._system[res][TIME] = time.time()
+      self._store(res, status, value, info)
   
   
   def _check_cpu(self, res = RES_CPU):
@@ -281,10 +297,7 @@ class sysMonitor(Thread):
       
     finally:
       
-      self._system[res][STATUS] = status
-      self._system[res][VALUE] = value
-      self._system[res][INFO] = info
-      self._system[res][TIME] = time.time()
+      self._store(res, status, value, info)
   
   
   def _check_mem(self, res = RES_RAM):
@@ -330,10 +343,7 @@ class sysMonitor(Thread):
       
     finally:
       
-      self._system[res][STATUS] = status
-      self._system[res][VALUE] = value
-      self._system[res][INFO] = info
-      self._system[res][TIME] = time.time()
+      self._store(res, status, value, info)
   
   
   def _check_ethernet(self, res = RES_ETH):
@@ -351,7 +361,7 @@ class sysMonitor(Thread):
           
           if (system().lower().startswith('win')):
             guid = device.find('GUID').text
-            dev_info = self.getDevInfo(guid)
+            dev_info = self._getDevInfo(guid)
             if (dev_info != None):
               dev_type = dev_info['type']
               if (dev_type == 0 or dev_type == 14):
@@ -366,15 +376,26 @@ class sysMonitor(Thread):
                   
           elif (system().lower().startswith('lin')):
             status = device.find('Status').text
-            isAct = device.find('isActive').text
+            active = device.find('isActive').text
             if (status == 'Disabled' and value != 1):  
               value = 0
               info = 'Dispositivi ethernet non attivi.'
               raise sysmonitorexception.WARNETH
-            elif (status == 'Enabled' and isAct == 'True'):
+            elif (status == 'Enabled' and active == 'True'):
               value = 1
               info = 'Dispositivi ethernet attivi.'
-                
+              
+          elif (system().lower().startswith('dar')):  
+            status = device.find('Status').text
+            active = device.find('isActive').text
+            if (status == 'Enabled' and active == 'True'):
+              value = 1
+              info = 'Dispositivi ethernet attivi.'
+            elif (value != 1):  
+              value = 0
+              info = 'Dispositivi ethernet non attivi.'
+              raise sysmonitorexception.WARNETH
+            
       if (value == -1):
         raise sysmonitorexception.WARNETH
                 
@@ -388,10 +409,7 @@ class sysMonitor(Thread):
       
     finally:
       
-      self._system[res][STATUS] = status
-      self._system[res][VALUE] = value
-      self._system[res][INFO] = info
-      self._system[res][TIME] = time.time()
+      self._store(res, status, value, info)
   
   
   def _check_wireless(self, res = RES_WIFI):
@@ -409,7 +427,7 @@ class sysMonitor(Thread):
           
           if (system().lower().startswith('win')):
             guid = device.find('GUID').text
-            dev_info = self.getDevInfo(guid)
+            dev_info = self._getDevInfo(guid)
             if (dev_info != None):
               dev_type = dev_info['type']
               if (dev_type == 0 or dev_type == 25):
@@ -431,6 +449,17 @@ class sysMonitor(Thread):
               value = 1
               info = 'Dispositivi wireless attivi.'
               raise sysmonitorexception.WARNWLAN
+            
+          elif (system().lower().startswith('dar')):  
+            status = device.find('Status').text
+            active = device.find('isActive').text
+            if (status == 'Enabled' and active == 'True'):
+              value = 1
+              info = 'Dispositivi wireless attivi.'
+              raise sysmonitorexception.WARNWLAN
+            elif (value != 1):
+              value = 0
+              info = 'Dispositivi wireless non attivi.'
                 
       status = True
       
@@ -442,10 +471,7 @@ class sysMonitor(Thread):
       
     finally:
       
-      self._system[res][STATUS] = status
-      self._system[res][VALUE] = value
-      self._system[res][INFO] = info
-      self._system[res][TIME] = time.time()
+      self._store(res, status, value, info)
   
   
   def _check_hspa(self, res = RES_HSPA):
@@ -469,7 +495,7 @@ class sysMonitor(Thread):
           if (re.search('USB',dev_id)):
             value = 0
             info = 'Dispositivi HSPA non attivi.'
-            dev_info = self.getDevInfo()
+            dev_info = self._getDevInfo()
             if (dev_info != None):
               dev_type = dev_info['type']
               dev_mask = dev_info['mask']
@@ -481,7 +507,7 @@ class sysMonitor(Thread):
         elif (type == 'WWAN'):
           if (system().lower().startswith('win')):
             guid = device.find('GUID').text
-            dev_info = self.getDevInfo(guid)
+            dev_info = self._getDevInfo(guid)
             if (dev_info != None):
               dev_type = dev_info['type']
               if (dev_type == 0 or dev_type == 17):
@@ -497,6 +523,17 @@ class sysMonitor(Thread):
             value = 1
             info = 'Dispositivi HSPA attivi.'
             raise sysmonitorexception.WARNHSPA
+          
+          elif (system().lower().startswith('dar')):
+            status = device.find('Status').text
+            active = device.find('isActive').text
+            if (status == 'Enabled' and active == 'True'):
+              value = 1
+              info = 'Dispositivi HSPA attivi.'
+              raise sysmonitorexception.WARNHSPA
+            elif (value != 1):  
+              value = 0
+              info = 'Dispositivi HSPA non attivi.'
     
       status = True
       
@@ -508,10 +545,7 @@ class sysMonitor(Thread):
       
     finally:
       
-      self._system[res][STATUS] = status
-      self._system[res][VALUE] = value
-      self._system[res][INFO] = info
-      self._system[res][TIME] = time.time()
+      self._store(res, status, value, info)
   
   
   def _check_hosts(self, up = 2048, down = 2048, ispid = 'tlc003', arping = 1, res = RES_HOSTS):
@@ -519,7 +553,7 @@ class sysMonitor(Thread):
       
       value = None
         
-      self.getIp()
+      self._get_ip()
       ip = self._system[RES_IP][VALUE]
       self._getDev(ip)
       dev = self._system[RES_DEV][VALUE]
@@ -570,10 +604,7 @@ class sysMonitor(Thread):
       
     finally:
       
-      self._system[res][STATUS] = status
-      self._system[res][VALUE] = value
-      self._system[res][INFO] = info
-      self._system[res][TIME] = time.time()
+      self._store(res, status, value, info)
   
   
   def _check_traffic(self, sec = 2, res = RES_TRAFFIC):
@@ -582,7 +613,7 @@ class sysMonitor(Thread):
       
       value = 'unknown'
       
-      self.getIp()
+      self._get_ip()
       ip = self._system[RES_IP][VALUE]
       self._getDev(ip)
       dev = self._system[RES_DEV][VALUE]
@@ -606,15 +637,15 @@ class sysMonitor(Thread):
       value = (DOWN_kbps, UP_kbps)
       info = "%.1f kbps in download e %.1f kbps in upload di traffico globale attuale sull'interfaccia di rete in uso." % (DOWN_kbps, UP_kbps)
       
-#      if (int(UP_kbps) < 20 and int(DOWN_kbps) < 200):
-#        value = 'LOW'
-#      elif (int(UP_kbps) < 180 and int(DOWN_kbps) < 1800):
-#        value = 'MEDIUM'
-#      else:
-#        value = 'HIGH'
-#      
-#      if (value != 'LOW'):
-#        raise Exception(check_info)
+      if (int(UP_kbps) < 20 and int(DOWN_kbps) < 200):
+        value = 'LOW'
+      elif (int(UP_kbps) < 180 and int(DOWN_kbps) < 1800):
+        value = 'MEDIUM'
+      else:
+        value = 'HIGH'
+      
+      if (value != 'LOW'):
+        raise Exception(info)
       
       status = True
       
@@ -626,57 +657,96 @@ class sysMonitor(Thread):
       
     finally:
       
-      self._system[res][STATUS] = status
-      self._system[res][VALUE] = value
-      self._system[res][INFO] = info
-      self._system[res][TIME] = time.time()
+      self._store(res, status, value, info)
   
   
   def _get_NetIF(self, from_profiler = True):
-  
-    global NETIF_TIME, NETIF_1, NETIF_2
-  
-    age = 4 #seconds
+    
+    age = 2
+    old = self._net_if['time']
     now = time.time()
     
-    if ( NETIF_TIME == None ):
-      NETIF_TIME = now
-    
-    if ( (now-NETIF_TIME)>age or (NETIF_1 == None) or (NETIF_2 == None) ):
-      NETIF_TIME = now
+    if (old == None):
+      old = now - 22
       
-      if from_profiler:
-        profiler = LocalProfilerFactory.getProfiler()
-        NETIF_1 = profiler.profile(set(['rete']))
-      else:  
-        NETIF_2 = {}
-        for ifName in netifaces.interfaces():
-          #logger.debug((ifName,netifaces.ifaddresses(ifName)))
-          mac = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_LINK, [{'addr':''}])]
-          ip = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'addr':''}])]
-          mask = [i.setdefault('netmask', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'netmask':''}])]
-          if mask[0] == '0.0.0.0':
-            mask = [i.setdefault('broadcast', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'broadcast':''}])]
-          NETIF_2[ifName] = {'mac':mac, 'ip':ip, 'mask':mask}
-        #logger.debug('Network Interfaces:\n %s' %NETIF_2)
-  
+    if ((now-old)>age):
+      
+      self._net_if['time'] = now
+      
+      #if from_profiler:
+      profiler = LocalProfilerFactory.getProfiler()
+      self._net_if['profiler'] = profiler.profile(set(['rete']))
+        
+      #else:
+      self._net_if['netifaces'] = {}
+      for ifName in netifaces.interfaces():
+        #logger.debug((ifName,netifaces.ifaddresses(ifName)))
+        mac = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_LINK, [{'addr':''}])]
+        ip = [i.setdefault('addr', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'addr':''}])]
+        mask = [i.setdefault('netmask', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'netmask':''}])]
+        if mask[0] == '0.0.0.0':
+          mask = [i.setdefault('broadcast', '') for i in netifaces.ifaddresses(ifName).setdefault(netifaces.AF_INET, [{'broadcast':''}])]
+        self._net_if['netifaces'][ifName] = {'mac':mac, 'ip':ip, 'mask':mask}
+      #logger.debug('Network Interfaces:\n %s' % self._net_if['netifaces'])
+      
     if from_profiler:
-      return NETIF_1
+      return self._net_if['profiler']
     else:
-      return NETIF_2
+      return self._net_if['netifaces']
   
   
-  def getDevInfo(self, dev = None):
+  def _getDev(self, ip = None, res = RES_DEV):
+  
+    try:
+      
+      value = None
+      
+      if ip == None:
+        ip = self._get_ActiveIp()
+    
+      netIF = self._get_NetIF(False)
+    
+      for interface in netIF:
+        if (netIF[interface]['ip'][0] == ip):
+          #logger.debug('| Ip: %s | Find on Dev: %s |' % (ip,interface))
+          value = interface
+          info = "Interfaccia di rete: %s" % value
+    
+      if (value == None):
+        info = 'Impossibile recuperare il nome del Device associato all\'IP %s' % ip
+        logger.error(info)
+        raise sysmonitorexception.UNKDEV
+      
+      status = True
+
+    except Exception as e:
+      
+      info = e
+      status = False
+      #raise e
+      
+    finally:
+      
+      self._store(res, status, value, info)
+  
+  
+  def _getDevInfo(self, dev = None):
     
     dev_info = None
     
     if dev == None:
       dev = self._get_ActiveIp()
-  
+      
     dev_info = pktman.getdev(dev)
     if (dev_info['err_flag'] != 0):
       dev_info = None
-      
+    if (dev_info.get('descr', 'none') == 'none'):
+      data = self._get_NetIF(True)
+      for device in data.findall('rete/NetworkDevice'):
+        if (device.find('Device').text == dev):
+          dev_info['type'] = 'none'
+          dev_info['descr'] = "%s (%s)" % (device.find('Name').text, device.find('Type').text)
+          
     return dev_info
   
   
@@ -714,13 +784,10 @@ class sysMonitor(Thread):
       
     finally:
       
-      self._system[res][STATUS] = status
-      self._system[res][VALUE] = value
-      self._system[res][INFO] = info
-      self._system[res][TIME] = time.time()
+      self._store(res, status, value, info)
   
   
-  def getIp(self, res = RES_IP):
+  def _get_ip(self, res = RES_IP):
     
     try:
       
@@ -732,7 +799,7 @@ class sysMonitor(Thread):
         if (netIF[interface]['ip'][0] == activeIp):
           #logger.debug('| Active Ip: %s | Find Ip: %s |' % (activeIp,netIF[interface]['ip'][0]))
           value = activeIp
-          info = "IPv4 dell'interfaccia di rete: %s" % value
+          info = "Indirizzo IPv4 dell'interfaccia di rete: %s" % value
     
       if (value == None):
         raise sysmonitorexception.UNKIP
@@ -747,10 +814,7 @@ class sysMonitor(Thread):
       
     finally:
       
-      self._system[res][STATUS] = status
-      self._system[res][VALUE] = value
-      self._system[res][INFO] = info
-      self._system[res][TIME] = time.time()
+      self._store(res, status, value, info)
   
   
   def _get_mask(self, ip = None, res = RES_MASK):
@@ -788,10 +852,7 @@ class sysMonitor(Thread):
       
     finally:
       
-      self._system[res][STATUS] = status
-      self._system[res][VALUE] = value
-      self._system[res][INFO] = info
-      self._system[res][TIME] = time.time()
+      self._store(res, status, value, info)
   
   
   def _check_ip_syntax(self, ip):
@@ -864,50 +925,6 @@ class sysMonitor(Thread):
       raise sysmonitorexception.UNKIP
     
     return value
-
-
-
-  
-  
-
-  
-  
-  def _getDev(self, ip = None, res = RES_DEV):
-  
-    try:
-      
-      value = None
-      
-      if ip == None:
-        ip = self._get_ActiveIp()
-    
-      netIF = self._get_NetIF(False)
-    
-      for interface in netIF:
-        if (netIF[interface]['ip'][0] == ip):
-          #logger.debug('| Ip: %s | Find on Dev: %s |' % (ip,interface))
-          value = interface
-          info = "Interfaccia di rete: %s" % value
-    
-      if (value == None):
-        info = 'Impossibile recuperare il nome del Device associato all\'IP %s' % ip
-        logger.error(info)
-        raise sysmonitorexception.UNKDEV
-      
-      status = True
-
-    except Exception as e:
-      
-      info = e
-      status = False
-      #raise e
-      
-    finally:
-      
-      self._system[res][STATUS] = status
-      self._system[res][VALUE] = value
-      self._system[res][INFO] = info
-      self._system[res][TIME] = time.time()
   
   
   def checkres(self, res, *args):
@@ -925,54 +942,12 @@ class sysMonitor(Thread):
       for key, val in result.items(): 
         logger.info("| %s\t: %s" % (key, val))
       logger.debug("--------[ %s ]--------" % check)
-      
-    
-#    system_profile = {}
-#  
-#    if (len(check_set) > 0):
-#      checks = (check_set & set(available_check.keys()))
-#  
-#      unavailable_check = check_set - set(available_check.keys())
-#      if (unavailable_check):
-#        for res in list(unavailable_check):
-#          system_profile[res] = {}
-#          system_profile[res]['status'] = None
-#          system_profile[res]['value'] = None
-#          system_profile[res]['info'] = 'Risorsa non disponibile'
-#  
-#    else:
-#      checks = set(available_check.keys())
-#  
-#    #logger.debug('Check Order: %s' % sorted(available_check, key = lambda check: available_check[check]['prio']))
-#    for check in sorted(available_check, key = lambda check: available_check[check]['prio']):
-#      if check in checks:
-#  
-#        try:
-#          info = None
-#          status = None
-#          info = available_check[check]['meth']()
-#          if (info != None):
-#            status = True
-#        except Exception as e:
-#          # errorcode = errors.geterrorcode(e)
-#          # logger.error('Errore [%d]: %s' % (errorcode, e))
-#          info = e
-#          status = False
-#  
-#        system_profile[check] = {}
-#        system_profile[check]['status'] = status
-#        system_profile[check]['value'] = None
-#        system_profile[check]['info'] = str(info)
-#        #logger.info('%s: %s' % (check, system_profile[check]))
-#        #logger.debug(CHECK_VALUES)
-#  
-#    return system_profile  
-  
-  
-  
-  
+
+
+
+
 if __name__ == "__main__":
-  monitor = sysMonitor()
+  monitor = SysMonitor()
   #monitor.interfaces()
   
   monitor.checkall()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from sysmonitor import interfaces, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
+from sysMonitor import interfaces, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
 from threading import Thread, Event, enumerate
 from checkSoftware import CheckSoftware
 from speedTester import SpeedTester
@@ -210,12 +210,8 @@ class NemesysSpeedtestGUI(wx.Frame):
     #self.bitmap_button_play.SetBitmapLabel(wx.Bitmap(path.join(paths.ICONS, u"play.png")))
 
     self._killTester()
-    self._profiler = sysProfiler(self, 'usbkey', set())
-    self._profiler.start()
-    self._check_usbkey = self._profiler.get_results()
-    if (self._check_usbkey):
-      self._enable_button()
-      self._update_messages("Sistema pronto per una nuova misura")
+    self._enable_button()
+    self._update_messages("Sistema pronto per una nuova misura")
     self.update_gauge(TOTAL_STEPS)
 
   def _killTester(self):
@@ -338,7 +334,7 @@ class NemesysSpeedtestGUI(wx.Frame):
         res_label.SetLabel("%s\n- - - -" % resource)
 
     if (message_flag) and (info['info'] != None):
-      self._update_messages("%s: %s" % (resource, info['info']), color)
+      self._update_messages(info['info'], color)
 
     self.Layout()
 
@@ -386,7 +382,7 @@ if __name__ == "__main__":
   
   checker = CheckSoftware(version)
   check = checker.checkIT()
-
+  
   if check:
     interfaces()
     if (system().lower().startswith('win')):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from sysmonitor import RES_OS, RES_IP, RES_MAC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
+from sysMonitor import RES_OS, RES_IP, RES_DEV, RES_MAC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
 from xmlutils import getvalues, getxml, xml2task
 from os import path, walk, listdir, remove, removedirs
 from optionParser import OptionParser
@@ -364,7 +364,7 @@ class SpeedTester(Thread):
     wx.CallAfter(self._gui.update_gauge)
 
     # Profilazione
-    self._profiler.set_check(set([RES_OS, RES_IP, RES_MAC]))
+    self._profiler.set_check(set([RES_OS, RES_IP, RES_DEV, RES_MAC]))
     self._profiler.start()
     profiler = self._profiler.get_results()
     sleep(1)
@@ -383,8 +383,8 @@ class SpeedTester(Thread):
         
         start_time = datetime.fromtimestamp(timestampNtp())
 
-        (ip, os, mac) = (profiler[RES_IP], profiler[RES_OS], profiler[RES_MAC])
-        tester = Tester(if_ip = ip, host = task.server, timeout = self._testtimeout,
+        (ip, dev, os, mac) = (profiler[RES_IP], profiler[RES_DEV], profiler[RES_OS], profiler[RES_MAC])
+        tester = Tester(dev = dev, ip = ip, host = task.server, timeout = self._testtimeout,
                    username = self._client.username, password = self._client.password)
 
         measure = Measure(self._client, start_time, task.server, ip, os, mac, self._version)
