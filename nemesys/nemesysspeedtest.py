@@ -21,7 +21,11 @@ __version__ = '1.0.5'
 TOTAL_STEPS = 15
 
 logger = logging.getLogger()
- 
+
+LABEL_MESSAGE = \
+'''In quest'area verranno visualizzati i risultati della misura
+espressi attraverso i valori di ping, download e upload.'''
+
 class NemesysSpeedtestGUI(wx.Frame):
   def __init__(self, *args, **kwds):
     self._version = __version__
@@ -67,7 +71,7 @@ class NemesysSpeedtestGUI(wx.Frame):
     self.label_rr_down = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
     self.label_rr_up = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
     self.messages_area = wx.TextCtrl(self, -1, "", style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP)
-    self.label_interface = wx.StaticText(self, -1, "Ne.Me.Sys. Speedtest Versione %s\nQui verranno visualizzati i risultati della misura" %self._version, style = wx.ALIGN_CENTRE)
+    self.label_interface = wx.StaticText(self, -1, LABEL_MESSAGE, style = wx.ALIGN_CENTRE)
     self.grid_sizer_1 = wx.FlexGridSizer(2, 7, 0, 0)
     self.grid_sizer_2 = wx.FlexGridSizer(2, 3, 0, 0)
 
@@ -336,11 +340,11 @@ class NemesysSpeedtestGUI(wx.Frame):
     logger.info('Messagio all\'utente: "%s"' % message)
     self._stream.append((message, color))
     if (not self._stream_flag.isSet()):
-      if (system().lower().startswith('win')):
-        writer = Thread(target = self._writer)
-        writer.start()
-      else:
-        self._writer()
+#      if (system().lower().startswith('win')):
+#        writer = Thread(target = self._writer)
+#        writer.start()
+#      else:
+      self._writer()
 
   def _writer(self):
     self._stream_flag.set()
@@ -358,7 +362,7 @@ class NemesysSpeedtestGUI(wx.Frame):
       self.messages_area.SetInsertionPoint(last_pos+1)
       words = {"\n%s" % date:(color,)}
       self._set_style(message,words, last_pos)
-      #self.messages_area.ScrollLines(-1)
+      self.messages_area.ScrollLines(-1)
     self._stream_flag.clear()
     
   def _initial_message(self):
@@ -374,12 +378,12 @@ class NemesysSpeedtestGUI(wx.Frame):
 
     self.messages_area.SetWindowStyleFlag(self.messages_area_style + wx.TE_CENTER)
 
-    self.messages_area.SetFont(wx.Font(12, wx.DECORATIVE, wx.NORMAL, wx.NORMAL, 0, ""))
+    self.messages_area.SetFont(wx.Font(12, wx.ROMAN, wx.NORMAL, wx.NORMAL, 0, ""))
     
     self.messages_area.AppendText(message)
     self.messages_area.ScrollLines(-1)
     
-    font1 = wx.Font(14, wx.DECORATIVE, wx.ITALIC, wx.BOLD, 0, "")
+    font1 = wx.Font(14, wx.ROMAN, wx.ITALIC, wx.BOLD, 0, "")
     font2 = wx.Font(12, wx.ROMAN, wx.ITALIC, wx.BOLD, 1, "")
     word1 = "Benvenuto in Ne.Me.Sys Speedtest versione %s" % self._version 
     words = {word1:(wx.NullColor, wx.NullColor, font1), 'CHECK':('blue', wx.NullColor, font2), 'PLAY':('green', wx.NullColor, font2)}

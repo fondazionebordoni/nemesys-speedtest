@@ -587,8 +587,9 @@ class SysMonitor():
             raise sysmonitorexception.BADHOST
           else:
             logger.warning('Passaggio a PING per controllo host in rete')
-            return self._check_hosts(up, down, ispid, 0)
-              
+            self._check_hosts(up, down, ispid, 0)
+            return
+            
       else:
         hosts = 1
         value = (hosts - th_host)
