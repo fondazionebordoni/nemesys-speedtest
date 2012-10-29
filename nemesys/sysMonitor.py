@@ -736,8 +736,10 @@ class SysMonitor():
     if dev == None:
       dev = self._get_ActiveIp()
       
+    logger.debug("--------> %s" % dev)
     dev_info = pktman.getdev(dev)
     if (dev_info['err_flag'] != 0):
+      logger.debug("--------> %s" % dev_info)
       dev_info = None
     else:
       if (dev_info['type'] == 0):
@@ -751,12 +753,12 @@ class SysMonitor():
       elif (dev_info['type'] == 3):
         dev_info['type'] = 'External Modem'
     
-    if (dev_info.get('descr', 'none') == 'none'):
-      data = self._get_NetIF(True)
-      for device in data.findall('rete/NetworkDevice'):
-        if (device.find('Device').text == dev):
-          dev_info['type'] = device.find('Type').text
-          dev_info['descr'] = "%s (%s)" % (device.find('Name').text, device.find('Type').text)
+      if (dev_info.get('descr', 'none') == 'none'):
+        data = self._get_NetIF(True)
+        for device in data.findall('rete/NetworkDevice'):
+          if (device.find('Device').text == dev):
+            dev_info['type'] = device.find('Type').text
+            dev_info['descr'] = "%s (%s)" % (device.find('Name').text, device.find('Type').text)
     
     return dev_info
   
