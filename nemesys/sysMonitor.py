@@ -736,10 +736,8 @@ class SysMonitor():
     if dev == None:
       dev = self._get_ActiveIp()
       
-    logger.debug("--------> %s" % dev)
     dev_info = pktman.getdev(dev)
     if (dev_info['err_flag'] != 0):
-      logger.debug("--------> %s" % dev_info)
       dev_info = None
     else:
       if (dev_info['type'] == 0):
