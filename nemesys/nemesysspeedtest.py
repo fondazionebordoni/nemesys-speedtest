@@ -16,7 +16,7 @@ from os import path
 import paths
 import wx
 
-__version__ = '1.0.5'
+__version__ = '1.1.0'
 
 TOTAL_STEPS = 15
 
