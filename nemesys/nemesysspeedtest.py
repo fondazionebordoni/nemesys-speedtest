@@ -360,7 +360,7 @@ class NemesysSpeedtestGUI(wx.Frame):
         message = ("%s  %s" % (date, message))
       self.messages_area.AppendText(message)
       self.messages_area.SetInsertionPoint(last_pos+1)
-      words = {"%s" % date:(color,)}
+      words = {date:(color,)}
       self._set_style(message,words, last_pos)
       self.messages_area.ScrollLines(-1)
     self._stream_flag.clear()
