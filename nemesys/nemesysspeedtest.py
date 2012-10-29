@@ -386,7 +386,7 @@ class NemesysSpeedtestGUI(wx.Frame):
     font1 = wx.Font(14, wx.ROMAN, wx.ITALIC, wx.BOLD, 0, "")
     font2 = wx.Font(12, wx.ROMAN, wx.ITALIC, wx.BOLD, 1, "")
     word1 = "Benvenuto in Ne.Me.Sys Speedtest versione %s" % self._version 
-    words = {word1:(wx.NullColor, wx.NullColor, font1), 'CHECK':('blue', wx.NullColor, font2), 'PLAY':('green', wx.NullColor, font2)}
+    words = {word1:(wx.NullColour, wx.NullColour, font1), 'CHECK':('blue', wx.NullColour, font2), 'PLAY':('green', wx.NullColour, font2)}
     
     self._set_style(message, words)
     
