@@ -2,12 +2,12 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Ne.Me.Sys Speedtest"
-#define MyAppVersion "1.0.5"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "Fondazione Ugo Bordoni"
 #define MyAppURL "http://www.misurainternet.it/"
 #define MyAppExeName "NemesysSpeedtest"
 #define MyRoot "C:\[nemesys]"
-#define MyAppDir MyRoot + "\nemesys-speedtest\trunk"
+#define MyAppDir MyRoot + "\nemesys speedtest\trunk"
 
 ; Read the previuos build number. If there is none take 0 instead.
 #define BuildNum Int(ReadIni(SourcePath	+ "\\buildinfo.ini","Info","Build","1"))
