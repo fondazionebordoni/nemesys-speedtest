@@ -402,10 +402,10 @@ class SpeedTester(Thread):
             wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.time, 'green')
             wx.CallAfter(self._gui._update_ping, test.time)
           elif (type == DOWN):
-            wx.CallAfter(self._gui._update_messages, "Download bandwith %.2f kbps" % self._get_bandwith(test), 'green')
+            wx.CallAfter(self._gui._update_messages, "Download bandwith %.0f kbps" % self._get_bandwith(test), 'green')
             wx.CallAfter(self._gui._update_down, self._get_bandwith(test))
           elif (type == UP):
-            wx.CallAfter(self._gui._update_messages, "Upload bandwith %.2f kbps" % self._get_bandwith(test), 'green')
+            wx.CallAfter(self._gui._update_messages, "Upload bandwith %.0f kbps" % self._get_bandwith(test), 'green')
             wx.CallAfter(self._gui._update_up, self._get_bandwith(test))
           # else:
             # raise Exception("chiave USB mancante")

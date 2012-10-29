@@ -34,15 +34,6 @@ class NemesysSpeedtestGUI(wx.Frame):
     self._button_play = False
     self._button_check = False
     
-    self._message = \
-'''
-  Benvenuto in Ne.Me.Sys Speedtest versione %s
-
-  1) Premendo il tasto CHECK avvierai la profilazione della macchina per la misura.
-
-  2) Premendo il tasto PLAY avvierai una profilazione e il test di misura completo.
-''' % self._version
-
     # begin wxGlade: Frame.__init__
     wx.Frame.__init__(self, *args, **kwds)
 
@@ -75,7 +66,7 @@ class NemesysSpeedtestGUI(wx.Frame):
     self.label_rr_ping = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
     self.label_rr_down = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
     self.label_rr_up = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
-    self.messages_area = wx.TextCtrl(self, -1, "%s" % self._message, style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_WORDWRAP)
+    self.messages_area = wx.TextCtrl(self, -1, "", style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP)
     self.label_interface = wx.StaticText(self, -1, "Ne.Me.Sys. Speedtest Versione %s\nQui verranno visualizzati i risultati della misura" %self._version, style = wx.ALIGN_CENTRE)
     self.grid_sizer_1 = wx.FlexGridSizer(2, 7, 0, 0)
     self.grid_sizer_2 = wx.FlexGridSizer(2, 3, 0, 0)
@@ -122,8 +113,10 @@ class NemesysSpeedtestGUI(wx.Frame):
     self.label_rr_up.SetFont(wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD, 0, ""))
     self.label_interface.SetFont(wx.Font(12, wx.ROMAN, wx.ITALIC, wx.NORMAL, 0, ""))
     
-    self.messages_area.SetFont(wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, ""))
     self.messages_area.SetMinSize((710, 150))
+    self.messages_area_style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP
+    self.messages_area_font = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, "")
+    
     self.sizer_5.SetMinSize((450, 120))
     self.sizer_6.SetMinSize((730, 100))
     self.sizer_7.SetMinSize((730, 100))
@@ -187,10 +180,11 @@ class NemesysSpeedtestGUI(wx.Frame):
     self.sizer_1.Add(self.sizer_7, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
 
     self.SetSizer(self.sizer_1)
+    
     self.Layout()
+    
+    self._initial_message()
     # end wxGlade
-
-    #self._check(None)
 
   def _on_close(self, event):
     logger.info("Richiesta di close")
@@ -250,11 +244,11 @@ class NemesysSpeedtestGUI(wx.Frame):
     self.bitmap_button_check.Enable()
 
   def _update_down(self, downwidth):
-    self.label_rr_down.SetLabel("%.2f kbps" % downwidth)
+    self.label_rr_down.SetLabel("%.0f kbps" % downwidth)
     self.Layout()
 
   def _update_up(self, upwidth):
-    self.label_rr_up.SetLabel("%.2f kbps" % upwidth)
+    self.label_rr_up.SetLabel("%.0f kbps" % upwidth)
     self.Layout()
 
   def _update_ping(self, rtt):
@@ -353,16 +347,53 @@ class NemesysSpeedtestGUI(wx.Frame):
     while (len(self._stream) > 0):
       (message, color) = self._stream.popleft()
       date = datetime.today().strftime('%c')
-      start = self.messages_area.GetLastPosition()
-      end = start + len(date) + 1
-      if (start != 0):
-        txt = ("\n%s %s" % (date, message))
+      last_pos = self.messages_area.GetLastPosition()
+      if (last_pos != 0):
+        message = ("\n%s  %s" % (date, message))
       else:
-        txt = ("%s %s" % (date, message))
-      self.messages_area.AppendText(txt)
-      self.messages_area.ScrollLines(-1)
-      self.messages_area.SetStyle(start, end, wx.TextAttr(color))
+        self.messages_area.SetWindowStyleFlag(self.messages_area_style)
+        self.messages_area.SetFont(self.messages_area_font)
+        message = ("%s  %s" % (date, message))
+      self.messages_area.AppendText(message)
+      self.messages_area.SetInsertionPoint(last_pos+1)
+      words = {"\n%s" % date:(color,)}
+      self._set_style(message,words, last_pos)
+      #self.messages_area.ScrollLines(-1)
     self._stream_flag.clear()
+    
+  def _initial_message(self):
+
+    message = \
+'''
+  Benvenuto in Ne.Me.Sys Speedtest versione %s
+
+  Premendo il tasto CHECK avvierai la profilazione della macchina per la misura.
+
+  Premendo il tasto PLAY avvierai una profilazione e il test di misura completo.
+''' % self._version
+
+    self.messages_area.SetWindowStyleFlag(self.messages_area_style + wx.TE_CENTER)
+
+    self.messages_area.SetFont(wx.Font(12, wx.DECORATIVE, wx.NORMAL, wx.NORMAL, 0, ""))
+    
+    self.messages_area.AppendText(message)
+    self.messages_area.ScrollLines(-1)
+    
+    font1 = wx.Font(14, wx.DECORATIVE, wx.ITALIC, wx.BOLD, 0, "")
+    font2 = wx.Font(12, wx.ROMAN, wx.ITALIC, wx.BOLD, 1, "")
+    word1 = "Benvenuto in Ne.Me.Sys Speedtest versione %s" % self._version 
+    words = {word1:(wx.NullColor, wx.NullColor, font1), 'CHECK':('blue', wx.NullColor, font2), 'PLAY':('green', wx.NullColor, font2)}
+    
+    self._set_style(message, words)
+    
+    self.Layout()
+    
+  def _set_style(self, message, words, offset = 0):
+    for word in words:
+      start = message.find(word) + offset
+      end = start + len(word)
+      style = words[word]
+      self.messages_area.SetStyle(start, end, wx.TextAttr(*style))
       
       
 def sleeper():

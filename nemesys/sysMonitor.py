@@ -364,7 +364,7 @@ class SysMonitor():
             dev_info = self._getDevInfo(guid)
             if (dev_info != None):
               dev_type = dev_info['type']
-              if (dev_type == 0 or dev_type == 14):
+              if (dev_type == type) or (dev_type == 'Unknown'):
                 status = int(device.find('Status').text)
                 if (status == 7 and value != 1):
                   value = 0
@@ -430,7 +430,7 @@ class SysMonitor():
             dev_info = self._getDevInfo(guid)
             if (dev_info != None):
               dev_type = dev_info['type']
-              if (dev_type == 0 or dev_type == 25):
+              if (dev_type == type) or (dev_type == 'Unknown'):
                 status = int(device.find('Status').text)
                 if (status == 7 and value != 1):
                   value = 0
@@ -499,7 +499,7 @@ class SysMonitor():
             if (dev_info != None):
               dev_type = dev_info['type']
               dev_mask = dev_info['mask']
-              if (dev_type == 3 or dev_type == 17 or dev_mask == '255.255.255.255'):
+              if (dev_type == type or dev_type == 'WWAN' or dev_mask == '255.255.255.255'):
                 value = 1
                 info = 'Dispositivi HSPA attivi.'
                 raise sysmonitorexception.WARNHSPA
@@ -510,7 +510,7 @@ class SysMonitor():
             dev_info = self._getDevInfo(guid)
             if (dev_info != None):
               dev_type = dev_info['type']
-              if (dev_type == 0 or dev_type == 17):
+              if (dev_type == type) or (dev_type == 'Unknown'):
                 status = int(device.find('Status').text)
                 if (status == 7 and value != 1):
                   value = 0
@@ -732,21 +732,31 @@ class SysMonitor():
   
   def _getDevInfo(self, dev = None):
     
-    dev_info = None
-    
     if dev == None:
       dev = self._get_ActiveIp()
       
     dev_info = pktman.getdev(dev)
     if (dev_info['err_flag'] != 0):
       dev_info = None
+    else:
+      if (dev_info['type'] == 0):
+        dev_info['type'] = 'Unknown'
+      elif (dev_info['type'] == 14):
+        dev_info['type'] = 'Ethernet 802.3'
+      elif (dev_info['type'] == 25):
+        dev_info['type'] = 'Wireless'
+      elif (dev_info['type'] == 17):
+        dev_info['type'] = 'WWAN'
+      elif (dev_info['type'] == 3):
+        dev_info['type'] = 'External Modem'
+    
     if (dev_info.get('descr', 'none') == 'none'):
       data = self._get_NetIF(True)
       for device in data.findall('rete/NetworkDevice'):
         if (device.find('Device').text == dev):
-          dev_info['type'] = 'none'
+          dev_info['type'] = device.find('Type').text
           dev_info['descr'] = "%s (%s)" % (device.find('Name').text, device.find('Type').text)
-          
+    
     return dev_info
   
   
