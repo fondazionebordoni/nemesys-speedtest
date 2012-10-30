@@ -465,7 +465,7 @@
 					<key>IFInstallationScriptsPostinstall</key>
 					<dict>
 						<key>Path</key>
-						<string>postinstall</string>
+						<string></string>
 						<key>Path Type</key>
 						<integer>2</integer>
 						<key>Status</key>
@@ -474,7 +474,7 @@
 					<key>IFInstallationScriptsPostupgrade</key>
 					<dict>
 						<key>Path</key>
-						<string>postinstall</string>
+						<string></string>
 						<key>Path Type</key>
 						<integer>2</integer>
 						<key>Status</key>
