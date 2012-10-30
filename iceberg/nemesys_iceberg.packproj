@@ -78,7 +78,7 @@
 											<key>GID</key>
 											<integer>80</integer>
 											<key>Path</key>
-											<string>executer.app</string>
+											<string>Core.app</string>
 											<key>Path Type</key>
 											<integer>2</integer>
 											<key>Privileges</key>
@@ -94,23 +94,7 @@
 											<key>GID</key>
 											<integer>80</integer>
 											<key>Path</key>
-											<string>gui.app</string>
-											<key>Path Type</key>
-											<integer>2</integer>
-											<key>Privileges</key>
-											<integer>493</integer>
-											<key>Type</key>
-											<integer>3</integer>
-											<key>UID</key>
-											<integer>0</integer>
-										</dict>
-										<dict>
-											<key>Children</key>
-											<array/>
-											<key>GID</key>
-											<integer>80</integer>
-											<key>Path</key>
-											<string>license.app</string>
+											<string>Speedtest.app</string>
 											<key>Path Type</key>
 											<integer>2</integer>
 											<key>Privileges</key>
@@ -485,7 +469,7 @@
 						<key>Path Type</key>
 						<integer>2</integer>
 						<key>Status</key>
-						<true/>
+						<false/>
 					</dict>
 					<key>IFInstallationScriptsPostupgrade</key>
 					<dict>
@@ -494,7 +478,7 @@
 						<key>Path Type</key>
 						<integer>2</integer>
 						<key>Status</key>
-						<true/>
+						<false/>
 					</dict>
 					<key>IFInstallationScriptsPreflight</key>
 					<dict>
@@ -532,15 +516,15 @@
 						<key>IFPkgDescriptionDescription</key>
 						<string></string>
 						<key>IFPkgDescriptionTitle</key>
-						<string>Nemesys</string>
+						<string>Nemesys Speedtest</string>
 						<key>IFPkgDescriptionVersion</key>
-						<string>2.1.2</string>
+						<string>1.1.0</string>
 					</dict>
 				</dict>
 				<key>Display Information</key>
 				<dict>
 					<key>CFBundleGetInfoString</key>
-					<string>Nemesys 1.7.1 Copyrights © 2011 Fondazione Ugo Bordoni</string>
+					<string>Nemesys Speedtest 1.1.0 Copyrights © 2012 Fondazione Ugo Bordoni</string>
 					<key>CFBundleIconFile</key>
 					<string>nemesys_logo.icns</string>
 					<key>CFBundleIconFile Path Type</key>
@@ -550,7 +534,7 @@
 					<key>CFBundleName</key>
 					<string>Nemesys</string>
 					<key>CFBundleShortVersionString</key>
-					<string>2.1.2</string>
+					<string>1.1</string>
 				</dict>
 				<key>Options</key>
 				<dict>
@@ -567,7 +551,7 @@
 					<key>IFPkgFlagRelocatable</key>
 					<false/>
 					<key>IFPkgFlagRestartAction</key>
-					<integer>2</integer>
+					<integer>0</integer>
 					<key>IFPkgFlagRootVolumeOnly</key>
 					<false/>
 					<key>IFPkgFlagUpdateInstalledLanguages</key>
@@ -576,7 +560,7 @@
 				<key>Version</key>
 				<dict>
 					<key>IFMajorVersion</key>
-					<integer>2</integer>
+					<integer>1</integer>
 					<key>IFMinorVersion</key>
 					<integer>1</integer>
 				</dict>
@@ -585,7 +569,7 @@
 		<key>IFPkgFlagPackageSelection</key>
 		<integer>0</integer>
 		<key>Name</key>
-		<string>Nemesys</string>
+		<string>Nemesys Speedtest</string>
 		<key>Status</key>
 		<integer>1</integer>
 		<key>Type</key>
