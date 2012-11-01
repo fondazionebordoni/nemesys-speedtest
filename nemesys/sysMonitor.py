@@ -552,7 +552,8 @@ class SysMonitor():
     try:
       
       value = None
-        
+      call_ping = False
+      
       self._get_ip()
       ip = self._system[RES_IP][VALUE]
       self._getDev(ip)
@@ -587,7 +588,8 @@ class SysMonitor():
             raise sysmonitorexception.BADHOST
           else:
             logger.warning('Passaggio a PING per controllo host in rete')
-            self._check_hosts(up, down, ispid, 0)
+            call_ping = True
+            status = False
             return
             
       else:
@@ -606,6 +608,9 @@ class SysMonitor():
     finally:
       
       self._store(res, status, value, info)
+      
+      if call_ping:
+        self._check_hosts(up, down, ispid, 0)
   
   
   def _check_traffic(self, sec = 2, res = RES_TRAFFIC):
