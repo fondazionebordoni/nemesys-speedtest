@@ -244,7 +244,7 @@ class SpeedTester(Thread):
     return test_status
   
   
-  def _get_bandwith(self, test):
+  def _get_bandwidth(self, test):
 
     if test.time > 0:
       return float(test.bytes * 8 / test.time)
@@ -318,7 +318,7 @@ class SpeedTester(Thread):
             best_test = test
             
         else:
-          bandwidth = self._get_bandwith(test)
+          bandwidth = self._get_bandwidth(test)
           
           if type == DOWN:
             self._client.profile.download = min(bandwidth, 40000)
@@ -402,11 +402,11 @@ class SpeedTester(Thread):
             wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.time, 'green')
             wx.CallAfter(self._gui._update_ping, test.time)
           elif (type == DOWN):
-            wx.CallAfter(self._gui._update_messages, "Download bandwith %.0f kbps" % self._get_bandwith(test), 'green')
-            wx.CallAfter(self._gui._update_down, self._get_bandwith(test))
+            wx.CallAfter(self._gui._update_messages, "Download bandwidth %.0f kbps" % self._get_bandwidth(test), 'green')
+            wx.CallAfter(self._gui._update_down, self._get_bandwidth(test))
           elif (type == UP):
-            wx.CallAfter(self._gui._update_messages, "Upload bandwith %.0f kbps" % self._get_bandwith(test), 'green')
-            wx.CallAfter(self._gui._update_up, self._get_bandwith(test))
+            wx.CallAfter(self._gui._update_messages, "Upload bandwidth %.0f kbps" % self._get_bandwidth(test), 'green')
+            wx.CallAfter(self._gui._update_up, self._get_bandwidth(test))
           # else:
             # raise Exception("chiave USB mancante")
           #logger.debug("\n\n%s\n\n",str(measure))
