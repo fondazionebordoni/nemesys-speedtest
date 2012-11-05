@@ -184,20 +184,17 @@ procedure InitializeWizard;
 begin
 
   WarningPage := CreateOutputMsgPage(wpInfoBefore,
-    'Attenzione', 'Prima di continuare l''installazione...',
-    '...controlla che tutto sia in ordine per l''esecuzione delle misure:'#13#13
+    'Attenzione', 'Prima di continuare l''installazione....',
+    '....è consigliato controllare che sia tutto in ordine per ottenere un risultato il più possibile attendibile. In particolare:'#13#13
     '1. Hai connesso il PC al modem via cavo?'#13#13 +
-    '2. Hai chiuso tutte le applicazioni che accedono ad Internet? Per esempio:'#13 +
-    '   * browser per la navigazione Internet'#13 +
+    '2. Hai chiuso tutte le applicazioni che accedono ad Internet? Ad esempio:'#13 +
     '   * programmi per l''accesso alla posta elettronica'#13 +
-    '   * altri programmi come: Skype, MSN Messenger, Dropbox, ecc...'#13#13 +
+    '   * altri programmi come: Skype, MSN Messenger, Dropbox, etc....'#13#13 +
     '3. Hai spento tutti i dispositivi che accedono ad Internet? Ad esempio:'#13 +
-    '   * Console'#13 +
-    '   * Smart-TV'#13 +
-    '   * Smartphone'#13 +
-    '   * IPTV'#13 +
-    '   * VoIP'#13#13 +
-    'Controlla di aver verificato che tutte le condizioni siano rispettate, poi procedi pure con l''installazione.');
+    '   * Console        * Smart-TV        * Smartphone        * IPTV        * VoIP'#13#13 +
+    'L’interfaccia grafica di NeMeSys Speed Test ti aiuterà nel controllo delle impostazioni del PC e della rete domestica per minimizzare le interferenze con le misure.'#13#13
+    'Controlla di aver verificato che tutte le condizioni siano rispettate,'#13 +
+    'poi procedi pure con l''installazione.');
 
 end;
 

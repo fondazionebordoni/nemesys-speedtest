@@ -270,7 +270,7 @@ class Tester:
     test['time'] = 0
     test['errorcode'] = 0
     
-    self._timeout = float(8)
+    self._timeout = float(22)
     
     try:
       # Il risultato deve essere espresso in millisecondi
