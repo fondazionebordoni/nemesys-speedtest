@@ -155,7 +155,7 @@ def do_one(dest_addr, timeout):
   icmp = socket.getprotobyname('icmp')
   try:
     my_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, icmp)
-    my_socket.setblocking(True)
+    my_socket.settimeout(timeout)
   except socket.error, (errno, msg):
     if errno == 1:
 

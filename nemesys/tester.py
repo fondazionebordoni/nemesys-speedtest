@@ -60,8 +60,7 @@ class Tester:
     
     self._username = username
     self._password = password
-    self._timeout = float(timeout * 1000)
-    socket.setdefaulttimeout(self._timeout)
+    self._timeout = timeout
     
     
   def _ftp_down(self):
@@ -270,6 +269,8 @@ class Tester:
     test['type'] = 'ping'
     test['time'] = 0
     test['errorcode'] = 0
+    
+    self._timeout = float(8)
     
     try:
       # Il risultato deve essere espresso in millisecondi
