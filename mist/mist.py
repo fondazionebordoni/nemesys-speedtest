@@ -97,7 +97,9 @@ class mistGUI(wx.Frame):
     # begin wxGlade: Frame.__set_properties
     self.SetTitle(SWN)
     dimension = (750,480)
-    if (system().lower().startswith('dar')):
+    if (system().lower().startswith('win')):
+      dimension = (750,500)
+    elif (system().lower().startswith('dar')):
       dimension = (750,550)
     self.SetSize(dimension)
     self.bitmap_button_play.SetMinSize((120, 120))
