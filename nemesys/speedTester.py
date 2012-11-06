@@ -521,7 +521,7 @@ class SpeedTester(Thread):
               Un nuovo tentativo verra' effettuato:
               1) a seguito della prossima profilazione
               2) a seguito della prossima misura
-              3) al prossimo riavvio di NeMeSys Speedtest
+              3) al prossimo riavvio di Misura Internet Speed Test
               ''' % MAX_SEND_RETRY
               msgBox = wx.MessageDialog(None, message, title, wx.OK|wx.ICON_INFORMATION)
               msgBox.ShowModal()

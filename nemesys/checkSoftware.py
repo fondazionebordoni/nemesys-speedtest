@@ -76,11 +76,11 @@ class CheckSoftware():
           newVersion = \
           { \
           "style":wx.YES|wx.NO|wx.ICON_INFORMATION, \
-          "title":"Ne.Me.Sys. Speedtest %s" % self._thisVersion, \
+          "title":"Misura Internet Speed Test %s" % self._thisVersion, \
           "message": \
           '''
           E' disponibile una nuova versione:
-          Ne.Me.Sys Speedtest %s
+          Misura Internet Speed Test %s
 
           E' possibile effetuare il download dalla relativa sezione
           nell'area privata del sito www.misurainternet.it
@@ -120,10 +120,10 @@ class CheckSoftware():
           beforeDeadline = \
           { \
           "style":wx.OK|wx.ICON_EXCLAMATION, \
-          "title":"Ne.Me.Sys. Speedtest %s" % self._thisVersion, \
+          "title":"Misura Internet Speed Test %s" % self._thisVersion, \
           "message": \
           '''
-          Questa versione di Ne.Me.Sys. Speedtest
+          Questa versione di Misura Internet Speed Test
           potra' essere utilizzata ancora per %s giorni.
           ''' % self._stillDay
           }
@@ -135,10 +135,10 @@ class CheckSoftware():
           afterDeadline = \
           { \
           "style":wx.OK|wx.ICON_EXCLAMATION, \
-          "title":"Ne.Me.Sys. Speedtest %s" % self._thisVersion, \
+          "title":"Misura Internet Speed Test %s" % self._thisVersion, \
           "message": \
           '''
-          Questa versione di Ne.Me.Sys. Speedtest
+          Questa versione di Misura Internet Speed Test
           e' scaduta da %s giorni e pertanto
           non potra' piu' essere utilizzata.
           ''' % self._stillDay

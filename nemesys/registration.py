@@ -24,7 +24,7 @@ RegInfo = \
 '''
 Verra' ora richiesto il codice licenza per l'attivazione.\n
 Il codice licenza e' riportato nella propria area privata sul sito
-www.misurainternet.it nella sezione Ne.Me.Sys. Speedtest.\n
+www.misurainternet.it nella sezione Misura Internet Speed Test.\n
 Al momento dell'inserimento si prega di verificare
 la correttezza del codice licenza e di avere accesso alla rete.\n
 Dopo %s tentativi falliti, sara' necessario riavviare
@@ -35,14 +35,14 @@ il programma per procedere nuovamente all'inserimento.
 RegSuccess = \
 { \
 "style":wx.OK|wx.ICON_EXCLAMATION, \
-"title":"Ne.Me.Sys. Speedtest Success", \
+"title":"Misura Internet Speed Test Success", \
 "message":"\nCodice licenza corretto e verificato." \
 }
 
 ErrorCode = \
 { \
 "style":wx.OK|wx.ICON_ERROR, \
-"title":"Ne.Me.Sys. Speedtest Error", \
+"title":"Misura Internet Speed Test Error", \
 "message": \
 '''
 Il codice licenza inserito e' errato.\n
@@ -54,21 +54,21 @@ area personale del sito www.misurainternet.it
 ErrorSave = \
 { \
 "style":wx.OK|wx.ICON_ERROR, \
-"title":"Ne.Me.Sys. Speedtest Error", \
+"title":"Misura Internet Speed Test Error", \
 "message":"\nErrore nel salvataggio del file di configurazione." \
 }
 
 ErrorDownload = \
 { \
 "style":wx.OK|wx.ICON_ERROR, \
-"title":"Ne.Me.Sys. Speedtest Error", \
+"title":"Misura Internet Speed Test Error", \
 "message":"\nErrore nel download del file di configurazione\no codice licenza non corretto." \
 }
 
 ErrorRetry = \
 { \
 "style":wx.OK|wx.ICON_ERROR, \
-"title":"Ne.Me.Sys. Speedtest Error", \
+"title":"Misura Internet Speed Test Error", \
 "message": \
 '''
 Il download del file di configurazione e' fallito per %s volte.\n
@@ -80,8 +80,8 @@ del codice di licenza e di avere accesso alla rete.
 ErrorRegistration = \
 { \
 "style":wx.OK|wx.ICON_ERROR, \
-"title":"Ne.Me.Sys. Speedtest Registration Error", \
-"message": "\nQuesta copia di Ne.Me.Sys Speedtest non risulta correttamente registrata." \
+"title":"Misura Internet Speed Test Registration Error", \
+"message": "\nQuesta copia di Misura Internet Speed Test non risulta correttamente registrata." \
 }
 
 def showDialog(dialog):
@@ -124,7 +124,7 @@ def registration(code):
       ## Prendo un codice licenza valido sintatticamente  ##
       code = None
       logger.info('Tentativo di registrazione %s di %s' % (retry+1, MAXretry))
-      message = "\n    Inserire un codice licenza per Ne.Me.Sys. Speedtest:    "
+      message = "\n    Inserire un codice licenza per Misura Internet Speed Test:    "
       title = "Tentativo %s di %s" % (retry+1, MAXretry)
       default = "scrivere o incollare qui il codice licenza"
       dlg = wx.TextEntryDialog(None, message, title, default, wx.OK)

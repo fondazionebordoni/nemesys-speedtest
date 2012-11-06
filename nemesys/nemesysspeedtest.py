@@ -93,7 +93,7 @@ class NemesysSpeedtestGUI(wx.Frame):
 
   def __set_properties(self):
     # begin wxGlade: Frame.__set_properties
-    self.SetTitle("Ne.Me.Sys Speedtest")
+    self.SetTitle("Misura Internet Speed Test")
     dimension = (750,500)
     if (system().lower().startswith('dar')):
       dimension = (750,550)
@@ -192,7 +192,7 @@ class NemesysSpeedtestGUI(wx.Frame):
 
   def _on_close(self, event):
     logger.info("Richiesta di close")
-    dlg = wx.MessageDialog(self,"\nVuoi davvero chiudere Ne.Me.Sys. Speedtest?","Ne.Me.Sys. Speedtest", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
+    dlg = wx.MessageDialog(self,"\nVuoi davvero chiudere Misura Internet Speed Test?","Misura Internet Speed Test", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
     res = dlg.ShowModal()
     dlg.Destroy()
     if res == wx.ID_OK:
@@ -369,7 +369,7 @@ class NemesysSpeedtestGUI(wx.Frame):
 
     message = \
 '''
-  Benvenuto in Ne.Me.Sys Speedtest versione %s
+  Benvenuto in Misura Internet Speed Test versione %s
 
   Premendo il tasto CHECK avvierai la profilazione della macchina per la misura.
 
@@ -385,7 +385,7 @@ class NemesysSpeedtestGUI(wx.Frame):
     
     font1 = wx.Font(14, wx.ROMAN, wx.ITALIC, wx.BOLD, 0, "")
     font2 = wx.Font(12, wx.ROMAN, wx.ITALIC, wx.BOLD, 1, "")
-    word1 = "Benvenuto in Ne.Me.Sys Speedtest versione %s" % self._version 
+    word1 = "Benvenuto in Misura Internet Speed Test versione %s" % self._version 
     words = {word1:(wx.NullColour, wx.NullColour, font1), 'CHECK':('blue', wx.NullColour, font2), 'PLAY':('green', wx.NullColour, font2)}
     
     self._set_style(message, words)
@@ -411,7 +411,7 @@ if __name__ == "__main__":
 
   version = __version__
 
-  logger.info('Starting Ne.Me.Sys. Speedtest v.%s' % version)
+  logger.info('Starting Misura Internet Speed Test v.%s' % version)
   
   app = wx.PySimpleApp(0)
   
