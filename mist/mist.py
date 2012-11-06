@@ -46,7 +46,7 @@ class mistGUI(wx.Frame):
     self.sizer_3_staticbox = wx.StaticBox(self, -1, "Messaggi")
     self.bitmap_button_play = wx.BitmapButton(self, -1, wx.Bitmap(path.join(paths.ICONS, u"play.png"), wx.BITMAP_TYPE_ANY))
     self.bitmap_button_check = wx.BitmapButton(self, -1, wx.Bitmap(path.join(paths.ICONS, u"check.png"), wx.BITMAP_TYPE_ANY))
-    self.bitmap_5 = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"logo_nemesys.png"), wx.BITMAP_TYPE_ANY))
+    self.bitmap_5 = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"logo_misurainternet.png"), wx.BITMAP_TYPE_ANY))
     self.label_5 = wx.StaticText(self, -1, "Versione %s" % self._version, style = wx.ALIGN_CENTRE)
     self.label_6 = wx.StaticText(self, -1, "Speed Test", style = wx.ALIGN_CENTRE)
     self.bitmap_cpu = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"%s_gray.png" % RES_CPU.lower()), wx.BITMAP_TYPE_ANY))
@@ -100,7 +100,7 @@ class mistGUI(wx.Frame):
     self.SetSize(dimension)
     self.bitmap_button_play.SetMinSize((120, 120))
     self.bitmap_button_check.SetMinSize((40, 120))
-    self.bitmap_5.SetMinSize((95, 70))
+    self.bitmap_5.SetMinSize((75, 75))
     self.label_5.SetFont(wx.Font(10, wx.ROMAN, wx.ITALIC, wx.NORMAL, 0, ""))
     self.label_6.SetFont(wx.Font(14, wx.ROMAN, wx.ITALIC, wx.NORMAL, 0, ""))
     self.bitmap_cpu.SetMinSize((60, 60))
@@ -167,7 +167,7 @@ class mistGUI(wx.Frame):
     
     self.sizer_4.Add(self.bitmap_5, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
     self.sizer_4.Add(self.label_6, 0, wx.TOP | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
-    self.sizer_4.Add(self.label_5, 0, wx.LEFT | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL, 8)
+    self.sizer_4.Add(self.label_5, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
     
     self.sizer_2.Add(self.bitmap_button_play, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
     self.sizer_2.Add(self.bitmap_button_check, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
