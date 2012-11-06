@@ -25,8 +25,8 @@ TOTAL_STEPS = 15
 logger = logging.getLogger()
 
 LABEL_MESSAGE = \
-'''In quest'area verranno visualizzati i risultati della misura
-espressi attraverso i valori di ping, download e upload.'''
+'''In quest'area saranno riportati i risultati della misura
+espressi con i valori di ping, download e upload.'''
 
 class mistGUI(wx.Frame):
   def __init__(self, *args, **kwds):
