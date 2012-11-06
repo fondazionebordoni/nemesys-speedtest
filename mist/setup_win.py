@@ -24,7 +24,7 @@ class Target:
         self.version = __version__
         self.company_name = "Fondazione Ugo Bordoni"
         self.copyright = "(c)2011 Fondazione Ugo Bordoni"
-        self.name = "Nemesys Speedtest"
+        self.name = "Misura Internet Speed Test"
 
 setup(
   data_files=data_files,
@@ -34,10 +34,10 @@ setup(
       'optimize': 2,
 		}
 	},
-	name = 'NemesysSpeedtest',
+	name = 'mist',
 	version = __version__,
 	windows = [
-		{"script": "NemesysSpeedtest.py", 'uac_info': "requireAdministrator", "icon_resources": [(1, "..\\nemesys.ico")]},
+		{"script": "mist.py", 'uac_info': "requireAdministrator", "icon_resources": [(1, "..\\mist.ico")]},
 	],
-	#packages = ['nemesys'],
+	#packages = ['mist'],
 )

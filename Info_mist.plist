@@ -24,7 +24,7 @@
 	<key>CFBundleIconFile</key>
 	<string>nemesys.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>it.fub.nemesys.nemesysspeedtest</string>
+	<string>it.fub.mist</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>

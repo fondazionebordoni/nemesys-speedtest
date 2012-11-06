@@ -220,7 +220,7 @@ class SpeedTester(Thread):
       packet_ratio_inv = float(packet_all - packet_nem) / float(packet_all)
       value1 = "%.2f%%" % (traffic_ratio * 100)
       value2 = "%.2f%%" % (packet_ratio_inv * 100)
-      logger.info('Traffico NeMeSys: [ %d pacchetti di %d totali e %.1f Kbyte di %.1f totali ]' % (packet_nem,  packet_all, byte_nem / 1024.0, byte_all / 1024.0))
+      logger.info('Traffico MIST: [ %d pacchetti di %d totali e %.1f Kbyte di %.1f totali ]' % (packet_nem,  packet_all, byte_nem / 1024.0, byte_all / 1024.0))
       logger.info('Percentuale di traffico spurio: %.2f%% traffico e %.2f%% pacchetti' % (traffic_ratio * 100, packet_ratio_inv * 100))
       if (0 <= traffic_ratio <= TH_TRAFFIC) and (0 <= packet_ratio_inv <= TH_INVERTED):
         test_status = True

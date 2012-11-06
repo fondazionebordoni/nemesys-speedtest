@@ -27,12 +27,12 @@ else:
     #library_dirs = ['C:\Python27\libs', 'C:\winpcap-dev\Include'],
     sources = ['pktman.c'])
 
-setup (name = 'nemesys',
-   version = '2.1',
-   description = 'nemesys qos',
+setup (name = 'mist',
+   version = '1.1.0',
+   description = 'Misura Internet Speed Test',
    author = 'Domenico Izzo',
    author_email = 'dizzo@fub.it',
-   url = 'nemesys-qos.googlecode.com',
+   url = 'nemesys-speedtest.googlecode.com',
    long_description = '''NONE''',
    ext_modules = [module]
 )

@@ -7,12 +7,12 @@ Usage:
 
 from setuptools import setup
 
-APP = ['nemesys/nemesysspeedtest.py']
-DATA_FILES = ['nemesys/nemesysspeedtest.py']
+APP = ['mist/mist.py']
+DATA_FILES = ['mist/mist.py']
 OPTIONS = {'argv_emulation': True,
- 'plist': 'Info_nemesysspeedtest.plist',
+ 'plist': 'Info_mist.plist',
  'resources': 'icons',
- 'iconfile': 'nemesys.icns',
+ 'iconfile': 'mist.icns',
  'semi_standalone': False, 
 }
 
