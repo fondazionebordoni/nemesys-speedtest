@@ -13,6 +13,8 @@ import wx
 ## OPTIONAL ##
 # from usbkey import check_usb, move_on_key
 
+SWN = 'MisuraInternet Speed Test'
+
 logger = logging.getLogger()
 
 #Data di scadenza
@@ -52,7 +54,7 @@ class CheckSoftware():
     try:
       connection.request('GET', '%s?speedtest=true&version=%s' % (url.path, self._thisVersion))
       data = connection.getresponse().read()
-      #data = "1.0.6:8"    # FAKE REPLY #
+      #data = "1.1.1:8"    # FAKE REPLY #
       #logger.debug(data)
       
       if (re.search('(\.?\d+)+:',data) == None):
@@ -76,17 +78,17 @@ class CheckSoftware():
           newVersion = \
           { \
           "style":wx.YES|wx.NO|wx.ICON_INFORMATION, \
-          "title":"Misura Internet Speed Test %s" % self._thisVersion, \
+          "title":"%s %s" % (SWN, self._thisVersion), \
           "message": \
           '''
           E' disponibile una nuova versione:
-          Misura Internet Speed Test %s
+          %s %s
 
           E' possibile effetuare il download dalla relativa sezione
           nell'area privata del sito www.misurainternet.it
 
           Vuoi scaricare ora la nuova versione?
-          ''' % self._lastVersion
+          ''' % (SWN, self._lastVersion)
           }
           res = self._showDialog(newVersion)
           if res == wx.ID_YES:
@@ -120,12 +122,12 @@ class CheckSoftware():
           beforeDeadline = \
           { \
           "style":wx.OK|wx.ICON_EXCLAMATION, \
-          "title":"Misura Internet Speed Test %s" % self._thisVersion, \
+          "title":"%s %s" % (SWN, self._thisVersion), \
           "message": \
           '''
-          Questa versione di Misura Internet Speed Test
+          Questa versione di %s
           potra' essere utilizzata ancora per %s giorni.
-          ''' % self._stillDay
+          ''' % (SWN, self._stillDay)
           }
           res = self._showDialog(beforeDeadline)
         else:
@@ -135,13 +137,13 @@ class CheckSoftware():
           afterDeadline = \
           { \
           "style":wx.OK|wx.ICON_EXCLAMATION, \
-          "title":"Misura Internet Speed Test %s" % self._thisVersion, \
+          "title":"%s %s" % (SWN, self._thisVersion), \
           "message": \
           '''
-          Questa versione di Misura Internet Speed Test
+          Questa versione di %s
           e' scaduta da %s giorni e pertanto
           non potra' piu' essere utilizzata.
-          ''' % self._stillDay
+          ''' % (SWN, self._stillDay)
           }
           res = self._showDialog(afterDeadline)
       else:

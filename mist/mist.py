@@ -18,6 +18,8 @@ import wx
 
 __version__ = '1.1.0'
 
+SWN = 'MisuraInternet Speed Test'
+
 TOTAL_STEPS = 15
 
 logger = logging.getLogger()
@@ -47,8 +49,8 @@ class mistGUI(wx.Frame):
     self.bitmap_button_play = wx.BitmapButton(self, -1, wx.Bitmap(path.join(paths.ICONS, u"play.png"), wx.BITMAP_TYPE_ANY))
     self.bitmap_button_check = wx.BitmapButton(self, -1, wx.Bitmap(path.join(paths.ICONS, u"check.png"), wx.BITMAP_TYPE_ANY))
     self.bitmap_5 = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"logo_misurainternet.png"), wx.BITMAP_TYPE_ANY))
-    self.label_5 = wx.StaticText(self, -1, "Versione %s" % self._version, style = wx.ALIGN_CENTRE)
-    self.label_6 = wx.StaticText(self, -1, "Speed Test", style = wx.ALIGN_CENTRE)
+    self.label_5 = wx.StaticText(self, -1, "", style = wx.ALIGN_CENTRE)
+    self.label_6 = wx.StaticText(self, -1, "", style = wx.ALIGN_CENTRE)
     self.bitmap_cpu = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"%s_gray.png" % RES_CPU.lower()), wx.BITMAP_TYPE_ANY))
     self.bitmap_ram = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"%s_gray.png" % RES_RAM.lower()), wx.BITMAP_TYPE_ANY))
     self.bitmap_eth = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"%s_gray.png" % RES_ETH.lower()), wx.BITMAP_TYPE_ANY))
@@ -78,7 +80,7 @@ class mistGUI(wx.Frame):
     self.sizer_1 = wx.BoxSizer(wx.VERTICAL)
     self.sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
     self.sizer_3 = wx.BoxSizer(wx.VERTICAL)
-    self.sizer_4 = wx.BoxSizer(wx.VERTICAL)
+    #self.sizer_4 = wx.BoxSizer(wx.VERTICAL)
     self.sizer_5 = wx.StaticBoxSizer(self.sizer_1_staticbox, wx.VERTICAL)
     self.sizer_6 = wx.StaticBoxSizer(self.sizer_3_staticbox, wx.VERTICAL)
     self.sizer_7 = wx.StaticBoxSizer(self.sizer_2_staticbox, wx.VERTICAL)
@@ -93,16 +95,16 @@ class mistGUI(wx.Frame):
 
   def __set_properties(self):
     # begin wxGlade: Frame.__set_properties
-    self.SetTitle("Misura Internet Speed Test")
-    dimension = (750,500)
+    self.SetTitle(SWN)
+    dimension = (750,480)
     if (system().lower().startswith('dar')):
       dimension = (750,550)
     self.SetSize(dimension)
     self.bitmap_button_play.SetMinSize((120, 120))
     self.bitmap_button_check.SetMinSize((40, 120))
-    self.bitmap_5.SetMinSize((75, 75))
-    self.label_5.SetFont(wx.Font(10, wx.ROMAN, wx.ITALIC, wx.NORMAL, 0, ""))
-    self.label_6.SetFont(wx.Font(14, wx.ROMAN, wx.ITALIC, wx.NORMAL, 0, ""))
+    self.bitmap_5.SetMinSize((101, 111))
+    self.label_5.SetFont(wx.Font(11, wx.ROMAN, wx.ITALIC, wx.NORMAL, 0, ""))
+    self.label_6.SetFont(wx.Font(11, wx.ROMAN, wx.ITALIC, wx.NORMAL, 0, ""))
     self.bitmap_cpu.SetMinSize((60, 60))
     self.bitmap_ram.SetMinSize((60, 60))
     self.bitmap_wifi.SetMinSize((60, 60))
@@ -165,14 +167,14 @@ class mistGUI(wx.Frame):
     
     self.sizer_5.Add(self.sizer_3, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
     
-    self.sizer_4.Add(self.bitmap_5, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
-    self.sizer_4.Add(self.label_6, 0, wx.TOP | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
-    self.sizer_4.Add(self.label_5, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
+    #self.sizer_4.Add(self.bitmap_5, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
+    #self.sizer_4.Add(self.label_6, 0, wx.TOP | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
+    #self.sizer_4.Add(self.label_5, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
     
     self.sizer_2.Add(self.bitmap_button_play, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
     self.sizer_2.Add(self.bitmap_button_check, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
     self.sizer_2.Add(self.sizer_5, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
-    self.sizer_2.Add(self.sizer_4, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
+    self.sizer_2.Add(self.bitmap_5, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
     
     self.sizer_6.Add(self.messages_area, 0, wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
     
@@ -192,7 +194,7 @@ class mistGUI(wx.Frame):
 
   def _on_close(self, event):
     logger.info("Richiesta di close")
-    dlg = wx.MessageDialog(self,"\nVuoi davvero chiudere Misura Internet Speed Test?","Misura Internet Speed Test", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
+    dlg = wx.MessageDialog(self,"\nVuoi davvero chiudere %s?" % SWN, SWN, wx.OK|wx.CANCEL|wx.ICON_QUESTION)
     res = dlg.ShowModal()
     dlg.Destroy()
     if res == wx.ID_OK:
@@ -369,12 +371,12 @@ class mistGUI(wx.Frame):
 
     message = \
 '''
-  Benvenuto in Misura Internet Speed Test versione %s
+  Benvenuto in %s versione %s
 
   Premendo il tasto CHECK avvierai la profilazione della macchina per la misura.
 
   Premendo il tasto PLAY avvierai una profilazione e il test di misura completo.
-''' % self._version
+''' % (SWN, self._version)
 
     self.messages_area.SetWindowStyleFlag(self.messages_area_style + wx.TE_CENTER)
 
@@ -385,7 +387,7 @@ class mistGUI(wx.Frame):
     
     font1 = wx.Font(14, wx.ROMAN, wx.ITALIC, wx.BOLD, 0, "")
     font2 = wx.Font(12, wx.ROMAN, wx.ITALIC, wx.BOLD, 1, "")
-    word1 = "Benvenuto in Misura Internet Speed Test versione %s" % self._version 
+    word1 = "Benvenuto in %s versione %s" % (SWN, self._version) 
     words = {word1:(wx.NullColour, wx.NullColour, font1), 'CHECK':('blue', wx.NullColour, font2), 'PLAY':('green', wx.NullColour, font2)}
     
     self._set_style(message, words)
@@ -411,7 +413,7 @@ if __name__ == "__main__":
 
   version = __version__
 
-  logger.info('Starting Misura Internet Speed Test v.%s' % version)
+  logger.info('Starting %s v.%s' % (SWN, version)) 
   
   app = wx.PySimpleApp(0)
   

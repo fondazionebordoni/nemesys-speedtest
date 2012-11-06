@@ -23,8 +23,8 @@ class Target:
         # for the versioninfo resources
         self.version = __version__
         self.company_name = "Fondazione Ugo Bordoni"
-        self.copyright = "(c)2011 Fondazione Ugo Bordoni"
-        self.name = "Misura Internet Speed Test"
+        self.copyright = "(c)2012 Fondazione Ugo Bordoni"
+        self.name = "MisuraInternet Speed Test"
 
 setup(
   data_files=data_files,

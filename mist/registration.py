@@ -10,6 +10,8 @@ import paths
 import os
 import wx
 
+SWN = 'MisuraInternet Speed Test'
+
 logger = logging.getLogger()
 
 configurationServer = 'https://speedtest.agcom244.fub.it/Config'
@@ -25,25 +27,25 @@ RegInfo = \
 Verra' ora richiesto il codice licenza per l'attivazione.\n
 Il codice licenza e' riportato nella propria area privata
 sul sito www.misurainternet.it nella sezione riservata a
-Misura Internet Speed Test.\n
+%s.\n
 Al momento dell'inserimento si prega di verificare
 la correttezza del codice licenza e di avere accesso alla rete.\n
 Dopo %s tentativi falliti, sara' necessario riavviare
 il programma per procedere nuovamente all'inserimento.
-''' % MAXretry
+''' % (SWN, MAXretry)
 }
 
 RegSuccess = \
 { \
 "style":wx.OK|wx.ICON_EXCLAMATION, \
-"title":"Misura Internet Speed Test Success", \
+"title":"%s Success" % SWN, \
 "message":"\nCodice licenza corretto e verificato." \
 }
 
 ErrorCode = \
 { \
 "style":wx.OK|wx.ICON_ERROR, \
-"title":"Misura Internet Speed Test Error", \
+"title":"%s Error" % SWN, \
 "message": \
 '''
 Il codice licenza inserito e' errato.\n
@@ -55,21 +57,21 @@ area personale del sito www.misurainternet.it
 ErrorSave = \
 { \
 "style":wx.OK|wx.ICON_ERROR, \
-"title":"Misura Internet Speed Test Error", \
+"title":"%s Error" % SWN, \
 "message":"\nErrore nel salvataggio del file di configurazione." \
 }
 
 ErrorDownload = \
 { \
 "style":wx.OK|wx.ICON_ERROR, \
-"title":"Misura Internet Speed Test Error", \
+"title":"%s Error" % SWN, \
 "message":"\nErrore nel download del file di configurazione\no codice licenza non corretto." \
 }
 
 ErrorRetry = \
 { \
 "style":wx.OK|wx.ICON_ERROR, \
-"title":"Misura Internet Speed Test Error", \
+"title":"%s Error" % SWN, \
 "message": \
 '''
 Il download del file di configurazione e' fallito per %s volte.\n
@@ -81,8 +83,8 @@ del codice di licenza e di avere accesso alla rete.
 ErrorRegistration = \
 { \
 "style":wx.OK|wx.ICON_ERROR, \
-"title":"Misura Internet Speed Test Registration Error", \
-"message": "\nQuesta copia di Misura Internet Speed Test non risulta correttamente registrata." \
+"title":"%s Registration Error" % SWN, \
+"message": "\nQuesta copia di %s non risulta correttamente registrata." % SWN \
 }
 
 def showDialog(dialog):
@@ -125,7 +127,7 @@ def registration(code):
       ## Prendo un codice licenza valido sintatticamente  ##
       code = None
       logger.info('Tentativo di registrazione %s di %s' % (retry+1, MAXretry))
-      message = "\n    Inserire un codice licenza per Misura Internet Speed Test:    "
+      message = "\n    Inserire un codice licenza per %s:    " % SWN
       title = "Tentativo %s di %s" % (retry+1, MAXretry)
       default = "scrivere o incollare qui il codice licenza"
       dlg = wx.TextEntryDialog(None, message, title, default, wx.OK)

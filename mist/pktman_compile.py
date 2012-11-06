@@ -29,7 +29,7 @@ else:
 
 setup (name = 'mist',
    version = '1.1.0',
-   description = 'Misura Internet Speed Test',
+   description = 'MisuraInternet Speed Test',
    author = 'Domenico Izzo',
    author_email = 'dizzo@fub.it',
    url = 'nemesys-speedtest.googlecode.com',
