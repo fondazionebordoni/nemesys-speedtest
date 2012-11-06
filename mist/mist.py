@@ -26,7 +26,7 @@ LABEL_MESSAGE = \
 '''In quest'area verranno visualizzati i risultati della misura
 espressi attraverso i valori di ping, download e upload.'''
 
-class NemesysSpeedtestGUI(wx.Frame):
+class mistGUI(wx.Frame):
   def __init__(self, *args, **kwds):
     self._version = __version__
     
@@ -423,7 +423,7 @@ if __name__ == "__main__":
     if (system().lower().startswith('win')):
       wx.CallLater(200, sleeper)
     wx.InitAllImageHandlers()
-    GUI = NemesysSpeedtestGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
+    GUI = mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
     app.SetTopWindow(GUI)
     GUI.Show()
     app.MainLoop()
