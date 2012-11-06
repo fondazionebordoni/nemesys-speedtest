@@ -23,8 +23,9 @@ RegInfo = \
 "message": \
 '''
 Verra' ora richiesto il codice licenza per l'attivazione.\n
-Il codice licenza e' riportato nella propria area privata sul sito
-www.misurainternet.it nella sezione Misura Internet Speed Test.\n
+Il codice licenza e' riportato nella propria area privata
+sul sito www.misurainternet.it nella sezione riservata a
+Misura Internet Speed Test.\n
 Al momento dell'inserimento si prega di verificare
 la correttezza del codice licenza e di avere accesso alla rete.\n
 Dopo %s tentativi falliti, sara' necessario riavviare

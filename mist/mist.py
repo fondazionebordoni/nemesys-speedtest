@@ -48,7 +48,7 @@ class mistGUI(wx.Frame):
     self.bitmap_button_check = wx.BitmapButton(self, -1, wx.Bitmap(path.join(paths.ICONS, u"check.png"), wx.BITMAP_TYPE_ANY))
     self.bitmap_5 = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"logo_nemesys.png"), wx.BITMAP_TYPE_ANY))
     self.label_5 = wx.StaticText(self, -1, "Versione %s" % self._version, style = wx.ALIGN_CENTRE)
-    self.label_6 = wx.StaticText(self, -1, "Ne.Me.Sys.", style = wx.ALIGN_CENTRE)
+    self.label_6 = wx.StaticText(self, -1, "Speed Test", style = wx.ALIGN_CENTRE)
     self.bitmap_cpu = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"%s_gray.png" % RES_CPU.lower()), wx.BITMAP_TYPE_ANY))
     self.bitmap_ram = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"%s_gray.png" % RES_RAM.lower()), wx.BITMAP_TYPE_ANY))
     self.bitmap_eth = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"%s_gray.png" % RES_ETH.lower()), wx.BITMAP_TYPE_ANY))
