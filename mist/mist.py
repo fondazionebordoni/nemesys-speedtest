@@ -95,7 +95,7 @@ class mistGUI(wx.Frame):
 
   def __set_properties(self):
     # begin wxGlade: Frame.__set_properties
-    self.SetTitle(SWN)
+    self.SetTitle("%s - versione %s" % (SWN, self._version))
     dimension = (750,480)
     if (system().lower().startswith('win')):
       dimension = (750,500)
