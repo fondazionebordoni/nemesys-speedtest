@@ -17,7 +17,7 @@
 					<key>Mode</key>
 					<integer>1</integer>
 					<key>Path</key>
-					<string>nemesys_logo.jpg</string>
+					<string>mist_logo.jpg</string>
 					<key>Path Type</key>
 					<integer>2</integer>
 				</dict>
@@ -516,7 +516,7 @@
 						<key>IFPkgDescriptionDescription</key>
 						<string></string>
 						<key>IFPkgDescriptionTitle</key>
-						<string>Nemesys Speedtest</string>
+						<string>MisuraInternet Speed Test</string>
 						<key>IFPkgDescriptionVersion</key>
 						<string>1.1.0</string>
 					</dict>
@@ -524,7 +524,7 @@
 				<key>Display Information</key>
 				<dict>
 					<key>CFBundleGetInfoString</key>
-					<string>Nemesys Speedtest 1.1.0 Copyrights © 2012 Fondazione Ugo Bordoni</string>
+					<string>MisuraInternet Speed Test 1.1.0 Copyrights © 2012 Fondazione Ugo Bordoni</string>
 					<key>CFBundleIconFile</key>
 					<string>nemesys_logo.icns</string>
 					<key>CFBundleIconFile Path Type</key>
@@ -569,7 +569,7 @@
 		<key>IFPkgFlagPackageSelection</key>
 		<integer>0</integer>
 		<key>Name</key>
-		<string>Nemesys Speedtest</string>
+		<string>MisuraInternet Speed Test</string>
 		<key>Status</key>
 		<integer>1</integer>
 		<key>Type</key>
