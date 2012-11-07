@@ -423,7 +423,7 @@ class SpeedTester(Thread):
         
       except Exception as e:
         logger.warning('Misura sospesa per eccezione: %s.' % e)
-        wx.CallAfter(self._gui._update_messages, 'Misura sospesa per errore: %s.' % e, 'red')
+        wx.CallAfter(self._gui._update_messages, 'Misura sospesa per errore: %s' % e, 'red')
         
     self._profiler.stop()
     wx.CallAfter(self._gui.stop)
