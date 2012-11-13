@@ -186,7 +186,7 @@ class mistGUI(wx.Frame):
     
     extra=0
     if (system().lower().startswith('win')):
-      extra = 10
+      extra = 20
     elif (system().lower().startswith('dar')):
       extra = 60
       
