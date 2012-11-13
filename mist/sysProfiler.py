@@ -130,7 +130,7 @@ class sysProfiler(Thread):
         elif (dev_type == 'WWAN') or (dev_type == 'External Modem'):
           dev_descr = "rete mobile su dispositivo hspa"
           
-        wx.CallAfter(self._gui._update_interface, dev_descr, ip)
+        wx.CallAfter(self._gui._update_interface, "Interfaccia di test: %s\nIndirizzo IP di rete: %s" % (dev_descr,ip))
         
         dev_descr = dev_info['descr'] 
         

@@ -26,7 +26,7 @@ logger = logging.getLogger()
 
 LABEL_MESSAGE = \
 '''In quest'area saranno riportati i risultati della misura
-espressi con i valori di ping, download e upload.'''
+espressi attraverso i valori di ping, download e upload.'''
 
 class mistGUI(wx.Frame):
   def __init__(self, *args, **kwds):
@@ -42,15 +42,15 @@ class mistGUI(wx.Frame):
     
     # begin wxGlade: Frame.__init__
     wx.Frame.__init__(self, *args, **kwds)
-
+    
+    self.SetIcon(wx.Icon(path.join(paths._APP_PATH, u"mist.ico"), wx.BITMAP_TYPE_ICO))
+    
     self.sizer_1_staticbox = wx.StaticBox(self, -1, "Risultati")
     self.sizer_2_staticbox = wx.StaticBox(self, -1, "Indicatori di stato del sistema")
     self.sizer_3_staticbox = wx.StaticBox(self, -1, "Messaggi")
     self.bitmap_button_play = wx.BitmapButton(self, -1, wx.Bitmap(path.join(paths.ICONS, u"play.png"), wx.BITMAP_TYPE_ANY))
     self.bitmap_button_check = wx.BitmapButton(self, -1, wx.Bitmap(path.join(paths.ICONS, u"check.png"), wx.BITMAP_TYPE_ANY))
     self.bitmap_5 = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"logo_misurainternet.png"), wx.BITMAP_TYPE_ANY))
-    self.label_5 = wx.StaticText(self, -1, "", style = wx.ALIGN_CENTRE)
-    self.label_6 = wx.StaticText(self, -1, "", style = wx.ALIGN_CENTRE)
     self.bitmap_cpu = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"%s_gray.png" % RES_CPU.lower()), wx.BITMAP_TYPE_ANY))
     self.bitmap_ram = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"%s_gray.png" % RES_RAM.lower()), wx.BITMAP_TYPE_ANY))
     self.bitmap_eth = wx.StaticBitmap(self, -1, wx.Bitmap(path.join(paths.ICONS, u"%s_gray.png" % RES_ETH.lower()), wx.BITMAP_TYPE_ANY))
@@ -72,7 +72,7 @@ class mistGUI(wx.Frame):
     self.label_rr_ping = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
     self.label_rr_down = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
     self.label_rr_up = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
-    self.messages_area = wx.TextCtrl(self, -1, "", style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP)
+    self.messages_area = wx.TextCtrl(self, -1, "", style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP | wx.BORDER_NONE)
     self.label_interface = wx.StaticText(self, -1, LABEL_MESSAGE, style = wx.ALIGN_CENTRE)
     self.grid_sizer_1 = wx.FlexGridSizer(2, 7, 0, 0)
     self.grid_sizer_2 = wx.FlexGridSizer(2, 3, 0, 0)
@@ -80,14 +80,14 @@ class mistGUI(wx.Frame):
     self.sizer_1 = wx.BoxSizer(wx.VERTICAL)
     self.sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
     self.sizer_3 = wx.BoxSizer(wx.VERTICAL)
-    #self.sizer_4 = wx.BoxSizer(wx.VERTICAL)
     self.sizer_5 = wx.StaticBoxSizer(self.sizer_1_staticbox, wx.VERTICAL)
     self.sizer_6 = wx.StaticBoxSizer(self.sizer_3_staticbox, wx.VERTICAL)
     self.sizer_7 = wx.StaticBoxSizer(self.sizer_2_staticbox, wx.VERTICAL)
     
     self.__set_properties()
     self.__do_layout()
-
+    
+    self.Bind(wx.EVT_SIZE, self._on_size)
     self.Bind(wx.EVT_CLOSE, self._on_close)
     self.Bind(wx.EVT_BUTTON, self._play, self.bitmap_button_play)
     self.Bind(wx.EVT_BUTTON, self._check, self.bitmap_button_check)
@@ -96,53 +96,53 @@ class mistGUI(wx.Frame):
   def __set_properties(self):
     # begin wxGlade: Frame.__set_properties
     self.SetTitle("%s - versione %s" % (SWN, self._version))
-    dimension = (750,480)
-    if (system().lower().startswith('win')):
-      dimension = (750,500)
-    elif (system().lower().startswith('dar')):
-      dimension = (750,550)
-    self.SetSize(dimension)
+#    dimension = (800,500)
+#    if (system().lower().startswith('win')):
+#      dimension = (800,500)
+#    elif (system().lower().startswith('dar')):
+#      dimension = (800,550)
+#    self.SetSize(dimension)
+    
+    self.messages_area_style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP | wx.BORDER_NONE
+    
     self.bitmap_button_play.SetMinSize((120, 120))
     self.bitmap_button_check.SetMinSize((40, 120))
     self.bitmap_5.SetMinSize((101, 111))
-    self.label_5.SetFont(wx.Font(11, wx.ROMAN, wx.ITALIC, wx.NORMAL, 0, ""))
-    self.label_6.SetFont(wx.Font(11, wx.ROMAN, wx.ITALIC, wx.NORMAL, 0, ""))
     self.bitmap_cpu.SetMinSize((60, 60))
     self.bitmap_ram.SetMinSize((60, 60))
     self.bitmap_wifi.SetMinSize((60, 60))
     self.bitmap_hosts.SetMinSize((60, 60))
     self.bitmap_traffic.SetMinSize((60, 60))
-    self.gauge_1.SetMinSize((730, 22))
-    self.label_r_1.SetFont(wx.Font(12, wx.ROMAN, wx.ITALIC, wx.BOLD, 0, ""))
-    self.label_r_2.SetFont(wx.Font(12, wx.ROMAN, wx.ITALIC, wx.BOLD, 0, ""))
-    self.label_r_3.SetFont(wx.Font(12, wx.ROMAN, wx.ITALIC, wx.BOLD, 0, ""))
-    self.label_rr_ping.SetFont(wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD, 0, ""))
-    self.label_rr_down.SetFont(wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD, 0, ""))
-    self.label_rr_up.SetFont(wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD, 0, ""))
-    self.label_interface.SetFont(wx.Font(12, wx.ROMAN, wx.ITALIC, wx.NORMAL, 0, ""))
     
-    self.messages_area.SetMinSize((710, 150))
-    self.messages_area_style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP
-    self.messages_area_font = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, "")
+    self._font_1 = wx.Font(12, wx.ROMAN, wx.ITALIC, wx.NORMAL, 0, "")
+    self._font_2 = wx.Font(12, wx.ROMAN, wx.ITALIC, wx.BOLD, 0, "")
+    self._font_3 = wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD, 0, "")
     
-    self.sizer_5.SetMinSize((450, 120))
-    self.sizer_6.SetMinSize((730, 100))
-    self.sizer_7.SetMinSize((730, 100))
-
+    self.label_interface.SetFont(self._font_1)
+    self.label_r_1.SetFont(self._font_2)
+    self.label_r_2.SetFont(self._font_2)
+    self.label_r_3.SetFont(self._font_2)
+    self.label_rr_ping.SetFont(self._font_3)
+    self.label_rr_down.SetFont(self._font_3)
+    self.label_rr_up.SetFont(self._font_3)
+    
+    
     #self.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+    self.messages_area.SetBackgroundColour(wx.Colour(242, 242, 242))
     self.SetBackgroundColour(wx.Colour(242, 242, 242))
-
+    
     # end wxGlade
 
   def __do_layout(self):
-    # begin wxGlade: Frame.__do_layout   
-    self.grid_sizer_1.Add(self.bitmap_cpu, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 20)
-    self.grid_sizer_1.Add(self.bitmap_ram, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 20)
-    self.grid_sizer_1.Add(self.bitmap_eth, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 20)
-    self.grid_sizer_1.Add(self.bitmap_wifi, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 20)
-    self.grid_sizer_1.Add(self.bitmap_hspa, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 20)
-    self.grid_sizer_1.Add(self.bitmap_hosts, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 20)
-    self.grid_sizer_1.Add(self.bitmap_traffic, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 20)
+    # begin wxGlade: Frame.__do_layout
+    
+    self.grid_sizer_1.Add(self.bitmap_cpu, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+    self.grid_sizer_1.Add(self.bitmap_ram, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+    self.grid_sizer_1.Add(self.bitmap_eth, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+    self.grid_sizer_1.Add(self.bitmap_wifi, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+    self.grid_sizer_1.Add(self.bitmap_hspa, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+    self.grid_sizer_1.Add(self.bitmap_hosts, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+    self.grid_sizer_1.Add(self.bitmap_traffic, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
     
     self.grid_sizer_1.Add(self.label_cpu, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
     self.grid_sizer_1.Add(self.label_ram, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
@@ -152,26 +152,20 @@ class mistGUI(wx.Frame):
     self.grid_sizer_1.Add(self.label_hosts, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
     self.grid_sizer_1.Add(self.label_traffic, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
     
-    self.grid_sizer_2.Add(self.label_r_1, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 40)
-    self.grid_sizer_2.Add(self.label_r_2, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 40)
-    self.grid_sizer_2.Add(self.label_r_3, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 40)
+    self.grid_sizer_2.Add(self.label_r_1, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
+    self.grid_sizer_2.Add(self.label_r_2, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
+    self.grid_sizer_2.Add(self.label_r_3, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
     
     self.grid_sizer_2.Add(self.label_rr_ping, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
     self.grid_sizer_2.Add(self.label_rr_down, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
     self.grid_sizer_2.Add(self.label_rr_up, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
     
-    self.sizer_3.Add(self.grid_sizer_2, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
-    self.sizer_3.Add(self.label_interface, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
-    #self.sizer_3.Add(self.label_alert_area, 0, wx.TOP | wx.DOWN | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
-    #self.sizer_3.Add(self.grid_sizer_1, 0, wx.DOWN | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
-    #self.sizer_3.Add(wx.StaticLine(self, -1), 0, wx.ALL | wx.EXPAND, 0)
+    self.sizer_3.Add(self.grid_sizer_2, 0, wx.ALL | wx.EXPAND, 0)
+    self.sizer_3.Add(wx.StaticLine(self, -1), 0, wx.ALL | wx.EXPAND, 4)
+    self.sizer_3.Add(self.label_interface, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
     #self.sizer_5.Add(wx.StaticLine(self, -1, style = wx.LI_VERTICAL), 0, wx.RIGHT | wx.EXPAND, 4)
     
     self.sizer_5.Add(self.sizer_3, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
-    
-    #self.sizer_4.Add(self.bitmap_5, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
-    #self.sizer_4.Add(self.label_6, 0, wx.TOP | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
-    #self.sizer_4.Add(self.label_5, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
     
     self.sizer_2.Add(self.bitmap_button_play, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
     self.sizer_2.Add(self.bitmap_button_check, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
@@ -179,7 +173,6 @@ class mistGUI(wx.Frame):
     self.sizer_2.Add(self.bitmap_5, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
     
     self.sizer_6.Add(self.messages_area, 0, wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
-    
     self.sizer_7.Add(self.grid_sizer_1, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
 
     self.sizer_1.Add(self.sizer_2, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
@@ -188,12 +181,27 @@ class mistGUI(wx.Frame):
     self.sizer_1.Add(self.sizer_7, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
 
     self.SetSizer(self.sizer_1)
-    
-    self.Layout()
+    self.SetSizeHints(800, 460)
     
     self._initial_message()
     # end wxGlade
-
+    
+  def _on_size(self, event):
+    
+    (X, Y) = self.GetPosition()
+    (W, H) = self.GetSize()
+    
+    self.sizer_1.SetMinSize((W, H))
+    self.sizer_5.SetMinSize((W-300, 120))
+    self.gauge_1.SetMinSize((W-20, 20))
+    self.sizer_6.SetMinSize((W-20, H-320))
+    self.sizer_7.SetMinSize((W-20, 120))
+    
+    self.messages_area.SetMinSize((W-40, H-330))
+    
+    self.Refresh()
+    self.Layout()
+  
   def _on_close(self, event):
     logger.info("Richiesta di close")
     dlg = wx.MessageDialog(self,"\nVuoi davvero chiudere %s?" % SWN, SWN, wx.OK|wx.CANCEL|wx.ICON_QUESTION)
@@ -213,7 +221,9 @@ class mistGUI(wx.Frame):
 
     self._killTester()
     self._enable_button()
-    self._update_messages("Sistema pronto per una nuova misura")
+    self._update_messages("Misura terminata", 'medium forest green', font = (14, 93, 92, 1), fill = True, separator = True)
+    self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura", font = (12, 93, 92, 0))
+    self._update_messages("Sistema pronto per una nuova misura", 'black', font = (12, 90, 92, 0), fill = True)
     self.update_gauge(TOTAL_STEPS)
 
   def _killTester(self):
@@ -231,7 +241,7 @@ class mistGUI(wx.Frame):
     self.bitmap_button_play.Disable()
     self.bitmap_button_check.Disable()
     self._reset_info()
-    self._update_messages("Profilazione dello stato del sistema di misura.")
+    self._update_messages("Profilazione dello stato del sistema di misura", 'black', font = (14, 93, 92, 1), separator = True)
     self._profiler = sysProfiler(self)
     self._profiler.start()
 
@@ -244,7 +254,8 @@ class mistGUI(wx.Frame):
     else:
       # move_on_key()
       self._button_check = False
-      self._update_messages("Profilazione terminata")
+      self._update_messages("Profilazione terminata", 'medium forest green', font = (14, 93, 92, 1), fill = True, separator = True)
+      self._update_interface(">> PROFILAZIONE TERMINATA <<\nPremere PLAY per effettuare la misura", font = (12, 93, 92, 0))
       self._enable_button()
 
   def _enable_button(self):
@@ -263,8 +274,11 @@ class mistGUI(wx.Frame):
     self.label_rr_ping.SetLabel("%.1f ms" % rtt)
     self.Layout()
 
-  def _update_interface(self, interface, ip):
-    self.label_interface.SetLabel("Interfaccia di test: %s\nIndirizzo IP di rete: %s" % (interface,ip))
+  def _update_interface(self, message, font = (12, 93, 90, 0)):
+    (size, italic, bold, underline) = font
+    font = wx.Font(size, wx.ROMAN, italic, bold, underline, "")
+    self.label_interface.SetFont(font)
+    self.label_interface.SetLabel(message)
     self.Layout()
   
   def _reset_info(self):
@@ -292,11 +306,11 @@ class mistGUI(wx.Frame):
     res_label = None
 
     if info['status'] == None:
-      color = 'gray'
+      colour = 'gray'
     elif info['status'] == True:
-      color = 'green'
+      colour = 'green'
     else:
-      color = 'red'
+      colour = 'red'
 
     if resource == RES_CPU:
       res_bitmap = self.bitmap_cpu
@@ -321,7 +335,7 @@ class mistGUI(wx.Frame):
       res_label = self.label_traffic
 
     if (res_bitmap != None):
-      res_bitmap.SetBitmap(wx.Bitmap(path.join(paths.ICONS, u"%s_%s.png" % (resource.lower(), color))))
+      res_bitmap.SetBitmap(wx.Bitmap(path.join(paths.ICONS, u"%s_%s.png" % (resource.lower(), colour))))
 
     if (res_label != None):
       if (info['value'] != None):
@@ -336,13 +350,13 @@ class mistGUI(wx.Frame):
         res_label.SetLabel("%s\n- - - -" % resource)
 
     if (message_flag) and (info['info'] != None):
-      self._update_messages(info['info'], color)
+      self._update_messages(info['info'], colour)
 
     self.Layout()
 
-  def _update_messages(self, message, color = 'black'):
+  def _update_messages(self, message, colour = 'black', font = None, fill = False, separator = False):
     logger.info('Messagio all\'utente: "%s"' % message)
-    self._stream.append((message, color))
+    self._stream.append((str(message), colour, font, fill, separator))
     if (not self._stream_flag.isSet()):
 #      if (system().lower().startswith('win')):
 #        writer = Thread(target = self._writer)
@@ -353,31 +367,67 @@ class mistGUI(wx.Frame):
   def _writer(self):
     self._stream_flag.set()
     while (len(self._stream) > 0):
-      (message, color) = self._stream.popleft()
+      (message, colour, font, fill, separator) = self._stream.popleft()
       date = datetime.today().strftime('%c')
+      
+      self.messages_area.SetWindowStyleFlag(self.messages_area_style)
+      self.messages_area.SetFont(wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, ""))
+      
+      font1 = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, "")
+      
+      if separator:
+        last_pos = self.messages_area.GetLastPosition()
+        msg = "    "+"-"*len(date)+"\n"
+        self.messages_area.AppendText(msg)
+        words = {msg:('black', wx.NullColour, font1),}
+        self._set_style(msg, words, last_pos)
+      
       last_pos = self.messages_area.GetLastPosition()
-      if (last_pos != 0):
-        message = ("\n%s  %s" % (date, message))
+      msg = (date + "  ")
+      self.messages_area.AppendText(msg)
+      #self.messages_area.SetInsertionPoint(last_pos+1)
+      words = {date + "  ":(colour, wx.NullColour, font1),}
+      self._set_style(msg, words, last_pos)
+      
+      last_pos = self.messages_area.GetLastPosition()
+      msg = (message+"\n")
+      self.messages_area.AppendText(msg)
+      #self.messages_area.SetInsertionPoint(last_pos+1)
+      
+      if fill:
+        msgcolour = colour
       else:
-        self.messages_area.SetWindowStyleFlag(self.messages_area_style)
-        self.messages_area.SetFont(self.messages_area_font)
-        message = ("%s  %s" % (date, message))
-      self.messages_area.AppendText(message)
-      self.messages_area.SetInsertionPoint(last_pos+1)
-      words = {date:(color,)}
-      self._set_style(message,words, last_pos)
-      self.messages_area.ScrollLines(-1)
+        msgcolour = wx.NullColour
+      
+      if font != None:
+        (size, italic, bold, underline) = font
+        font2 = wx.Font(size, wx.SWISS, italic, bold, underline, "")
+        words = {message:(msgcolour, wx.NullColour, font2)}
+      else: 
+        font1 = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, "")
+        words = {message:(msgcolour, wx.NullColour, font1)}
+      
+      self._set_style(msg, words, last_pos)
+        
+      if separator:
+        last_pos = self.messages_area.GetLastPosition()
+        msg = "    "+"-"*len(date) + "\n"
+        self.messages_area.AppendText(msg)
+        words = {msg:('black', wx.NullColour, font1),}
+        self._set_style(msg, words, last_pos)
+        
+      #self.messages_area.ScrollLines(-2)
     self._stream_flag.clear()
     
   def _initial_message(self):
 
     message = \
 '''
-  Benvenuto in %s versione %s
+Benvenuto in %s versione %s
 
-  Premendo il tasto CHECK avvierai la profilazione della macchina per la misura.
+Premendo il tasto CHECK avvierai la profilazione della macchina per la misura.
 
-  Premendo il tasto PLAY avvierai una profilazione e il test di misura completo.
+Premendo il tasto PLAY avvierai una profilazione e il test di misura completo.
 ''' % (SWN, self._version)
 
     self.messages_area.SetWindowStyleFlag(self.messages_area_style + wx.TE_CENTER)
@@ -427,7 +477,7 @@ if __name__ == "__main__":
     if (system().lower().startswith('win')):
       wx.CallLater(200, sleeper)
     wx.InitAllImageHandlers()
-    GUI = mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
+    GUI = mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE) #& ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
     app.SetTopWindow(GUI)
     GUI.Show()
     app.MainLoop()
