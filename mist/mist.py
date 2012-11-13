@@ -96,12 +96,7 @@ class mistGUI(wx.Frame):
   def __set_properties(self):
     # begin wxGlade: Frame.__set_properties
     self.SetTitle("%s - versione %s" % (SWN, self._version))
-#    dimension = (800,500)
-#    if (system().lower().startswith('win')):
-#      dimension = (800,500)
-#    elif (system().lower().startswith('dar')):
-#      dimension = (800,550)
-#    self.SetSize(dimension)
+    self.SetSize((800,460))
     
     self.messages_area_style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP | wx.BORDER_NONE
     
@@ -125,7 +120,6 @@ class mistGUI(wx.Frame):
     self.label_rr_ping.SetFont(self._font_3)
     self.label_rr_down.SetFont(self._font_3)
     self.label_rr_up.SetFont(self._font_3)
-    
     
     #self.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
     self.messages_area.SetBackgroundColour(wx.Colour(242, 242, 242))
@@ -197,7 +191,7 @@ class mistGUI(wx.Frame):
     self.sizer_6.SetMinSize((W-20, H-320))
     self.sizer_7.SetMinSize((W-20, 120))
     
-    self.messages_area.SetMinSize((W-40, H-330))
+    self.messages_area.SetMinSize((W-40, H-350))
     
     self.Refresh()
     self.Layout()
@@ -367,6 +361,8 @@ class mistGUI(wx.Frame):
   def _writer(self):
     self._stream_flag.set()
     while (len(self._stream) > 0):
+      words = {}
+      
       (message, colour, font, fill, separator) = self._stream.popleft()
       date = datetime.today().strftime('%c')
       
@@ -375,60 +371,56 @@ class mistGUI(wx.Frame):
       
       font1 = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, "")
       
-      if separator:
-        last_pos = self.messages_area.GetLastPosition()
-        msg = "    "+"-"*len(date)+"\n"
-        self.messages_area.AppendText(msg)
-        words = {msg:('black', wx.NullColour, font1),}
-        self._set_style(msg, words, last_pos)
-      
       last_pos = self.messages_area.GetLastPosition()
-      msg = (date + "  ")
-      self.messages_area.AppendText(msg)
-      #self.messages_area.SetInsertionPoint(last_pos+1)
-      words = {date + "  ":(colour, wx.NullColour, font1),}
-      self._set_style(msg, words, last_pos)
-      
-      last_pos = self.messages_area.GetLastPosition()
-      msg = (message+"\n")
-      self.messages_area.AppendText(msg)
-      #self.messages_area.SetInsertionPoint(last_pos+1)
-      
-      if fill:
-        msgcolour = colour
+      if (last_pos != 0):
+        text = "\n"
       else:
-        msgcolour = wx.NullColour
+        text = ""
+      
+      if separator:
+        sep = "    " + "-" * 22
+        text = text+sep+"\n"
+        words[sep] = ('black', wx.NullColour, font1)
+      
+      date = date + "  "
+      text = text + date
+      words[date] = (colour, wx.NullColour, font1)
+      
+      text = text + message
+            
+      if fill:
+        textcolour = colour
+      else:
+        textcolour = 'black'
       
       if font != None:
         (size, italic, bold, underline) = font
-        font2 = wx.Font(size, wx.SWISS, italic, bold, underline, "")
-        words = {message:(msgcolour, wx.NullColour, font2)}
-      else: 
-        font1 = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, "")
-        words = {message:(msgcolour, wx.NullColour, font1)}
+        font = wx.Font(size, wx.SWISS, italic, bold, underline, "")
+      else:
+        font = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, "")
       
-      self._set_style(msg, words, last_pos)
+      words[message] = (textcolour, wx.NullColour, font)
         
       if separator:
-        last_pos = self.messages_area.GetLastPosition()
-        msg = "    "+"-"*len(date) + "\n"
-        self.messages_area.AppendText(msg)
-        words = {msg:('black', wx.NullColour, font1),}
-        self._set_style(msg, words, last_pos)
+        sep = "    " + "-" * 22
+        text = text+"\n"+sep
+        words[sep] = ('black', wx.NullColour, font1)
+
+      self.messages_area.AppendText(text)
+      self.messages_area.SetInsertionPoint(last_pos+1)
+      self._set_style(text, words, last_pos)
         
-      #self.messages_area.ScrollLines(-2)
+      self.messages_area.ScrollLines(-1)
     self._stream_flag.clear()
     
   def _initial_message(self):
 
     message = \
-'''
-Benvenuto in %s versione %s
+'''Benvenuto in %s versione %s
 
 Premendo il tasto CHECK avvierai la profilazione della macchina per la misura.
 
-Premendo il tasto PLAY avvierai una profilazione e il test di misura completo.
-''' % (SWN, self._version)
+Premendo il tasto PLAY avvierai una profilazione e il test di misura completo.''' % (SWN, self._version)
 
     self.messages_area.SetWindowStyleFlag(self.messages_area_style + wx.TE_CENTER)
 
