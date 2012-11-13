@@ -185,13 +185,17 @@ class mistGUI(wx.Frame):
     (X, Y) = self.GetPosition()
     (W, H) = self.GetSize()
     
+    extra=0
+    if (system().lower().startswith('dar')):
+      extra = 40
+      
     self.sizer_1.SetMinSize((W, H))
     self.sizer_5.SetMinSize((W-300, 120))
     self.gauge_1.SetMinSize((W-20, 20))
-    self.sizer_6.SetMinSize((W-20, H-320))
+    self.sizer_6.SetMinSize((W-20, H-(320+extra)))
     self.sizer_7.SetMinSize((W-20, 120))
     
-    self.messages_area.SetMinSize((W-40, H-350))
+    self.messages_area.SetMinSize((W-40, H-(350+extra)))
     
     self.Refresh()
     self.Layout()
@@ -367,7 +371,7 @@ class mistGUI(wx.Frame):
       date = datetime.today().strftime('%c')
       
       self.messages_area.SetWindowStyleFlag(self.messages_area_style)
-      self.messages_area.SetFont(wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, ""))
+      #self.messages_area.SetFont(wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, ""))
       
       font1 = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, "")
       
