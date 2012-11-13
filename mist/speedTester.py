@@ -360,7 +360,7 @@ class SpeedTester(Thread):
 
     self._running.set()
     
-    wx.CallAfter(self._gui._update_messages, "Inizio dei test di misura", separator = True, font = (14, 93, 92, 1))
+    wx.CallAfter(self._gui._update_messages, "Inizio dei test di misura", font = (14, 93, 92, 1))
     wx.CallAfter(self._gui.update_gauge)
 
     # Profilazione
@@ -399,13 +399,13 @@ class SpeedTester(Thread):
           wx.CallAfter(self._gui._update_messages, "Elaborazione dei dati")
           # if (move_on_key()):
           if (type == PING):
-            wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.time, 'green', separator = True, font = (14, 93, 92, 1))
+            wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.time, 'green', font = (14, 93, 92, 1))
             wx.CallAfter(self._gui._update_ping, test.time)
           elif (type == DOWN):
-            wx.CallAfter(self._gui._update_messages, "Download bandwidth: %.0f kbps" % self._get_bandwidth(test), 'green', separator = True, font = (14, 93, 92, 1))
+            wx.CallAfter(self._gui._update_messages, "Download bandwidth: %.0f kbps" % self._get_bandwidth(test), 'green', font = (14, 93, 92, 1))
             wx.CallAfter(self._gui._update_down, self._get_bandwidth(test))
           elif (type == UP):
-            wx.CallAfter(self._gui._update_messages, "Upload bandwidth: %.0f kbps" % self._get_bandwidth(test), 'green', separator = True, font = (14, 93, 92, 1))
+            wx.CallAfter(self._gui._update_messages, "Upload bandwidth: %.0f kbps" % self._get_bandwidth(test), 'green', font = (14, 93, 92, 1))
             wx.CallAfter(self._gui._update_up, self._get_bandwidth(test))
           # else:
             # raise Exception("chiave USB mancante")

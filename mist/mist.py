@@ -182,20 +182,21 @@ class mistGUI(wx.Frame):
     
   def _on_size(self, event):
     
-    (X, Y) = self.GetPosition()
     (W, H) = self.GetSize()
     
     extra=0
-    if (system().lower().startswith('dar')):
-      extra = 40
+    if (system().lower().startswith('win')):
+      extra = 10
+    elif (system().lower().startswith('dar')):
+      extra = 60
       
     self.sizer_1.SetMinSize((W, H))
     self.sizer_5.SetMinSize((W-300, 120))
     self.gauge_1.SetMinSize((W-20, 20))
-    self.sizer_6.SetMinSize((W-20, H-(320+extra)))
+    self.sizer_6.SetMinSize((W-20, H-(310+extra)))
     self.sizer_7.SetMinSize((W-20, 120))
     
-    self.messages_area.SetMinSize((W-40, H-(350+extra)))
+    self.messages_area.SetMinSize((W-40, H-(330+extra)))
     
     self.Refresh()
     self.Layout()
@@ -219,7 +220,7 @@ class mistGUI(wx.Frame):
 
     self._killTester()
     self._enable_button()
-    self._update_messages("Misura terminata", 'medium forest green', font = (14, 93, 92, 1), fill = True, separator = True)
+    self._update_messages("Misura terminata\n", 'medium forest green', font = (14, 93, 92, 1), fill = True)
     self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura", font = (12, 93, 92, 0))
     self._update_messages("Sistema pronto per una nuova misura", 'black', font = (12, 90, 92, 0), fill = True)
     self.update_gauge(TOTAL_STEPS)
@@ -239,11 +240,12 @@ class mistGUI(wx.Frame):
     self.bitmap_button_play.Disable()
     self.bitmap_button_check.Disable()
     self._reset_info()
-    self._update_messages("Profilazione dello stato del sistema di misura", 'black', font = (14, 93, 92, 1), separator = True)
+    self._update_messages("Profilazione dello stato del sistema di misura", 'black', font = (14, 93, 92, 1))
     self._profiler = sysProfiler(self)
     self._profiler.start()
 
   def _after_check(self):
+    self._update_messages("Profilazione terminata\n", 'medium forest green', font = (14, 93, 92, 1), fill = True)
     if (self._button_play):
       self._button_play = False
       self._button_check = False
@@ -252,7 +254,6 @@ class mistGUI(wx.Frame):
     else:
       # move_on_key()
       self._button_check = False
-      self._update_messages("Profilazione terminata", 'medium forest green', font = (14, 93, 92, 1), fill = True, separator = True)
       self._update_interface(">> PROFILAZIONE TERMINATA <<\nPremere PLAY per effettuare la misura", font = (12, 93, 92, 0))
       self._enable_button()
 
@@ -352,9 +353,9 @@ class mistGUI(wx.Frame):
 
     self.Layout()
 
-  def _update_messages(self, message, colour = 'black', font = None, fill = False, separator = False):
+  def _update_messages(self, message, colour = 'black', font = None, fill = False):
     logger.info('Messagio all\'utente: "%s"' % message)
-    self._stream.append((str(message), colour, font, fill, separator))
+    self._stream.append((str(message), colour, font, fill))
     if (not self._stream_flag.isSet()):
 #      if (system().lower().startswith('win')):
 #        writer = Thread(target = self._writer)
@@ -365,30 +366,24 @@ class mistGUI(wx.Frame):
   def _writer(self):
     self._stream_flag.set()
     while (len(self._stream) > 0):
+      
+      basic_font = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, "")
       words = {}
       
-      (message, colour, font, fill, separator) = self._stream.popleft()
-      date = datetime.today().strftime('%c')
-      
-      self.messages_area.SetWindowStyleFlag(self.messages_area_style)
-      #self.messages_area.SetFont(wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, ""))
-      
-      font1 = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, "")
+      (message, colour, font, fill) = self._stream.popleft()
+      date = datetime.today().strftime('%a %d/%m/%Y %H:%M:%S')
       
       last_pos = self.messages_area.GetLastPosition()
       if (last_pos != 0):
         text = "\n"
       else:
+        self.messages_area.SetWindowStyleFlag(self.messages_area_style)
+        self.messages_area.SetFont(basic_font)
         text = ""
-      
-      if separator:
-        sep = "    " + "-" * 22
-        text = text+sep+"\n"
-        words[sep] = ('black', wx.NullColour, font1)
       
       date = date + "  "
       text = text + date
-      words[date] = (colour, wx.NullColour, font1)
+      words[date] = (colour, wx.NullColour, basic_font)
       
       text = text + message
             
@@ -405,11 +400,6 @@ class mistGUI(wx.Frame):
       
       words[message] = (textcolour, wx.NullColour, font)
         
-      if separator:
-        sep = "    " + "-" * 22
-        text = text+"\n"+sep
-        words[sep] = ('black', wx.NullColour, font1)
-
       self.messages_area.AppendText(text)
       self.messages_area.SetInsertionPoint(last_pos+1)
       self._set_style(text, words, last_pos)
