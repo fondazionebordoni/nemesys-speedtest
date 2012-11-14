@@ -163,7 +163,7 @@ packet_unit **bufferTot;
 UINT num_unit = 0;
 /* Buffer Variables END */
 
-struct device devices[22];
+struct device devices[242];
 struct statistics stats;
 
 
@@ -712,7 +712,7 @@ UINT find_devices(void)
   // IP_ADAPTER_DNS_SERVER_ADDRESS *pDnServer = NULL;
   PIP_ADAPTER_PREFIX pPrefix = NULL;
 
-  for(i = 0; i<22; i++)
+  for(i = 0; i<242; i++)
   {
     FREE(devices[i].name);  devices[i].name = NULL;
     FREE(devices[i].description);  devices[i].description = NULL;
