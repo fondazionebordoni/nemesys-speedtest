@@ -246,6 +246,7 @@ class SysMonitor():
   
   def _get_os(self, res = RES_OS):
     
+    value = 'unknown'
     try:
       
       value = self._get_string_tag(tag_os.split('.', 1)[1], 1, tag_os.split('.', 1)[0])
@@ -315,7 +316,7 @@ class SysMonitor():
             raise sysmonitorexception.LOWMEM
           break
         else:
-          avMem = 'unknow'
+          avMem = 'unknown'
           value = avMem
     
       for check in range(3):
@@ -329,7 +330,7 @@ class SysMonitor():
             raise sysmonitorexception.OVERMEM
           break
         else:
-          memLoad = 'unknow'
+          memLoad = 'unknown'
           value = memLoad
     
       info = 'Utilizzato il %s%% di %d GB della memoria' % (memLoad, avMem / (1000*1000*1000))
@@ -753,7 +754,7 @@ class SysMonitor():
         dev_info['type'] = 'Wireless'
       elif (dev_info['type'] == 17):
         dev_info['type'] = 'WWAN'
-      elif (dev_info['type'] == 3):
+      elif (dev_info['type'] == 3) and (dev_info['ip'] != '127.0.0.1'):
         dev_info['type'] = 'External Modem'
     
       if (dev_info.get('descr', 'none') == 'none'):
