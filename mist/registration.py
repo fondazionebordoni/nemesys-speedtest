@@ -24,12 +24,12 @@ RegInfo = \
 "title":"Informazioni sulla registrazione", \
 "message": \
 '''
-Verra' ora richiesto il codice licenza per l'attivazione.\n
-Il codice licenza e' riportato nella propria area privata
-sul sito www.misurainternet.it nella sezione riservata a
-%s.\n
+Verranno ora richieste le credenziali per l'attivazione.\n
+Inserire i codici di accesso (username e password) che hai 
+usato per accedere all'area personale di %s.\n
 Al momento dell'inserimento si prega di verificare
-la correttezza del codice licenza e di avere accesso alla rete.\n
+la correttezza delle credenziali di accesso e di avere 
+accesso alla rete.\n
 Dopo %s tentativi falliti, sara' necessario riavviare
 il programma per procedere nuovamente all'inserimento.
 ''' % (SWN, MAXretry)
@@ -39,7 +39,7 @@ RegSuccess = \
 { \
 "style":wx.OK|wx.ICON_EXCLAMATION, \
 "title":"%s Success" % SWN, \
-"message":"\nCodice licenza corretto e verificato." \
+"message":"\nUsername e password corrette e verificate." \
 }
 
 ErrorCode = \
@@ -48,9 +48,9 @@ ErrorCode = \
 "title":"%s Error" % SWN, \
 "message": \
 '''
-Il codice licenza inserito e' errato.\n
-Controllare il codice licenza nella propria
-area personale del sito www.misurainternet.it
+Le credenziali di accesso inserite sono errate.\n
+Controllare la loro correttezza accedendo all'area 
+personale sul sito www.misurainternet.it
 '''
 }
 
@@ -65,7 +65,7 @@ ErrorDownload = \
 { \
 "style":wx.OK|wx.ICON_ERROR, \
 "title":"%s Error" % SWN, \
-"message":"\nErrore nel download del file di configurazione\no codice licenza non corretto." \
+"message":"\nErrore nel download del file di configurazione\no credenziali di accesso non corrette." \
 }
 
 ErrorRetry = \
@@ -76,7 +76,7 @@ ErrorRetry = \
 '''
 Il download del file di configurazione e' fallito per %s volte.\n
 Riavviare il programma dopo aver verificato la correttezza
-del codice di licenza e di avere accesso alla rete.
+delle credenziali di accesso e di avere accesso alla rete.
 ''' % MAXretry
 }
 
@@ -87,12 +87,69 @@ ErrorRegistration = \
 "message": "\nQuesta copia di %s non risulta correttamente registrata." % SWN \
 }
 
-def showDialog(dialog):
 
+class Dialog(wx.Dialog):
+
+  def __init__(self, parent, message, title, default, caption):
+    #kwds["style"] = wx.DEFAULT_FRAME_STYLE
+    wx.Dialog.__init__(self, None, -1, "")
+    self.label_1 = wx.StaticText(self, -1, message, style=wx.ALIGN_CENTRE)
+    self.label_username = wx.StaticText(self, -1, "Username:", style=wx.ALIGN_RIGHT)
+    self.text_username = wx.TextCtrl(self, -1, default)
+    self.label_password = wx.StaticText(self, -1, "Password:", style=wx.ALIGN_RIGHT)
+    self.text_password = wx.TextCtrl(self, -1, "", style=wx.TE_PASSWORD)
+    self.button_1 = wx.Button(self, caption, "Accedi")
+
+    self.__set_properties(title)
+    self.__do_layout()
+
+    self.Bind(wx.EVT_BUTTON, self.button_pressed, self.button_1)
+    # end wxGlade
+
+  def __set_properties(self, title):
+    # begin wxGlade: MyFrame.__set_properties
+    self.SetTitle(title)
+    self.SetSize((300, 160))
+    self.label_username.SetMinSize((80, 20))
+    self.text_username.SetMinSize((180, 20))
+    self.label_password.SetMinSize((80, 20))
+    self.text_password.SetMinSize((180, 20))
+    # end wxGlade
+
+  def __do_layout(self):
+    # begin wxGlade: MyFrame.__do_layout
+    sizer_1 = wx.BoxSizer(wx.VERTICAL)
+    sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
+    sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
+
+    sizer_1.Add(self.label_1, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+
+    sizer_2.Add(self.label_username, 0, 0, 0)
+    sizer_2.Add(self.text_username, 0, 0, 0)
+    sizer_1.Add(sizer_2, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
+
+    sizer_3.Add(self.label_password, 0, 0, 0)
+    sizer_3.Add(self.text_password, 0, 0, 0)
+    sizer_1.Add(sizer_3, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
+
+    sizer_1.Add(self.button_1, 0, wx.BOTTOM | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
+    
+    self.SetSizer(sizer_1)
+    self.Layout()
+    # end wxGlade
+
+  def GetValue(self):
+    return "%s|%s" % (self.text_username.GetValue(), self.text_password.GetValue())
+
+  def button_pressed(self, event):  # wxGlade: MyDialog.<event_handler>
+    self.EndModal(event.GetId())
+
+
+
+def showDialog(dialog):
   msgBox = wx.MessageDialog(None, dialog['message'], dialog['title'], dialog['style'])
   msgBox.ShowModal()
   msgBox.Destroy()
-  
   
 def getconf(code, filepath, url):
   ## Scarica il file di configurazione dalla url (HTTPS) specificata, salvandolo nel file specificato. ##
@@ -116,9 +173,8 @@ def getconf(code, filepath, url):
 
   return os.path.exists(filepath)
   
-  
 def registration(code):
-  if len(code)!=32:
+  if len(code) < 4:
     regOK = False
     logger.error("ClientID assente o di errata lunghezza")
     retry=0
@@ -127,14 +183,14 @@ def registration(code):
       ## Prendo un codice licenza valido sintatticamente  ##
       code = None
       logger.info('Tentativo di registrazione %s di %s' % (retry+1, MAXretry))
-      message = "\n    Inserire un codice licenza per %s:    " % SWN
+      message = "\nInserisci i codici di accesso (username e password)\nche hai usato per accedere all'area personale\n"
       title = "Tentativo %s di %s" % (retry+1, MAXretry)
-      default = "scrivere o incollare qui il codice licenza"
-      dlg = wx.TextEntryDialog(None, message, title, default, wx.OK)
+      default = ""
+      dlg = Dialog(None, message, title, default, wx.ID_OK)
       res = dlg.ShowModal()
       code = dlg.GetValue()
       dlg.Destroy()
-      logger.info("Codice licenza inserito dall'utente: %s" % code)
+      logger.info("Codici di accesso inseriti dall'utente: %s" % code)
       if (res != wx.ID_OK):
         logger.warning('Registration aborted at attemp number %d' %(retry+1))
         break
@@ -152,7 +208,7 @@ def registration(code):
             logger.error('Configuration file not correctly saved')
             showDialog(ErrorSave)
         else:
-          logger.error('Wrong license code')
+          logger.error('Wrong username/password')
           showDialog(ErrorCode)
       except Exception as error:
         logger.error('Configuration file not downloaded or incorrect: %s' % error)
