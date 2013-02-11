@@ -6,7 +6,7 @@ from xml.etree import ElementTree as ET
 import modulefinder
 from glob import glob
 
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 sys.path.append("C:\\Microsoft.VC90.CRT")
 
