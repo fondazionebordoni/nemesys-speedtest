@@ -141,7 +141,7 @@ class Dialog(wx.Dialog):
 
   def GetValue(self):
 
-    return "%s|%s" % (self.text_username.GetValue(), mysql_password(self.text_password.GetValue()))
+    return "%s|%s" % (self.text_username.GetValue(), hashlib.sha1(self.text_password.GetValue()).hexdigest())
 
   def button_pressed(self, event):  # wxGlade: MyDialog.<event_handler>
     self.EndModal(event.GetId())
@@ -227,17 +227,6 @@ def registration(code):
     regOK = True
   
   return regOK
-
-def mysql_password(str):
-  """
-  Hash string twice with SHA1 and return uppercase hex digest,
-  prepended with an asterix.
-
-  This function is identical to the MySQL PASSWORD() function.
-  """
-  pass1 = hashlib.sha1(str).digest()
-  pass2 = hashlib.sha1(pass1).hexdigest()
-  return "*" + pass2.upper()  
 
 if __name__ == '__main__':
   app = wx.PySimpleApp(0)
