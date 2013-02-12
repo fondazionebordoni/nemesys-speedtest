@@ -140,7 +140,6 @@ class Dialog(wx.Dialog):
     # end wxGlade
 
   def GetValue(self):
-
     return "%s|%s" % (self.text_username.GetValue(), hashlib.sha1(self.text_password.GetValue()).hexdigest())
 
   def button_pressed(self, event):  # wxGlade: MyDialog.<event_handler>
@@ -162,12 +161,13 @@ def getconf(code, filepath, url):
   # Warning This does not do any verification of the server’s certificate. #
 
   connection.request('GET', '%s?clientid=%s' % (url.path, code))
-  data = connection.getresponse().read()
-  
-  #logger.debug(data)
+  logger.debug("Dati inviati: %s" % code)
+
+  data = connection.getresponse().read() 
+  logger.debug("Dati ricevuti:\n%s" % data)
   
   # Controllo se nel file di configurazione è presente il codice di attivazione. #
-  if (data.find(code) != -1):
+  if (data.find(code) != -1 or data.find("username") != -1):
     data2file=open(filepath,'w')
     data2file.write(data)
   else:
@@ -199,7 +199,7 @@ def registration(code):
       
       filepath=paths.CONF_MAIN 
       try:
-        if(code != None and len(code) == 32):
+        if(code != None and len(code) > 4):
           # Prendo il file di configurazione. #
           regOK = getconf(code, filepath, configurationServer)
           if (regOK == True):
