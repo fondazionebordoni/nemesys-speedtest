@@ -144,7 +144,7 @@ class SpeedTester(Thread):
     return best
   
   
-  def _download_task(self):
+  def _download_task(self, server):
     # Scarica il prossimo task dallo scheduler #
     #logger.info('Reading resource %s for client %s' % (self._scheduler, self._client))
 
@@ -153,7 +153,7 @@ class SpeedTester(Thread):
       certificate = self._client.isp.certificate
       
       connection = httputils.getverifiedconnection(url = url, certificate = certificate, timeout = self._httptimeout)
-      connection.request('GET', '%s?clientid=%s&version=%s&confid=%s' % (url.path, self._client.id, self._version, self._md5conf))
+      connection.request('GET', '%s?clientid=%s&version=%s&confid=%s&server=%s' % (url.path, self._client.id, self._version, self._md5conf, server.ip))
       
       data = connection.getresponse().read()
       #logger.debug(data)
@@ -369,10 +369,10 @@ class SpeedTester(Thread):
     profiler = self._profiler.get_results()
     sleep(1)
     
-    #ping_test = self._get_server()
-    #server = ping_test['server']
+    ping_test = self._get_server()
+    server = ping_test['server']
     
-    task = self._download_task()
+    task = self._download_task(server)
     if task == None:
       wx.CallAfter(self._gui._update_messages, "Impossibile eseguire ora i test di misura. Riprovare tra qualche secondo.", 'red')
     else:

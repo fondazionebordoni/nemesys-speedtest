@@ -10,14 +10,15 @@ import httplib
 import paths
 import os
 import wx
+from sysMonitor import SysMonitor, RES_MAC
 
 SWN = 'MisuraInternet Speed Test'
 
 logger = logging.getLogger()
 
 configurationServer = 'https://speedtest.agcom244.fub.it/Config'
-MAXretry = 3 ## numero massimo di tentativi prima di chiudere la finestra ##
-
+MAXretry = 5 ## numero massimo di tentativi prima di chiudere la finestra ##
+provinciaList = sorted(["TO", "VC", "NO", "CN", "AT", "AL", "AO", "IM", "SV", "GE", "SP", "VA", "CO", "SO", "MI", "BG", "BS", "PV", "CR", "MN", "BZ", "TN", "VR", "VI", "BL", "TV", "VE", "PD", "RO", "UD", "GO", "TS", "PC", "PR", "RE", "MO", "BO", "FE", "RA", "FC", "PU", "AN", "MC", "AP", "MS", "LU", "PT", "FI", "LI", "PI", "AR", "SI", "GR", "PG", "TR", "VT", "RI", "RM", "LT", "FR", "CE", "BN", "NA", "AV", "SA", "AQ", "TE", "PE", "CH", "CB", "FG", "BA", "TA", "BR", "LE", "PZ", "MT", "CS", "CZ", "RC", "TP", "PA", "ME", "AG", "CL", "EN", "CT", "RG", "SR", "SS", "NU", "CA", "PN", "IS", "OR", "BI", "LC", "LO", "RN", "PO", "KR", "VV", "VB", "OT", "OG", "VS", "CI", "MB", "FM", "BT"])
 
 RegInfo = \
 { \
@@ -100,6 +101,9 @@ class Dialog(wx.Dialog):
     self.label_password = wx.StaticText(self, -1, "Password:", style=wx.ALIGN_RIGHT)
     self.text_password = wx.TextCtrl(self, -1, "", style=wx.TE_PASSWORD)
     self.button_1 = wx.Button(self, caption, "Accedi")
+    self.label_2 = wx.StaticText(self, -1, "Se non sei ancora registrato, inserisci la provincia\nin cui stai effettuando l'installazione e prova\nMisuraInternet Speedtest per una misurazione.\n", style=wx.ALIGN_CENTRE)
+    self.label_provincia = wx.StaticText(self, -1, "Provincia:", style=wx.ALIGN_RIGHT)
+    self.text_provincia = wx.ComboBox(self, choices=provinciaList)
 
     self.__set_properties(title)
     self.__do_layout()
@@ -110,11 +114,13 @@ class Dialog(wx.Dialog):
   def __set_properties(self, title):
     # begin wxGlade: MyFrame.__set_properties
     self.SetTitle(title)
-    self.SetSize((300, 160))
-    self.label_username.SetMinSize((80, 20))
-    self.text_username.SetMinSize((180, 20))
-    self.label_password.SetMinSize((80, 20))
-    self.text_password.SetMinSize((180, 20))
+    self.SetSize((400, 260))
+    self.label_username.SetMinSize((80, 26))
+    self.text_username.SetMinSize((180, 26))
+    self.label_password.SetMinSize((80, 26))
+    self.text_password.SetMinSize((180, 26))
+    self.label_provincia.SetMinSize((80, 26))
+    self.text_provincia.SetMinSize((180, 26))
     # end wxGlade
 
   def __do_layout(self):
@@ -122,6 +128,7 @@ class Dialog(wx.Dialog):
     sizer_1 = wx.BoxSizer(wx.VERTICAL)
     sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
     sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
+    sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
 
     sizer_1.Add(self.label_1, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
 
@@ -133,6 +140,13 @@ class Dialog(wx.Dialog):
     sizer_3.Add(self.text_password, 0, 0, 0)
     sizer_1.Add(sizer_3, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
 
+    sizer_1.Add(self.label_2, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+
+    sizer_4.Add(self.label_provincia, 0, 0, 0)
+    sizer_4.Add(self.text_provincia, 0, 0, 0)
+    sizer_1.Add(sizer_4, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
+
+
     sizer_1.Add(self.button_1, 0, wx.BOTTOM | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
     
     self.SetSizer(sizer_1)
@@ -140,7 +154,19 @@ class Dialog(wx.Dialog):
     # end wxGlade
 
   def GetValue(self):
-    return "%s|%s" % (self.text_username.GetValue(), hashlib.sha1(self.text_password.GetValue()).hexdigest())
+    username = self.text_username.GetValue()
+    password = self.text_password.GetValue()
+    provincia = self.text_provincia.GetValue()
+    if (len(username) > 2):
+      return "%s|%s" % (username, hashlib.sha1(password).hexdigest())
+    else:
+      if (len(provincia) == 2):
+        monitor = SysMonitor()
+        mac = monitor.checkres(RES_MAC)['value']
+        return "%s|%s" % (provincia, mac)
+      else:
+        return None
+
 
   def button_pressed(self, event):  # wxGlade: MyDialog.<event_handler>
     self.EndModal(event.GetId())
@@ -171,6 +197,7 @@ def getconf(code, filepath, url):
     data2file=open(filepath,'w')
     data2file.write(data)
   else:
+    # TODO Stampa i dati di risposta nella finestra
     raise Exception('incorrect configuration file.')
 
   return os.path.exists(filepath)
