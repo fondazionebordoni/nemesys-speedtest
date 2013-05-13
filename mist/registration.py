@@ -44,6 +44,13 @@ RegSuccess = \
 "message":"\nUsername e password corrette e verificate." \
 }
 
+RegSuccessOneShot = \
+{ \
+"style":wx.OK|wx.ICON_EXCLAMATION, \
+"title":"%s Success" % SWN, \
+"message":"\nDati della provinicia ricevuti e memorizzati correttamente." \
+}
+
 ErrorCode = \
 { \
 "style":wx.OK|wx.ICON_ERROR, \
@@ -103,7 +110,7 @@ class Dialog(wx.Dialog):
     self.button_1 = wx.Button(self, caption, "Accedi")
     self.label_2 = wx.StaticText(self, -1, "Se non sei ancora registrato, inserisci la provincia\nin cui stai effettuando l'installazione e prova\nMisuraInternet Speedtest per una misurazione.\n", style=wx.ALIGN_CENTRE)
     self.label_provincia = wx.StaticText(self, -1, "Provincia:", style=wx.ALIGN_RIGHT)
-    self.text_provincia = wx.ComboBox(self, choices=provinciaList)
+    self.text_provincia = wx.ComboBox(self, choices=provinciaList, style=wx.CB_READONLY)
 
     self.__set_properties(title)
     self.__do_layout()
@@ -231,7 +238,10 @@ def registration(code):
           regOK = getconf(code, filepath, configurationServer)
           if (regOK == True):
             logger.info('Configuration file successfully downloaded and saved')
-            showDialog(RegSuccess)
+            if ('|' in code):
+              showDialog(RegSuccessOneShot)
+            else:
+              showDialog(RegSuccess)
             break
           else:
             logger.error('Configuration file not correctly saved')

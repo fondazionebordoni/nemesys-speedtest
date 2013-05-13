@@ -31,7 +31,6 @@ import re
 ## OPTIONAL ##
 from task import Task   #for Fake Task#
 
-
 logger = logging.getLogger()
 
 TASK_FILE = '40000'
@@ -80,6 +79,8 @@ class SpeedTester(Thread):
 
     self._running = Event()
   
+  def is_oneshot(self):
+    return self._client.is_oneshot()
   
   def join(self, timeout = None):
     self._running.clear()
@@ -493,6 +494,8 @@ class SpeedTester(Thread):
               
           if uploadOK:
             logger.info('File %s spedito con successo.' % filename)
+            if (self._client.is_oneshot()):
+              remove(paths.CONF_MAIN)
           else:
             logger.info('Errore nella spedizione del file %s.' % filename)
             sleep_time = 5*(retry+1)

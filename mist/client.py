@@ -54,6 +54,9 @@ class Client:
   @property
   def password(self):
     return self._password
+  
+  def is_oneshot(self):
+    return '|' in self._id
 
   def __str__(self):
     return 'id: %s; profile: %s; isp: %s; geocode: %s' % (self.id, self.profile, self.isp, self.geocode)

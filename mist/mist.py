@@ -20,7 +20,7 @@ __version__ = '1.1.1'
 
 SWN = 'MisuraInternet Speed Test'
 
-TOTAL_STEPS = 15
+TOTAL_STEPS = 19
 
 logger = logging.getLogger()
 
@@ -219,10 +219,15 @@ class mistGUI(wx.Frame):
     #self.bitmap_button_play.SetBitmapLabel(wx.Bitmap(path.join(paths.ICONS, u"play.png")))
 
     self._killTester()
-    self._enable_button()
     self._update_messages("Misura terminata\n", 'medium forest green', font = (14, 93, 92, 1), fill = True)
-    self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura", font = (12, 93, 92, 0))
-    self._update_messages("Sistema pronto per una nuova misura", 'black', font = (12, 90, 92, 0), fill = True)
+    is_oneshot = self._tester.is_oneshot()
+    if (is_oneshot):
+      self._update_interface(">> MISURA TERMINATA <<\nMisura di test esaurita", font = (12, 93, 92, 0))
+      self._update_messages("Misura di test esaurita, per proseguire le misurazioni ed accedere allo storico delle proprie misurazioni occorre registrarsi", 'black', font = (12, 90, 92, 0), fill = True)
+    else:
+      self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura", font = (12, 93, 92, 0))
+      self._update_messages("Sistema pronto per una nuova misura", 'black', font = (12, 90, 92, 0), fill = True)
+    self._enable_button(is_oneshot)
     self.update_gauge(TOTAL_STEPS)
 
   def _killTester(self):
@@ -257,9 +262,10 @@ class mistGUI(wx.Frame):
       self._update_interface(">> PROFILAZIONE TERMINATA <<\nPremere PLAY per effettuare la misura", font = (12, 93, 92, 0))
       self._enable_button()
 
-  def _enable_button(self):
-    self.bitmap_button_play.Enable()
+  def _enable_button(self, only_check_button=False):
     self.bitmap_button_check.Enable()
+    if (not only_check_button):
+      self.bitmap_button_play.Enable()
 
   def _update_down(self, downwidth):
     self.label_rr_down.SetLabel("%.0f kbps" % downwidth)
