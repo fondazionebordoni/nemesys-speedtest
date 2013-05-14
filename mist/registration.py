@@ -105,13 +105,13 @@ class Dialog(wx.Dialog):
   def __init__(self, parent, title, default, caption):
     #kwds["style"] = wx.DEFAULT_FRAME_STYLE
     wx.Dialog.__init__(self, None, -1, "")
-    self.label_1 = wx.StaticText(self, -1, "Se e' stata effettuata l'iscrizione inserire\ni codici di accesso (username e password)\nutilizzati per accedere all'area personale.\n", style=wx.ALIGN_CENTRE)
+    self.label_1 = wx.StaticText(self, -1, "\nSe e' stata effettuata l'iscrizione inserire\ni codici di accesso (username e password)\nutilizzati per accedere all'area personale.\n", style=wx.ALIGN_CENTRE)
     self.label_username = wx.StaticText(self, -1, "Username:", style=wx.ALIGN_RIGHT)
     self.text_username = wx.TextCtrl(self, -1, default)
     self.label_password = wx.StaticText(self, -1, "Password:", style=wx.ALIGN_RIGHT)
     self.text_password = wx.TextCtrl(self, -1, "", style=wx.TE_PASSWORD)
     self.button_1 = wx.Button(self, caption, "Accedi")
-    self.label_2 = wx.StaticText(self, -1, "Se NON e' stata effettuata l'iscrizione inserire\nla provincia in cui si sta effettuando\nla misura con MisuraInternet Speed Test.\n", style=wx.ALIGN_CENTRE)
+    self.label_2 = wx.StaticText(self, -1, "\nSe NON e' stata effettuata l'iscrizione inserire\nla provincia in cui si sta effettuando\nla misura con MisuraInternet Speed Test.\n", style=wx.ALIGN_CENTRE)
     self.label_provincia = wx.StaticText(self, -1, "Provincia:", style=wx.ALIGN_RIGHT)
     self.text_provincia = wx.ComboBox(self, choices=provinciaList, style=wx.CB_READONLY)
 
@@ -124,13 +124,13 @@ class Dialog(wx.Dialog):
   def __set_properties(self, title):
     # begin wxGlade: MyFrame.__set_properties
     self.SetTitle(title)
-    self.SetSize((400, 260))
+    self.SetSize((380, 294))
     self.label_username.SetMinSize((80, 26))
     self.text_username.SetMinSize((180, 26))
     self.label_password.SetMinSize((80, 26))
     self.text_password.SetMinSize((180, 26))
     self.label_provincia.SetMinSize((80, 26))
-    self.text_provincia.SetMinSize((180, 26))
+    self.text_provincia.SetMinSize((80, 26))
     # end wxGlade
 
   def __do_layout(self):
@@ -140,19 +140,19 @@ class Dialog(wx.Dialog):
     sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
     sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
 
-    sizer_1.Add(self.label_2, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+    sizer_1.Add(self.label_2, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM, 0)
 
-    sizer_4.Add(self.label_provincia, 0, 0, 0)
+    sizer_4.Add(self.label_provincia, 0, wx.ALIGN_BOTTOM, 0)
     sizer_4.Add(self.text_provincia, 0, 0, 0)
     sizer_1.Add(sizer_4, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
 
-    sizer_1.Add(self.label_1, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+    sizer_1.Add(self.label_1, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM, 0)
 
-    sizer_2.Add(self.label_username, 0, 0, 0)
+    sizer_2.Add(self.label_username, 0, wx.ALIGN_BOTTOM, 0)
     sizer_2.Add(self.text_username, 0, 0, 0)
     sizer_1.Add(sizer_2, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
 
-    sizer_3.Add(self.label_password, 0, 0, 0)
+    sizer_3.Add(self.label_password, 0, wx.ALIGN_BOTTOM, 0)
     sizer_3.Add(self.text_password, 0, 0, 0)
     sizer_1.Add(sizer_3, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
 
