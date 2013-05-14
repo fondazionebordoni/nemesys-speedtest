@@ -16,7 +16,7 @@ from os import path
 import paths
 import wx
 
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 SWN = 'MisuraInternet Speed Test'
 
@@ -219,14 +219,14 @@ class mistGUI(wx.Frame):
     #self.bitmap_button_play.SetBitmapLabel(wx.Bitmap(path.join(paths.ICONS, u"play.png")))
 
     self._killTester()
-    self._update_messages("Misura terminata\n", 'medium forest green', font = (14, 93, 92, 1), fill = True)
+    self._update_messages("Misura terminata\n", 'medium forest green', (14, 93, 92, 1), True)
     is_oneshot = self._tester.is_oneshot()
     if (is_oneshot):
-      self._update_interface(">> MISURA TERMINATA <<\nMisura di test esaurita", font = (12, 93, 92, 0))
-      self._update_messages("Misura di test esaurita, per proseguire le misurazioni ed accedere allo storico delle proprie misurazioni occorre registrarsi", 'black', font = (12, 90, 92, 0), fill = True)
+      self._update_interface(">> MISURA TERMINATA <<\nPer la versione completa iscriviti su misurainternet.it", font = (12, 93, 92, 0))
+      self._update_messages("Per effettuare altre misure e conservare i tuoi risultati nell’area riservata effettua l’iscrizione su https://www.misurainternet.it/registration_form.php\n",  'medium forest green', (14, 90, 92, 0), True)
     else:
-      self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura", font = (12, 93, 92, 0))
-      self._update_messages("Sistema pronto per una nuova misura", 'black', font = (12, 90, 92, 0), fill = True)
+      self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura\n", font = (12, 93, 92, 0))
+      self._update_messages("Sistema pronto per una nuova misura", 'black', (14, 90, 92, 0), True)
     self._enable_button(is_oneshot)
     self.update_gauge(TOTAL_STEPS)
 
@@ -360,7 +360,7 @@ class mistGUI(wx.Frame):
     self.Layout()
 
   def _update_messages(self, message, colour = 'black', font = None, fill = False):
-    logger.info('Messagio all\'utente: "%s"' % message)
+    logger.info('Messaggio all\'utente: "%s"' % message)
     self._stream.append((str(message), colour, font, fill))
     if (not self._stream_flag.isSet()):
 #      if (system().lower().startswith('win')):

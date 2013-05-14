@@ -27,14 +27,17 @@ RegInfo = \
 "message": \
 '''
 Verranno ora richieste le credenziali per l'attivazione.\n
-Inserire i codici di accesso (username e password) che hai 
-usato per accedere all'area personale di %s.\n
+Se NON è stata effettuata l’iscrizione verrà richiesto di
+selezionare la provincia dalla quale si sta effettuando
+la misura con %s.\n
+Se è stata effettuata l’iscrizione verrà richiesto di
+inserire i codici di accesso (username e password)
+utilizzate per accedere all’area riservata su misurainternet.it.
 Al momento dell'inserimento si prega di verificare
-la correttezza delle credenziali di accesso e di avere 
-accesso alla rete.\n
+la correttezza delle credenziali di accesso.\n
 Dopo %s tentativi falliti, sara' necessario riavviare
-il programma per procedere nuovamente all'inserimento.
-''' % (SWN, MAXretry)
+il programma per procedere nuovamente all'inserimento.\n
+Al momento dell'inserimento si prega di avere accesso alla rete.''' % (SWN, MAXretry)
 }
 
 RegSuccess = \
@@ -48,7 +51,7 @@ RegSuccessOneShot = \
 { \
 "style":wx.OK|wx.ICON_EXCLAMATION, \
 "title":"%s Success" % SWN, \
-"message":"\nDati della provinicia ricevuti e memorizzati correttamente." \
+"message":"\nL'installazione è andata a buon fine." \
 }
 
 ErrorCode = \
@@ -99,16 +102,16 @@ ErrorRegistration = \
 
 class Dialog(wx.Dialog):
 
-  def __init__(self, parent, message, title, default, caption):
+  def __init__(self, parent, title, default, caption):
     #kwds["style"] = wx.DEFAULT_FRAME_STYLE
     wx.Dialog.__init__(self, None, -1, "")
-    self.label_1 = wx.StaticText(self, -1, message, style=wx.ALIGN_CENTRE)
+    self.label_1 = wx.StaticText(self, -1, "Se è stata effettuata l’iscrizione inserire\ni codici di accesso (username e password)\nutilizzati per accedere all’area personale.\n", style=wx.ALIGN_CENTRE)
     self.label_username = wx.StaticText(self, -1, "Username:", style=wx.ALIGN_RIGHT)
     self.text_username = wx.TextCtrl(self, -1, default)
     self.label_password = wx.StaticText(self, -1, "Password:", style=wx.ALIGN_RIGHT)
     self.text_password = wx.TextCtrl(self, -1, "", style=wx.TE_PASSWORD)
     self.button_1 = wx.Button(self, caption, "Accedi")
-    self.label_2 = wx.StaticText(self, -1, "Se non sei ancora registrato, inserisci la provincia\nin cui stai effettuando l'installazione e prova\nMisuraInternet Speedtest per una misurazione.\n", style=wx.ALIGN_CENTRE)
+    self.label_2 = wx.StaticText(self, -1, "Se NON è stata effettuata l’iscrizione inserire\nla provincia in cui si sta effettuando\nla misura con MisuraInternet Speed Test.\n", style=wx.ALIGN_CENTRE)
     self.label_provincia = wx.StaticText(self, -1, "Provincia:", style=wx.ALIGN_RIGHT)
     self.text_provincia = wx.ComboBox(self, choices=provinciaList, style=wx.CB_READONLY)
 
@@ -137,6 +140,12 @@ class Dialog(wx.Dialog):
     sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
     sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
 
+    sizer_1.Add(self.label_2, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+
+    sizer_4.Add(self.label_provincia, 0, 0, 0)
+    sizer_4.Add(self.text_provincia, 0, 0, 0)
+    sizer_1.Add(sizer_4, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
+
     sizer_1.Add(self.label_1, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
 
     sizer_2.Add(self.label_username, 0, 0, 0)
@@ -146,13 +155,6 @@ class Dialog(wx.Dialog):
     sizer_3.Add(self.label_password, 0, 0, 0)
     sizer_3.Add(self.text_password, 0, 0, 0)
     sizer_1.Add(sizer_3, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
-
-    sizer_1.Add(self.label_2, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
-
-    sizer_4.Add(self.label_provincia, 0, 0, 0)
-    sizer_4.Add(self.text_provincia, 0, 0, 0)
-    sizer_1.Add(sizer_4, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
-
 
     sizer_1.Add(self.button_1, 0, wx.BOTTOM | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
     
@@ -219,10 +221,9 @@ def registration(code):
       ## Prendo un codice licenza valido sintatticamente  ##
       code = None
       logger.info('Tentativo di registrazione %s di %s' % (retry+1, MAXretry))
-      message = "\nInserisci i codici di accesso (username e password)\nche hai usato per accedere all'area personale\n"
       title = "Tentativo %s di %s" % (retry+1, MAXretry)
       default = ""
-      dlg = Dialog(None, message, title, default, wx.ID_OK)
+      dlg = Dialog(None, title, default, wx.ID_OK)
       res = dlg.ShowModal()
       code = dlg.GetValue()
       dlg.Destroy()
