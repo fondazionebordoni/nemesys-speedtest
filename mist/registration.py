@@ -124,7 +124,7 @@ class Dialog(wx.Dialog):
   def __set_properties(self, title):
     # begin wxGlade: MyFrame.__set_properties
     self.SetTitle(title)
-    self.SetSize((380, 294))
+    self.SetSize((360, 294))
     self.label_username.SetMinSize((80, 26))
     self.text_username.SetMinSize((180, 26))
     self.label_password.SetMinSize((80, 26))
@@ -142,17 +142,17 @@ class Dialog(wx.Dialog):
 
     sizer_1.Add(self.label_2, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM, 0)
 
-    sizer_4.Add(self.label_provincia, 0, wx.ALIGN_BOTTOM, 0)
+    sizer_4.Add(self.label_provincia, 0, wx.ALIGN_CENTRE_VERTICAL, 0)
     sizer_4.Add(self.text_provincia, 0, 0, 0)
     sizer_1.Add(sizer_4, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
 
     sizer_1.Add(self.label_1, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM, 0)
 
-    sizer_2.Add(self.label_username, 0, wx.ALIGN_BOTTOM, 0)
+    sizer_2.Add(self.label_username, 0, wx.ALIGN_CENTER_VERTICAL, 0)
     sizer_2.Add(self.text_username, 0, 0, 0)
     sizer_1.Add(sizer_2, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
 
-    sizer_3.Add(self.label_password, 0, wx.ALIGN_BOTTOM, 0)
+    sizer_3.Add(self.label_password, 0, wx.ALIGN_CENTER_VERTICAL, 0)
     sizer_3.Add(self.text_password, 0, 0, 0)
     sizer_1.Add(sizer_3, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
 
