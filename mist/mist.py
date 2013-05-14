@@ -223,7 +223,7 @@ class mistGUI(wx.Frame):
     is_oneshot = self._tester.is_oneshot()
     if (is_oneshot):
       self._update_interface(">> MISURA TERMINATA <<\nPer la versione completa iscriviti su misurainternet.it", font = (12, 93, 92, 0))
-      self._update_messages("Per effettuare altre misure e conservare i tuoi risultati nell’area riservata effettua l’iscrizione su https://www.misurainternet.it/registration_form.php\n",  'medium forest green', (14, 90, 92, 0), True)
+      self._update_messages("Per effettuare altre misure e conservare i tuoi risultati nell'area riservata effettua l'iscrizione su https://www.misurainternet.it/registration_form.php\n",  'medium forest green', (14, 90, 92, 0), True)
     else:
       self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura\n", font = (12, 93, 92, 0))
       self._update_messages("Sistema pronto per una nuova misura", 'black', (14, 90, 92, 0), True)

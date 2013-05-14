@@ -27,12 +27,12 @@ RegInfo = \
 "message": \
 '''
 Verranno ora richieste le credenziali per l'attivazione.\n
-Se NON e' stata effettuata l’iscrizione verra' richiesto di
+Se NON e' stata effettuata l'iscrizione verra' richiesto di
 selezionare la provincia dalla quale si sta effettuando
 la misura con %s.\n
-Se e' stata effettuata l’iscrizione verra' richiesto di
+Se e' stata effettuata l'iscrizione verra' richiesto di
 inserire i codici di accesso (username e password)
-utilizzate per accedere all’area riservata su misurainternet.it.
+utilizzate per accedere all'area riservata su misurainternet.it.
 Al momento dell'inserimento si prega di verificare
 la correttezza delle credenziali di accesso.\n
 Dopo %s tentativi falliti, sara' necessario riavviare
@@ -105,13 +105,13 @@ class Dialog(wx.Dialog):
   def __init__(self, parent, title, default, caption):
     #kwds["style"] = wx.DEFAULT_FRAME_STYLE
     wx.Dialog.__init__(self, None, -1, "")
-    self.label_1 = wx.StaticText(self, -1, "Se e' stata effettuata l’iscrizione inserire\ni codici di accesso (username e password)\nutilizzati per accedere all’area personale.\n", style=wx.ALIGN_CENTRE)
+    self.label_1 = wx.StaticText(self, -1, "Se e' stata effettuata l'iscrizione inserire\ni codici di accesso (username e password)\nutilizzati per accedere all'area personale.\n", style=wx.ALIGN_CENTRE)
     self.label_username = wx.StaticText(self, -1, "Username:", style=wx.ALIGN_RIGHT)
     self.text_username = wx.TextCtrl(self, -1, default)
     self.label_password = wx.StaticText(self, -1, "Password:", style=wx.ALIGN_RIGHT)
     self.text_password = wx.TextCtrl(self, -1, "", style=wx.TE_PASSWORD)
     self.button_1 = wx.Button(self, caption, "Accedi")
-    self.label_2 = wx.StaticText(self, -1, "Se NON e' stata effettuata l’iscrizione inserire\nla provincia in cui si sta effettuando\nla misura con MisuraInternet Speed Test.\n", style=wx.ALIGN_CENTRE)
+    self.label_2 = wx.StaticText(self, -1, "Se NON e' stata effettuata l'iscrizione inserire\nla provincia in cui si sta effettuando\nla misura con MisuraInternet Speed Test.\n", style=wx.ALIGN_CENTRE)
     self.label_provincia = wx.StaticText(self, -1, "Provincia:", style=wx.ALIGN_RIGHT)
     self.text_provincia = wx.ComboBox(self, choices=provinciaList, style=wx.CB_READONLY)
 
@@ -193,7 +193,7 @@ def getconf(code, filepath, url):
   
   url = urlparse.urlparse(url)
   connection = httplib.HTTPSConnection(host=url.hostname)
-  # Warning This does not do any verification of the server’s certificate. #
+  # Warning This does not do any verification of the server's certificate. #
 
   connection.request('GET', '%s?clientid=%s' % (url.path, code))
   logger.debug("Dati inviati: %s" % code)
