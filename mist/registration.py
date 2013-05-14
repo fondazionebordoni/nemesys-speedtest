@@ -27,10 +27,10 @@ RegInfo = \
 "message": \
 '''
 Verranno ora richieste le credenziali per l'attivazione.\n
-Se NON è stata effettuata l’iscrizione verrà richiesto di
+Se NON e' stata effettuata l’iscrizione verra' richiesto di
 selezionare la provincia dalla quale si sta effettuando
 la misura con %s.\n
-Se è stata effettuata l’iscrizione verrà richiesto di
+Se e' stata effettuata l’iscrizione verra' richiesto di
 inserire i codici di accesso (username e password)
 utilizzate per accedere all’area riservata su misurainternet.it.
 Al momento dell'inserimento si prega di verificare
@@ -51,7 +51,7 @@ RegSuccessOneShot = \
 { \
 "style":wx.OK|wx.ICON_EXCLAMATION, \
 "title":"%s Success" % SWN, \
-"message":"\nL'installazione è andata a buon fine." \
+"message":"\nL'installazione e' andata a buon fine." \
 }
 
 ErrorCode = \
@@ -105,13 +105,13 @@ class Dialog(wx.Dialog):
   def __init__(self, parent, title, default, caption):
     #kwds["style"] = wx.DEFAULT_FRAME_STYLE
     wx.Dialog.__init__(self, None, -1, "")
-    self.label_1 = wx.StaticText(self, -1, "Se è stata effettuata l’iscrizione inserire\ni codici di accesso (username e password)\nutilizzati per accedere all’area personale.\n", style=wx.ALIGN_CENTRE)
+    self.label_1 = wx.StaticText(self, -1, "Se e' stata effettuata l’iscrizione inserire\ni codici di accesso (username e password)\nutilizzati per accedere all’area personale.\n", style=wx.ALIGN_CENTRE)
     self.label_username = wx.StaticText(self, -1, "Username:", style=wx.ALIGN_RIGHT)
     self.text_username = wx.TextCtrl(self, -1, default)
     self.label_password = wx.StaticText(self, -1, "Password:", style=wx.ALIGN_RIGHT)
     self.text_password = wx.TextCtrl(self, -1, "", style=wx.TE_PASSWORD)
     self.button_1 = wx.Button(self, caption, "Accedi")
-    self.label_2 = wx.StaticText(self, -1, "Se NON è stata effettuata l’iscrizione inserire\nla provincia in cui si sta effettuando\nla misura con MisuraInternet Speed Test.\n", style=wx.ALIGN_CENTRE)
+    self.label_2 = wx.StaticText(self, -1, "Se NON e' stata effettuata l’iscrizione inserire\nla provincia in cui si sta effettuando\nla misura con MisuraInternet Speed Test.\n", style=wx.ALIGN_CENTRE)
     self.label_provincia = wx.StaticText(self, -1, "Provincia:", style=wx.ALIGN_RIGHT)
     self.text_provincia = wx.ComboBox(self, choices=provinciaList, style=wx.CB_READONLY)
 
@@ -201,7 +201,7 @@ def getconf(code, filepath, url):
   data = connection.getresponse().read() 
   logger.debug("Dati ricevuti:\n%s" % data)
   
-  # Controllo se nel file di configurazione è presente il codice di attivazione. #
+  # Controllo se nel file di configurazione e' presente il codice di attivazione. #
   if (data.find(code) != -1 or data.find("username") != -1):
     data2file=open(filepath,'w')
     data2file.write(data)
