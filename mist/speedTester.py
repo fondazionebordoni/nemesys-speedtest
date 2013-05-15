@@ -370,8 +370,9 @@ class SpeedTester(Thread):
     profiler = self._profiler.get_results()
     sleep(1)
     
-    ping_test = self._get_server()
-    server = ping_test['server']
+    if (self.is_oneshot()):
+      ping_test = self._get_server()
+      server = ping_test['server']
     
     task = self._download_task(server)
     if task == None:

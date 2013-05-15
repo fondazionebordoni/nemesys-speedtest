@@ -220,14 +220,13 @@ class mistGUI(wx.Frame):
 
     self._killTester()
     self._update_messages("Misura terminata\n", 'medium forest green', (14, 93, 92, 1), True)
-    is_oneshot = self._tester.is_oneshot()
-    if (is_oneshot):
+    if (self._tester.is_oneshot()):
       self._update_interface(">> MISURA TERMINATA <<\nPer la versione completa iscriviti su misurainternet.it", font = (12, 93, 92, 0))
       self._update_messages("Per effettuare altre misure e conservare i tuoi risultati nell'area riservata effettua l'iscrizione su misurainternet.it\n", 'black', (14, 90, 92, 0), True)
     else:
       self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura\n", font = (12, 93, 92, 0))
       self._update_messages("Sistema pronto per una nuova misura", 'black', (14, 90, 92, 0), True)
-    self._enable_button(is_oneshot)
+    self._enable_button()
     self.update_gauge(TOTAL_STEPS)
 
   def _killTester(self):
@@ -262,9 +261,9 @@ class mistGUI(wx.Frame):
       self._update_interface(">> PROFILAZIONE TERMINATA <<\nPremere PLAY per effettuare la misura", font = (12, 93, 92, 0))
       self._enable_button()
 
-  def _enable_button(self, only_check_button=False):
+  def _enable_button(self):
     self.bitmap_button_check.Enable()
-    if (not only_check_button):
+    if (not self._tester.is_oneshot()):
       self.bitmap_button_play.Enable()
 
   def _update_down(self, downwidth):

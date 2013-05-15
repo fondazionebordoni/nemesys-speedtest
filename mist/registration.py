@@ -17,12 +17,12 @@ SWN = 'MisuraInternet Speed Test'
 logger = logging.getLogger()
 
 configurationServer = 'https://speedtest.agcom244.fub.it/Config'
-MAXretry = 5 ## numero massimo di tentativi prima di chiudere la finestra ##
+MAXretry = 5  # # numero massimo di tentativi prima di chiudere la finestra ##
 provinciaList = sorted(["TO", "VC", "NO", "CN", "AT", "AL", "AO", "IM", "SV", "GE", "SP", "VA", "CO", "SO", "MI", "BG", "BS", "PV", "CR", "MN", "BZ", "TN", "VR", "VI", "BL", "TV", "VE", "PD", "RO", "UD", "GO", "TS", "PC", "PR", "RE", "MO", "BO", "FE", "RA", "FC", "PU", "AN", "MC", "AP", "MS", "LU", "PT", "FI", "LI", "PI", "AR", "SI", "GR", "PG", "TR", "VT", "RI", "RM", "LT", "FR", "CE", "BN", "NA", "AV", "SA", "AQ", "TE", "PE", "CH", "CB", "FG", "BA", "TA", "BR", "LE", "PZ", "MT", "CS", "CZ", "RC", "TP", "PA", "ME", "AG", "CL", "EN", "CT", "RG", "SR", "SS", "NU", "CA", "PN", "IS", "OR", "BI", "LC", "LO", "RN", "PO", "KR", "VV", "VB", "OT", "OG", "VS", "CI", "MB", "FM", "BT"])
 
 RegInfo = \
 { \
-"style":wx.OK|wx.ICON_INFORMATION, \
+"style":wx.OK | wx.ICON_INFORMATION, \
 "title":"Informazioni sulla registrazione", \
 "message": \
 '''
@@ -42,21 +42,21 @@ Al momento dell'inserimento si prega di avere accesso alla rete.''' % (SWN, MAXr
 
 RegSuccess = \
 { \
-"style":wx.OK|wx.ICON_EXCLAMATION, \
+"style":wx.OK | wx.ICON_EXCLAMATION, \
 "title":"%s Success" % SWN, \
 "message":"\nUsername e password corrette e verificate." \
 }
 
 RegSuccessOneShot = \
 { \
-"style":wx.OK|wx.ICON_EXCLAMATION, \
+"style":wx.OK | wx.ICON_EXCLAMATION, \
 "title":"%s Success" % SWN, \
 "message":"\nL'installazione e' andata a buon fine." \
 }
 
 ErrorCode = \
 { \
-"style":wx.OK|wx.ICON_ERROR, \
+"style":wx.OK | wx.ICON_ERROR, \
 "title":"%s Error" % SWN, \
 "message": \
 '''
@@ -68,21 +68,21 @@ personale sul sito www.misurainternet.it
 
 ErrorSave = \
 { \
-"style":wx.OK|wx.ICON_ERROR, \
+"style":wx.OK | wx.ICON_ERROR, \
 "title":"%s Error" % SWN, \
 "message":"\nErrore nel salvataggio del file di configurazione." \
 }
 
 ErrorDownload = \
 { \
-"style":wx.OK|wx.ICON_ERROR, \
+"style":wx.OK | wx.ICON_ERROR, \
 "title":"%s Error" % SWN, \
 "message":"\nErrore nel download del file di configurazione\no credenziali di accesso non corrette." \
 }
 
 ErrorRetry = \
 { \
-"style":wx.OK|wx.ICON_ERROR, \
+"style":wx.OK | wx.ICON_ERROR, \
 "title":"%s Error" % SWN, \
 "message": \
 '''
@@ -94,7 +94,7 @@ delle credenziali di accesso e di avere accesso alla rete.
 
 ErrorRegistration = \
 { \
-"style":wx.OK|wx.ICON_ERROR, \
+"style":wx.OK | wx.ICON_ERROR, \
 "title":"%s Registration Error" % SWN, \
 "message": "\nQuesta copia di %s non risulta correttamente registrata." % SWN \
 }
@@ -103,7 +103,7 @@ ErrorRegistration = \
 class Dialog(wx.Dialog):
 
   def __init__(self, parent, title, default, caption):
-    #kwds["style"] = wx.DEFAULT_FRAME_STYLE
+    # kwds["style"] = wx.DEFAULT_FRAME_STYLE
     wx.Dialog.__init__(self, None, -1, "")
     self.label_1 = wx.StaticText(self, -1, "\nSe e' stata effettuata l'iscrizione inserire\ni codici di accesso (username e password)\nutilizzati per accedere all'area personale.\n", style=wx.ALIGN_CENTRE)
     self.label_username = wx.StaticText(self, -1, "Username:", style=wx.ALIGN_RIGHT)
@@ -182,14 +182,17 @@ class Dialog(wx.Dialog):
 
 
 
-def showDialog(dialog):
-  msgBox = wx.MessageDialog(None, dialog['message'], dialog['title'], dialog['style'])
+def showDialog(dialog, message=None):
+  if (message == None):
+    msgBox = wx.MessageDialog(None, dialog['message'], dialog['title'], dialog['style'])
+  else:
+    msgBox = wx.MessageDialog(None, message, dialog['title'], dialog['style'])
   msgBox.ShowModal()
   msgBox.Destroy()
   
 def getconf(code, filepath, url):
-  ## Scarica il file di configurazione dalla url (HTTPS) specificata, salvandolo nel file specificato. ##
-  ## Solleva eccezioni in caso di problemi o file ricevuto non corretto. ##
+  # # Scarica il file di configurazione dalla url (HTTPS) specificata, salvandolo nel file specificato. ##
+  # # Solleva eccezioni in caso di problemi o file ricevuto non corretto. ##
   
   url = urlparse.urlparse(url)
   connection = httplib.HTTPSConnection(host=url.hostname)
@@ -203,11 +206,10 @@ def getconf(code, filepath, url):
   
   # Controllo se nel file di configurazione e' presente il codice di attivazione. #
   if (data.find(code) != -1 or data.find("username") != -1):
-    data2file=open(filepath,'w')
+    data2file = open(filepath, 'w')
     data2file.write(data)
   else:
-    # TODO Stampa i dati di risposta nella finestra
-    raise Exception('incorrect configuration file.')
+    raise Exception(data.replace(";", ""))
 
   return os.path.exists(filepath)
   
@@ -215,13 +217,13 @@ def registration(code):
   if len(code) < 4:
     regOK = False
     logger.error("ClientID assente o di errata lunghezza")
-    retry=0
+    retry = 0
     showDialog(RegInfo)
     for retry in range(MAXretry):
-      ## Prendo un codice licenza valido sintatticamente  ##
+      # # Prendo un codice licenza valido sintatticamente  ##
       code = None
-      logger.info('Tentativo di registrazione %s di %s' % (retry+1, MAXretry))
-      title = "Tentativo %s di %s" % (retry+1, MAXretry)
+      logger.info('Tentativo di registrazione %s di %s' % (retry + 1, MAXretry))
+      title = "Tentativo %s di %s" % (retry + 1, MAXretry)
       default = ""
       dlg = Dialog(None, title, default, wx.ID_OK)
       res = dlg.ShowModal()
@@ -229,10 +231,10 @@ def registration(code):
       dlg.Destroy()
       logger.info("Codici di accesso inseriti dall'utente: %s" % code)
       if (res != wx.ID_OK):
-        logger.warning('Registration aborted at attemp number %d' %(retry+1))
+        logger.warning('Registration aborted at attemp number %d' % (retry + 1))
         break
       
-      filepath=paths.CONF_MAIN 
+      filepath = paths.CONF_MAIN 
       try:
         if(code != None and len(code) > 4):
           # Prendo il file di configurazione. #
@@ -252,9 +254,9 @@ def registration(code):
           showDialog(ErrorCode)
       except Exception as error:
         logger.error('Configuration file not downloaded or incorrect: %s' % error)
-        showDialog(ErrorDownload)
+        showDialog(ErrorDownload, str(error))
       
-      if not ( retry+1 < MAXretry ):
+      if not (retry + 1 < MAXretry):
         showDialog(ErrorRetry)
         
     if not regOK:
@@ -269,4 +271,4 @@ def registration(code):
 if __name__ == '__main__':
   app = wx.PySimpleApp(0)
   registration()
-  #getconf('ab0cd1ef2gh3ij4kl5mn6op7qr8st9uv', './../config/client.conf', 'https://finaluser.agcom244.fub.it/Config')
+  # getconf('ab0cd1ef2gh3ij4kl5mn6op7qr8st9uv', './../config/client.conf', 'https://finaluser.agcom244.fub.it/Config')
