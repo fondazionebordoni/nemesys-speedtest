@@ -263,7 +263,7 @@ class mistGUI(wx.Frame):
 
   def _enable_button(self):
     self.bitmap_button_check.Enable()
-    if (not self._tester.is_oneshot()):
+    if (self._tester is None or not self._tester.is_oneshot()):
       self.bitmap_button_play.Enable()
 
   def _update_down(self, downwidth):
