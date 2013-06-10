@@ -224,7 +224,7 @@ class mistGUI(wx.Frame):
       self._update_interface(">> MISURA TERMINATA <<\nPer la versione completa iscriviti su misurainternet.it", font = (12, 93, 92, 0))
       self._update_messages("Per effettuare altre misure e conservare i tuoi risultati nell'area riservata effettua l'iscrizione su misurainternet.it\n", 'black', (14, 90, 92, 0), True)
     else:
-      self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura\n", font = (12, 93, 92, 0))
+      self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura", font = (12, 93, 92, 0))
       self._update_messages("Sistema pronto per una nuova misura", 'black', (14, 90, 92, 0), True)
     self._enable_button()
     self.update_gauge(TOTAL_STEPS)
