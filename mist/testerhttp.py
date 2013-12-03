@@ -205,6 +205,13 @@ def _init_test(type):
     
 
 if __name__ == '__main__':
-    t = HttpTester("eth0", "192.168.112.24", "pippo")
-    #print t.test_down("http://regopptest6.fub.it")
-    print t.test_up("http://regopptest6.fub.it/")
+    import platform
+    platform_name = platform.system().lower()
+    dev = None
+    if "win" in platform_name:
+        dev = "Scheda Ethernet"
+    else:
+        dev = "eth0"
+    t = HttpTester(dev, "192.168.112.24", "pippo")
+    print t.test_down("http://regopptest6.fub.it")
+    #print t.test_up("http://regopptest6.fub.it/")
