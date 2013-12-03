@@ -22,7 +22,6 @@ import datetime
 from logger import logging
 from errorcoder import Errorcoder
 import requests
-from fakefile2 import Fakefile
 import random
 from string import lowercase
 #import paths
