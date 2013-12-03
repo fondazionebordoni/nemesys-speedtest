@@ -10,42 +10,53 @@ import httplib
 import paths
 import os
 import wx
+from sysMonitor import SysMonitor, RES_MAC
 
 SWN = 'MisuraInternet Speed Test'
 
 logger = logging.getLogger()
 
 configurationServer = 'https://speedtest.agcom244.fub.it/Config'
-MAXretry = 3 ## numero massimo di tentativi prima di chiudere la finestra ##
-
+MAXretry = 5  # # numero massimo di tentativi prima di chiudere la finestra ##
+provinciaList = sorted(["TO", "VC", "NO", "CN", "AT", "AL", "AO", "IM", "SV", "GE", "SP", "VA", "CO", "SO", "MI", "BG", "BS", "PV", "CR", "MN", "BZ", "TN", "VR", "VI", "BL", "TV", "VE", "PD", "RO", "UD", "GO", "TS", "PC", "PR", "RE", "MO", "BO", "FE", "RA", "FC", "PU", "AN", "MC", "AP", "MS", "LU", "PT", "FI", "LI", "PI", "AR", "SI", "GR", "PG", "TR", "VT", "RI", "RM", "LT", "FR", "CE", "BN", "NA", "AV", "SA", "AQ", "TE", "PE", "CH", "CB", "FG", "BA", "TA", "BR", "LE", "PZ", "MT", "CS", "CZ", "RC", "TP", "PA", "ME", "AG", "CL", "EN", "CT", "RG", "SR", "SS", "NU", "CA", "PN", "IS", "OR", "BI", "LC", "LO", "RN", "PO", "KR", "VV", "VB", "OT", "OG", "VS", "CI", "MB", "FM", "BT"])
 
 RegInfo = \
 { \
-"style":wx.OK|wx.ICON_INFORMATION, \
+"style":wx.OK | wx.ICON_INFORMATION, \
 "title":"Informazioni sulla registrazione", \
 "message": \
 '''
 Verranno ora richieste le credenziali per l'attivazione.\n
-Inserire i codici di accesso (username e password) che hai 
-usato per accedere all'area personale di %s.\n
+Se NON e' stata effettuata l'iscrizione verra' richiesto di
+selezionare la provincia dalla quale si sta effettuando
+la misura con %s.\n
+Se e' stata effettuata l'iscrizione verra' richiesto di
+inserire i codici di accesso (username e password)
+utilizzate per accedere all'area riservata su misurainternet.it.
 Al momento dell'inserimento si prega di verificare
-la correttezza delle credenziali di accesso e di avere 
-accesso alla rete.\n
+la correttezza delle credenziali di accesso.\n
 Dopo %s tentativi falliti, sara' necessario riavviare
-il programma per procedere nuovamente all'inserimento.
-''' % (SWN, MAXretry)
+il programma per procedere nuovamente all'inserimento.\n
+Al momento dell'inserimento si prega di avere accesso alla rete.''' % (SWN, MAXretry)
 }
 
 RegSuccess = \
 { \
-"style":wx.OK|wx.ICON_EXCLAMATION, \
+"style":wx.OK | wx.ICON_EXCLAMATION, \
 "title":"%s Success" % SWN, \
 "message":"\nUsername e password corrette e verificate." \
 }
 
+RegSuccessOneShot = \
+{ \
+"style":wx.OK | wx.ICON_EXCLAMATION, \
+"title":"%s Success" % SWN, \
+"message":"\nL'installazione e' andata a buon fine." \
+}
+
 ErrorCode = \
 { \
-"style":wx.OK|wx.ICON_ERROR, \
+"style":wx.OK | wx.ICON_ERROR, \
 "title":"%s Error" % SWN, \
 "message": \
 '''
@@ -57,21 +68,21 @@ personale sul sito www.misurainternet.it
 
 ErrorSave = \
 { \
-"style":wx.OK|wx.ICON_ERROR, \
+"style":wx.OK | wx.ICON_ERROR, \
 "title":"%s Error" % SWN, \
 "message":"\nErrore nel salvataggio del file di configurazione." \
 }
 
 ErrorDownload = \
 { \
-"style":wx.OK|wx.ICON_ERROR, \
+"style":wx.OK | wx.ICON_ERROR, \
 "title":"%s Error" % SWN, \
 "message":"\nErrore nel download del file di configurazione\no credenziali di accesso non corrette." \
 }
 
 ErrorRetry = \
 { \
-"style":wx.OK|wx.ICON_ERROR, \
+"style":wx.OK | wx.ICON_ERROR, \
 "title":"%s Error" % SWN, \
 "message": \
 '''
@@ -83,7 +94,7 @@ delle credenziali di accesso e di avere accesso alla rete.
 
 ErrorRegistration = \
 { \
-"style":wx.OK|wx.ICON_ERROR, \
+"style":wx.OK | wx.ICON_ERROR, \
 "title":"%s Registration Error" % SWN, \
 "message": "\nQuesta copia di %s non risulta correttamente registrata." % SWN \
 }
@@ -91,15 +102,18 @@ ErrorRegistration = \
 
 class Dialog(wx.Dialog):
 
-  def __init__(self, parent, message, title, default, caption):
-    #kwds["style"] = wx.DEFAULT_FRAME_STYLE
+  def __init__(self, parent, title, default, caption):
+    # kwds["style"] = wx.DEFAULT_FRAME_STYLE
     wx.Dialog.__init__(self, None, -1, "")
-    self.label_1 = wx.StaticText(self, -1, message, style=wx.ALIGN_CENTRE)
+    self.label_1 = wx.StaticText(self, -1, "\nSe e' stata effettuata l'iscrizione inserire\ni codici di accesso (username e password)\nutilizzati per accedere all'area personale.\n", style=wx.ALIGN_CENTRE)
     self.label_username = wx.StaticText(self, -1, "Username:", style=wx.ALIGN_RIGHT)
     self.text_username = wx.TextCtrl(self, -1, default)
     self.label_password = wx.StaticText(self, -1, "Password:", style=wx.ALIGN_RIGHT)
     self.text_password = wx.TextCtrl(self, -1, "", style=wx.TE_PASSWORD)
     self.button_1 = wx.Button(self, caption, "Accedi")
+    self.label_2 = wx.StaticText(self, -1, "\nSe NON e' stata effettuata l'iscrizione inserire\nla provincia in cui si sta effettuando\nla misura con MisuraInternet Speed Test.\n", style=wx.ALIGN_CENTRE)
+    self.label_provincia = wx.StaticText(self, -1, "Provincia:", style=wx.ALIGN_RIGHT)
+    self.text_provincia = wx.ComboBox(self, choices=provinciaList, style=wx.CB_READONLY)
 
     self.__set_properties(title)
     self.__do_layout()
@@ -110,11 +124,13 @@ class Dialog(wx.Dialog):
   def __set_properties(self, title):
     # begin wxGlade: MyFrame.__set_properties
     self.SetTitle(title)
-    self.SetSize((300, 160))
-    self.label_username.SetMinSize((80, 20))
-    self.text_username.SetMinSize((180, 20))
-    self.label_password.SetMinSize((80, 20))
-    self.text_password.SetMinSize((180, 20))
+    self.SetSize((360, 294))
+    self.label_username.SetMinSize((80, 26))
+    self.text_username.SetMinSize((180, 26))
+    self.label_password.SetMinSize((80, 26))
+    self.text_password.SetMinSize((180, 26))
+    self.label_provincia.SetMinSize((80, 26))
+    self.text_provincia.SetMinSize((80, 26))
     # end wxGlade
 
   def __do_layout(self):
@@ -122,14 +138,21 @@ class Dialog(wx.Dialog):
     sizer_1 = wx.BoxSizer(wx.VERTICAL)
     sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
     sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
+    sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
 
-    sizer_1.Add(self.label_1, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+    sizer_1.Add(self.label_2, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM, 0)
 
-    sizer_2.Add(self.label_username, 0, 0, 0)
+    sizer_4.Add(self.label_provincia, 0, wx.ALIGN_CENTRE_VERTICAL, 0)
+    sizer_4.Add(self.text_provincia, 0, 0, 0)
+    sizer_1.Add(sizer_4, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
+
+    sizer_1.Add(self.label_1, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM, 0)
+
+    sizer_2.Add(self.label_username, 0, wx.ALIGN_CENTER_VERTICAL, 0)
     sizer_2.Add(self.text_username, 0, 0, 0)
     sizer_1.Add(sizer_2, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
 
-    sizer_3.Add(self.label_password, 0, 0, 0)
+    sizer_3.Add(self.label_password, 0, wx.ALIGN_CENTER_VERTICAL, 0)
     sizer_3.Add(self.text_password, 0, 0, 0)
     sizer_1.Add(sizer_3, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
 
@@ -140,25 +163,40 @@ class Dialog(wx.Dialog):
     # end wxGlade
 
   def GetValue(self):
-    return "%s|%s" % (self.text_username.GetValue(), hashlib.sha1(self.text_password.GetValue()).hexdigest())
+    username = self.text_username.GetValue()
+    password = self.text_password.GetValue()
+    provincia = self.text_provincia.GetValue()
+    if (len(username) > 2):
+      return "%s|%s" % (username, hashlib.sha1(password).hexdigest())
+    else:
+      if (len(provincia) == 2):
+        monitor = SysMonitor()
+        mac = monitor.checkres(RES_MAC)['value']
+        return "%s|%s" % (provincia, mac)
+      else:
+        return None
+
 
   def button_pressed(self, event):  # wxGlade: MyDialog.<event_handler>
     self.EndModal(event.GetId())
 
 
 
-def showDialog(dialog):
-  msgBox = wx.MessageDialog(None, dialog['message'], dialog['title'], dialog['style'])
+def showDialog(dialog, message=None):
+  if (message == None):
+    msgBox = wx.MessageDialog(None, dialog['message'], dialog['title'], dialog['style'])
+  else:
+    msgBox = wx.MessageDialog(None, message, dialog['title'], dialog['style'])
   msgBox.ShowModal()
   msgBox.Destroy()
   
 def getconf(code, filepath, url):
-  ## Scarica il file di configurazione dalla url (HTTPS) specificata, salvandolo nel file specificato. ##
-  ## Solleva eccezioni in caso di problemi o file ricevuto non corretto. ##
+  # # Scarica il file di configurazione dalla url (HTTPS) specificata, salvandolo nel file specificato. ##
+  # # Solleva eccezioni in caso di problemi o file ricevuto non corretto. ##
   
   url = urlparse.urlparse(url)
   connection = httplib.HTTPSConnection(host=url.hostname)
-  # Warning This does not do any verification of the server’s certificate. #
+  # Warning This does not do any verification of the server's certificate. #
 
   connection.request('GET', '%s?clientid=%s' % (url.path, code))
   logger.debug("Dati inviati: %s" % code)
@@ -166,12 +204,12 @@ def getconf(code, filepath, url):
   data = connection.getresponse().read() 
   logger.debug("Dati ricevuti:\n%s" % data)
   
-  # Controllo se nel file di configurazione è presente il codice di attivazione. #
+  # Controllo se nel file di configurazione e' presente il codice di attivazione. #
   if (data.find(code) != -1 or data.find("username") != -1):
-    data2file=open(filepath,'w')
+    data2file = open(filepath, 'w')
     data2file.write(data)
   else:
-    raise Exception('incorrect configuration file.')
+    raise Exception(data.replace(";", ""))
 
   return os.path.exists(filepath)
   
@@ -179,32 +217,34 @@ def registration(code):
   if len(code) < 4:
     regOK = False
     logger.error("ClientID assente o di errata lunghezza")
-    retry=0
+    retry = 0
     showDialog(RegInfo)
     for retry in range(MAXretry):
-      ## Prendo un codice licenza valido sintatticamente  ##
+      # # Prendo un codice licenza valido sintatticamente  ##
       code = None
-      logger.info('Tentativo di registrazione %s di %s' % (retry+1, MAXretry))
-      message = "\nInserisci i codici di accesso (username e password)\nche hai usato per accedere all'area personale\n"
-      title = "Tentativo %s di %s" % (retry+1, MAXretry)
+      logger.info('Tentativo di registrazione %s di %s' % (retry + 1, MAXretry))
+      title = "Tentativo %s di %s" % (retry + 1, MAXretry)
       default = ""
-      dlg = Dialog(None, message, title, default, wx.ID_OK)
+      dlg = Dialog(None, title, default, wx.ID_OK)
       res = dlg.ShowModal()
       code = dlg.GetValue()
       dlg.Destroy()
       logger.info("Codici di accesso inseriti dall'utente: %s" % code)
       if (res != wx.ID_OK):
-        logger.warning('Registration aborted at attemp number %d' %(retry+1))
+        logger.warning('Registration aborted at attemp number %d' % (retry + 1))
         break
       
-      filepath=paths.CONF_MAIN 
+      filepath = paths.CONF_MAIN 
       try:
         if(code != None and len(code) > 4):
           # Prendo il file di configurazione. #
           regOK = getconf(code, filepath, configurationServer)
           if (regOK == True):
             logger.info('Configuration file successfully downloaded and saved')
-            showDialog(RegSuccess)
+            if ('|' in code):
+              showDialog(RegSuccessOneShot)
+            else:
+              showDialog(RegSuccess)
             break
           else:
             logger.error('Configuration file not correctly saved')
@@ -214,9 +254,9 @@ def registration(code):
           showDialog(ErrorCode)
       except Exception as error:
         logger.error('Configuration file not downloaded or incorrect: %s' % error)
-        showDialog(ErrorDownload)
+        showDialog(ErrorDownload, str(error))
       
-      if not ( retry+1 < MAXretry ):
+      if not (retry + 1 < MAXretry):
         showDialog(ErrorRetry)
         
     if not regOK:
@@ -231,4 +271,4 @@ def registration(code):
 if __name__ == '__main__':
   app = wx.PySimpleApp(0)
   registration()
-  #getconf('ab0cd1ef2gh3ij4kl5mn6op7qr8st9uv', './../config/client.conf', 'https://finaluser.agcom244.fub.it/Config')
+  # getconf('ab0cd1ef2gh3ij4kl5mn6op7qr8st9uv', './../config/client.conf', 'https://finaluser.agcom244.fub.it/Config')
