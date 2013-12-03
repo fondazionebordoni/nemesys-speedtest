@@ -21,11 +21,16 @@ import threading
 import datetime
 from logger import logging
 from errorcoder import Errorcoder
+import requests
+from fakefile2 import Fakefile
+import random
+from string import lowercase
 #import paths
 
 
 THRESHOLD_START=0.1
 logger = logging.getLogger()
+#TODO: fix!
 #errors = Errorcoder(paths.CONF_ERRORS)
 errors = Errorcoder("../config/errorcodes.conf")
 
@@ -45,24 +50,17 @@ class HttpTester:
         self._num_bytes = num_bytes
         
         self._time_to_stop = False
-        self._bytes_read = 0
-        self._last_bytes_read = 0
+        self._transfered_bytes = 0
+        self._last_transfered_bytes = 0
         self._last_diff = 0
         self._measures = []
         self._measure_count = 0
         self._go_ahead = False
+        self._test = None
         
     def test_down(self, url):
-        self._http_server = url
         
-        test = {}
-        test['type'] = 'download'
-        test['protocol'] = 'http'
-        test['time'] = 0
-        test['bytes'] = 0
-        test['stats'] = {}
-        test['errorcode'] = 0
-
+        test = _init_test('download')
         bit_per_second = -1
 
         try:
@@ -88,19 +86,19 @@ class HttpTester:
         while not self._go_ahead and has_more and not self._time_to_stop:
             buffer = response.read(self._num_bytes)
             if buffer: 
-                self._bytes_read += len(buffer)
+                self._transfered_bytes += len(buffer)
             else: 
                 has_more = False
         if self._go_ahead:
             logger.debug("Starting HTTP measurement....")
             start_time = datetime.datetime.now()
-            start_bytes_read = self._bytes_read
-            t = threading.Timer(10, self._stop_measurement)
+            start_transfered_bytes = self._transfered_bytes
+            t = threading.Timer(10, self._stop_down_measurement)
             t.start()
             while has_more and not self._time_to_stop:
                 buffer = response.read(self._num_bytes)
                 if buffer: 
-                    self._bytes_read += len(buffer)
+                    self._transfered_bytes += len(buffer)
                 else: 
                     has_more = False
             # TODO: abort the connection Not needed?
@@ -108,7 +106,7 @@ class HttpTester:
                 end_time = datetime.datetime.now()
                 elapsed_time = end_time - start_time
                 elapsed_time_seconds = elapsed_time.seconds + elapsed_time.microseconds/1000000.0
-                measured_bytes = self._bytes_read - start_bytes_read
+                measured_bytes = self._transfered_bytes - start_transfered_bytes
                 bit_per_second = measured_bytes * 8.0 / elapsed_time_seconds
                 test['bytes'] = measured_bytes
                 test['time'] = elapsed_time_seconds
@@ -121,18 +119,18 @@ class HttpTester:
         return test
         
 
-    def _stop_measurement(self):
+    def _stop_down_measurement(self):
         self._read_measure()
         logger.debug("Stopping....")
         self._time_to_stop = True
     
     def _read_measure(self):
-        new_bytes_read = self._bytes_read
+        new_transfered_bytes = self._transfered_bytes
         # TODO add to array of measurements
-        diff = new_bytes_read - self._last_bytes_read
+        diff = new_transfered_bytes - self._last_transfered_bytes
         logger.debug("reading count = %d, diff is %d" % (self._measure_count,diff))
 
-        if (not self._go_ahead) and (self._last_bytes_read != 0):
+        if (not self._go_ahead) and (self._last_transfered_bytes != 0):
             acc = (diff - self._last_diff)/self._last_diff
             if acc < THRESHOLD_START:
                 self._go_ahead = True
@@ -140,14 +138,63 @@ class HttpTester:
         self._last_diff = diff
         self._measures.append((self._measure_count, diff))
         self._measure_count += 1
-        self._last_bytes_read = new_bytes_read
+        self._last_transfered_bytes = new_transfered_bytes
         if not self._time_to_stop:
             t = threading.Timer(1.0, self._read_measure)
             t.start()
 
+    def _buffer_generator(self, bufsize):
+        self._transfered_bytes = 0
+        
+        while not self._go_ahead and not self._time_to_stop:
+            yield random.choice(lowercase) * bufsize
+            self._transfered_bytes += bufsize
+        if self._go_ahead:
+            logger.debug("Starting HTTP measurement....")
+            start_time = datetime.datetime.now()
+            start_transfered_bytes = self._transfered_bytes
+            t = threading.Timer(10, self._stop_down_measurement)
+            t.start()
+            while not self._time_to_stop:
+                yield random.choice(lowercase) * bufsize
+                self._transfered_bytes += bufsize
+            end_time = datetime.datetime.now()
+            elapsed_time = end_time - start_time
+            elapsed_time_seconds = elapsed_time.seconds + elapsed_time.microseconds/1000000.0
+            measured_bytes = self._transfered_bytes - start_transfered_bytes
+            bit_per_second = measured_bytes * 8.0 / elapsed_time_seconds
+            self._test['bytes'] = measured_bytes
+            self._test['time'] = elapsed_time_seconds
+            self._test['rate'] = bit_per_second
+            logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes,elapsed_time_seconds,bit_per_second))
+        else:
+            self._test['errorcode'] = errors.geterrorcode("Bitrate non stabilizzata")
+
+        yield '_ThisIsTheEnd_'
+    
+    
+    def test_up(self, url):
+        self._test = _init_test('upload')
+        t = threading.Timer(1.0, self._read_measure)
+        t.start()
+        
+        requests.post(url, data=self._buffer_generator(5*1024))
+        return self._test
+
+def _init_test(type):
+    test = {}
+    test['type'] = type
+    test['protocol'] = 'http'
+    test['time'] = 0
+    test['bytes'] = 0
+    test['stats'] = {}
+    test['errorcode'] = 0
+    return test
         
     # TODO: also read spurious traffic!
+    
 
 if __name__ == '__main__':
     t = HttpTester("eth0", "192.168.112.24", "pippo")
     print t.test_down("http://regopptest6.fub.it")
+    #print t.test_up("http://regopptest6.fub.it/")
