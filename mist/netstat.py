@@ -43,6 +43,7 @@ class NetstatWindows(Netstat):
     '''
 
 	def _get_entry(self, entry_name):
+		entry_value = None
 		whereCondition = " WHERE Name Like \"%" + self.if_device + "%\""
 		result = _execute_query("Win32_PerfRawData_Tcpip_NetworkInterface", whereCondition, entry_name)
 		if (result):
