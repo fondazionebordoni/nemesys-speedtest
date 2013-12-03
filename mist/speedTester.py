@@ -38,6 +38,8 @@ TASK_FILE = '40000'
 PING = 'ping'
 DOWN = 'down'
 UP = 'up'
+HTTP_DOWN = 'http_down'
+HTTP_UP = 'http_up'
 
 TH_PACKETDROP = 0.05  # Soglia per numero di pacchetti persi #
 TH_TRAFFIC = 0.1  # Soglia per il rapporto tra traffico 'spurio' e traffico totale #
@@ -203,22 +205,28 @@ class SpeedTester(Thread):
         wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': None})
         return test_status
     else:
+      logger.warning('Errore durante il controllo del numero dei pacchetti totali: %d' % packet_tot)
       info = 'Errore durante la misura, impossibile analizzare i dati di test'
       wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': None})
       return test_status
 
-    if (testtype == DOWN):
+    if (testtype == DOWN or testtype == HTTP_DOWN):
       byte_nem = stats.payload_down_nem_net
       byte_all = byte_nem + stats.byte_down_oth_net
       packet_nem = stats.packet_up_nem_net
       packet_all = packet_nem + stats.packet_up_oth_net
-    else:
+    elif (testtype == UP or testtype == HTTP_UP):
       byte_nem = stats.payload_up_nem_net
       byte_all = byte_nem + stats.byte_up_oth_net
       packet_nem = stats.packet_down_nem_net
       packet_all = packet_nem + stats.packet_down_oth_net
+    else:
+      info = 'Errore durante la misura, impossibile analizzare i dati di test'
+      wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': 'error'})
+      return test_status
 
     logger.info('Analisi dei rapporti di traffico')
+    logger.debug('Dati per la soglia: byte_nem: %d | byte_all: %d | packet_nem: %d | packet_all: %d' % (byte_nem, byte_all, packet_nem, packet_all))
     if byte_all > 0 and packet_all > 0:
       traffic_ratio = float(byte_all - byte_nem) / float(byte_all)
       packet_ratio_inv = float(packet_all - packet_nem) / float(packet_all)
@@ -255,6 +263,14 @@ class SpeedTester(Thread):
     else:
       raise Exception("Errore durante la valutazione del test")
   
+  def _get_max_http_bandwidth(self, test):
+
+    rate_max = test.dict().get('rate_max', 0) 
+    if rate_max > 0:
+      return rate_max
+    else:
+      raise Exception("Errore durante la valutazione del test")
+  
   
   def _do_test(self, tester, type, task):
     test_done = 0
@@ -275,6 +291,12 @@ class SpeedTester(Thread):
     elif type == UP:
       stringtype = "ftp upload"
       test_todo = task.upload
+    elif type == HTTP_DOWN:
+      stringtype = "http download"
+      test_todo = task.http_download
+    elif type == HTTP_UP:
+      stringtype = "http upload"
+      test_todo = task.http_upload
 
     self._profiler.set_check(set([RES_HOSTS, RES_TRAFFIC]))
     pre_profiler = self._profiler.get_results()
@@ -305,11 +327,17 @@ class SpeedTester(Thread):
           logger.info("[PING] " + message + " [PING]")
           test.update(tester.testping())
         elif type == DOWN:
-          logger.info("[DOWNLOAD] " + message + " [DOWNLOAD]")
+          logger.info("[FTP DOWNLOAD] " + message + " [FTP DOWNLOAD]")
           test.update(tester.testftpdown(self._client.profile.download * task.multiplier * 1000 / 8, task.ftpdownpath, timeout))
         elif type == UP:
-          logger.info("[UPLOAD] " + message + " [UPLOAD]")
+          logger.info("[FTP UPLOAD] " + message + " [FTP UPLOAD]")
           test.update(tester.testftpup(self._client.profile.upload * task.multiplier * 1000 / 8, task.ftpuppath, timeout))
+        elif type == HTTP_DOWN:
+          logger.info("[HTTP DOWNLOAD] " + message + " [HTTP DOWNLOAD]")
+          test.update(tester.testhttpdown())
+        elif type == HTTP_UP:
+          logger.info("[HTTP UPLOAD] " + message + " [HTTP UPLOAD]")
+          test.update(tester.testhttpup())
         else:
           logger.warn("Tipo di test da effettuare non definito!")
 
@@ -324,10 +352,10 @@ class SpeedTester(Thread):
         else:
           bandwidth = self._get_bandwidth(test)
           
-          if type == DOWN:
+          if type == DOWN or type == HTTP_DOWN:
             self._client.profile.download = min(bandwidth, 40000)
             task.update_ftpdownpath(bandwidth)
-          elif type == UP:
+          elif type == UP or type == HTTP_UP:
             self._client.profile.upload = min(bandwidth, 40000)
           else:
             logger.warn("Tipo di test effettuato non definito!")
@@ -343,6 +371,8 @@ class SpeedTester(Thread):
               if bandwidth > best_value:
                 best_value = bandwidth
                 best_test = test
+          else:
+            best_test = test
             
         wx.CallAfter(self._gui.update_gauge)
         test_good += 1
@@ -364,7 +394,7 @@ class SpeedTester(Thread):
 
     self._running.set()
     
-    wx.CallAfter(self._gui._update_messages, "Inizio dei test di misura", font=(14, 93, 92, 1))
+    wx.CallAfter(self._gui._update_messages, "Inizio dei test di misura", font=(12, 93, 92, 1))
     wx.CallAfter(self._gui.update_gauge)
 
     # Profilazione
@@ -397,7 +427,8 @@ class SpeedTester(Thread):
         measure = Measure(self._client, start_time, task.server, ip, os, mac, self._version)
         # logger.debug("\n\n%s\n\n",str(measure))
         
-        test_types = [PING, DOWN, UP]
+        # test_types = [PING, DOWN, HTTP_DOWN, UP, HTTP_UP]
+        test_types = [HTTP_DOWN, HTTP_UP]
         
         # Testa i ping
         for type in test_types:
@@ -406,13 +437,19 @@ class SpeedTester(Thread):
           wx.CallAfter(self._gui._update_messages, "Elaborazione dei dati")
           # if (move_on_key()):
           if (type == PING):
-            wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.time, 'green', font=(14, 93, 92, 1))
+            wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.time, 'green', font=(12, 93, 92, 1))
             wx.CallAfter(self._gui._update_ping, test.time)
           elif (type == DOWN):
-            wx.CallAfter(self._gui._update_messages, "Download bandwidth: %.0f kbps" % self._get_bandwidth(test), 'green', font=(14, 93, 92, 1))
+            wx.CallAfter(self._gui._update_messages, "Download (FTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
             wx.CallAfter(self._gui._update_down, self._get_bandwidth(test))
           elif (type == UP):
-            wx.CallAfter(self._gui._update_messages, "Upload bandwidth: %.0f kbps" % self._get_bandwidth(test), 'green', font=(14, 93, 92, 1))
+            wx.CallAfter(self._gui._update_messages, "Upload (FTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
+            wx.CallAfter(self._gui._update_up, self._get_bandwidth(test))
+          elif (type == HTTP_DOWN):
+            wx.CallAfter(self._gui._update_messages, "Download (HTTP): Media %.0f kbps, Max %.0f kbps" % (self._get_bandwidth(test), self._get_max_http_bandwidth(test)), 'green', font=(12, 93, 92, 1))
+            wx.CallAfter(self._gui._update_down, self._get_bandwidth(test))
+          elif (type == HTTP_UP):
+            wx.CallAfter(self._gui._update_messages, "Upload (HTTP): Media %.0f kbps, Max %.0f kbps" % (self._get_bandwidth(test), self._get_max_http_bandwidth(test)), 'green', font=(12, 93, 92, 1))
             wx.CallAfter(self._gui._update_up, self._get_bandwidth(test))
           # else:
             # raise Exception("chiave USB mancante")

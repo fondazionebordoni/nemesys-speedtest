@@ -219,13 +219,13 @@ class mistGUI(wx.Frame):
     #self.bitmap_button_play.SetBitmapLabel(wx.Bitmap(path.join(paths.ICONS, u"play.png")))
 
     self._killTester()
-    self._update_messages("Misura terminata\n", 'medium forest green', (14, 93, 92, 1), True)
+    self._update_messages("Misura terminata\n", 'medium forest green', (12, 93, 92, 1), True)
     if (self._tester.is_oneshot()):
       self._update_interface(">> MISURA TERMINATA <<\nPer la versione completa iscriviti su misurainternet.it", font = (12, 93, 92, 0))
-      self._update_messages("Per effettuare altre misure e conservare i tuoi risultati nell'area riservata effettua l'iscrizione su misurainternet.it\n", 'black', (14, 90, 92, 0), True)
+      self._update_messages("Per effettuare altre misure e conservare i tuoi risultati nell'area riservata effettua l'iscrizione su misurainternet.it\n", 'black', (12, 90, 92, 0), True)
     else:
       self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura", font = (12, 93, 92, 0))
-      self._update_messages("Sistema pronto per una nuova misura", 'black', (14, 90, 92, 0), True)
+      self._update_messages("Sistema pronto per una nuova misura", 'black', (12, 90, 92, 0), True)
     self._enable_button()
     self.update_gauge(TOTAL_STEPS)
 
@@ -244,12 +244,12 @@ class mistGUI(wx.Frame):
     self.bitmap_button_play.Disable()
     self.bitmap_button_check.Disable()
     self._reset_info()
-    self._update_messages("Profilazione dello stato del sistema di misura", 'black', font = (14, 93, 92, 1))
+    self._update_messages("Profilazione dello stato del sistema di misura", 'black', font = (12, 93, 92, 1))
     self._profiler = sysProfiler(self)
     self._profiler.start()
 
   def _after_check(self):
-    self._update_messages("Profilazione terminata\n", 'medium forest green', font = (14, 93, 92, 1), fill = True)
+    self._update_messages("Profilazione terminata\n", 'medium forest green', font = (12, 93, 92, 1), fill = True)
     if (self._button_play):
       self._button_play = False
       self._button_check = False
