@@ -24,6 +24,7 @@ from errorcoder import Errorcoder
 import requests
 import random
 from string import lowercase
+import netstat
 #import paths
 
 
@@ -56,6 +57,10 @@ class HttpTester:
         self._measure_count = 0
         self._go_ahead = False
         self._test = None
+        self._netstat = netstat.get_netstat(dev)
+        
+    def get_measures(self):
+        return self._measures
         
     def test_down(self, url):
         
@@ -90,6 +95,7 @@ class HttpTester:
                 has_more = False
         if self._go_ahead:
             logger.debug("Starting HTTP measurement....")
+            start_total_bytes = self._netstat.get_rx_bytes()
             start_time = datetime.datetime.now()
             start_transfered_bytes = self._transfered_bytes
             t = threading.Timer(10, self._stop_down_measurement)
@@ -106,10 +112,12 @@ class HttpTester:
                 elapsed_time = end_time - start_time
                 elapsed_time_seconds = elapsed_time.seconds + elapsed_time.microseconds/1000000.0
                 measured_bytes = self._transfered_bytes - start_transfered_bytes
+                total_bytes = self._netstat.get_rx_bytes() - start_total_bytes
                 bit_per_second = measured_bytes * 8.0 / elapsed_time_seconds
                 test['bytes'] = measured_bytes
                 test['time'] = elapsed_time_seconds
                 test['rate'] = bit_per_second
+                test['rate_total'] = total_bytes * 8.0 / elapsed_time_seconds
                 logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes,elapsed_time_seconds,bit_per_second))
             else:
                 test['errorcode'] = errors.geterrorcode("File non sufficientemente grande per la misura")
@@ -151,6 +159,7 @@ class HttpTester:
         if self._go_ahead:
             logger.debug("Starting HTTP measurement....")
             start_time = datetime.datetime.now()
+            start_total_bytes = self._netstat.get_tx_bytes()
             start_transfered_bytes = self._transfered_bytes
             t = threading.Timer(10, self._stop_down_measurement)
             t.start()
@@ -162,9 +171,11 @@ class HttpTester:
             elapsed_time_seconds = elapsed_time.seconds + elapsed_time.microseconds/1000000.0
             measured_bytes = self._transfered_bytes - start_transfered_bytes
             bit_per_second = measured_bytes * 8.0 / elapsed_time_seconds
+            total_bytes = self._netstat.get_tx_bytes() - start_total_bytes
             self._test['bytes'] = measured_bytes
             self._test['time'] = elapsed_time_seconds
             self._test['rate'] = bit_per_second
+            self._test['rate_total'] = total_bytes * 8.0 / elapsed_time_seconds
             logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes,elapsed_time_seconds,bit_per_second))
         else:
             self._test['errorcode'] = errors.geterrorcode("Bitrate non stabilizzata")
@@ -195,5 +206,5 @@ def _init_test(type):
 
 if __name__ == '__main__':
     t = HttpTester("eth0", "192.168.112.24", "pippo")
-    print t.test_down("http://regopptest6.fub.it")
-    #print t.test_up("http://regopptest6.fub.it/")
+    #print t.test_down("http://regopptest6.fub.it")
+    print t.test_up("http://regopptest6.fub.it/")
