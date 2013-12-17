@@ -28,9 +28,8 @@ import ping
 import wx
 import re
 
-## OPTIONAL ##
-from task import Task   #for Fake Task#
-
+# # OPTIONAL ##
+from task import Task  # for Fake Task#
 
 logger = logging.getLogger()
 
@@ -39,12 +38,14 @@ TASK_FILE = '40000'
 PING = 'ping'
 DOWN = 'down'
 UP = 'up'
+HTTP_DOWN = 'http_down'
+HTTP_UP = 'http_up'
 
-TH_PACKETDROP = 0.05    # Soglia per numero di pacchetti persi #
-TH_TRAFFIC = 0.1        # Soglia per il rapporto tra traffico 'spurio' e traffico totale #
-TH_INVERTED = 0.9       # Soglia per il rapporto tra traffico 'spurio' e traffico totale nella direzione opposta a quella di test #
+TH_PACKETDROP = 0.05  # Soglia per numero di pacchetti persi #
+TH_TRAFFIC = 0.1  # Soglia per il rapporto tra traffico 'spurio' e traffico totale #
+TH_INVERTED = 0.9  # Soglia per il rapporto tra traffico 'spurio' e traffico totale nella direzione opposta a quella di test #
 
-TIME_LAG = 5            # Tempo di attesa tra una misura e la successiva in caso di misura fallita #
+TIME_LAG = 5  # Tempo di attesa tra una misura e la successiva in caso di misura fallita #
 MAX_TEST_RETRY = 3
 MAX_SEND_RETRY = 3
 
@@ -65,7 +66,7 @@ class SpeedTester(Thread):
     self._version = version
     self._profiler = sysProfiler(self._gui, 'tester')
 
-    parser = OptionParser(version = self._version, description = '')
+    parser = OptionParser(version=self._version, description='')
     (options, args, md5conf) = parser.parse()
 
     self._client = self._getclient(options)
@@ -80,24 +81,26 @@ class SpeedTester(Thread):
 
     self._running = Event()
   
+  def is_oneshot(self):
+    return self._client.is_oneshot()
   
-  def join(self, timeout = None):
+  def join(self, timeout=None):
     self._running.clear()
     logger.info("Chiusura del tester")
-    #wx.CallAfter(self._gui._update_messages, "Attendere la chiusura del programma...")
+    # wx.CallAfter(self._gui._update_messages, "Attendere la chiusura del programma...")
 
 
   def _getclient(self, options):
 
-    profile = Profile(id = None, upload = options.bandwidthup,
-                      download = options.bandwidthdown)
+    profile = Profile(id=None, upload=options.bandwidthup,
+                      download=options.bandwidthdown)
     isp = Isp('fub001')
-    return Client(id = options.clientid, profile = profile, isp = isp,
-                  geocode = None, username = 'speedtest',
-                  password = options.password)
+    return Client(id=options.clientid, profile=profile, isp=isp,
+                  geocode=None, username='speedtest',
+                  password=options.password)
 
   
-  def _get_server(self, servers = set([Server('NAMEX', '193.104.137.133', 'NAP di Roma'), Server('MIX', '193.104.137.4', 'NAP di Milano')])):
+  def _get_server(self, servers=set([Server('NAMEX', '193.104.137.133', 'NAP di Roma'), Server('MIX', '193.104.137.4', 'NAP di Milano')])):
 
     maxREP = 4
     best = {}
@@ -113,7 +116,7 @@ class SpeedTester(Thread):
 
     for repeat in range(maxREP):
       sleep(1)
-      wx.CallAfter(self._gui._update_messages, "Test %d di %d di ping." % (repeat+1, maxREP), 'blue')
+      wx.CallAfter(self._gui._update_messages, "Test %d di %d di ping." % (repeat + 1, maxREP), 'blue')
       wx.CallAfter(self._gui.update_gauge)
       for server in servers:
         try:
@@ -144,27 +147,30 @@ class SpeedTester(Thread):
     return best
   
   
-  def _download_task(self):
+  def _download_task(self, server=None):
     # Scarica il prossimo task dallo scheduler #
-    #logger.info('Reading resource %s for client %s' % (self._scheduler, self._client))
+    # logger.info('Reading resource %s for client %s' % (self._scheduler, self._client))
 
     try:
       url = urlparse(self._scheduler)
       certificate = self._client.isp.certificate
       
-      connection = httputils.getverifiedconnection(url = url, certificate = certificate, timeout = self._httptimeout)
-      connection.request('GET', '%s?clientid=%s&version=%s&confid=%s' % (url.path, self._client.id, self._version, self._md5conf))
+      connection = httputils.getverifiedconnection(url=url, certificate=certificate, timeout=self._httptimeout)
+      if (server != None):
+        connection.request('GET', '%s?clientid=%s&version=%s&confid=%s&server=%s' % (url.path, self._client.id, self._version, self._md5conf, server.ip))
+      else:
+        connection.request('GET', '%s?clientid=%s&version=%s&confid=%s' % (url.path, self._client.id, self._version, self._md5conf))
       
       data = connection.getresponse().read()
-      #logger.debug(data)
+      # logger.debug(data)
       
       task = xml2task(data)
-      #task = Task(11, '2011-11-11 11:11:11', Server('fubsrvrmnmx03', '193.104.137.133', 'NAMEX', 'Roma'), '/download/40000.rnd', 'upload/1111.rnd', 4, 4, 10, 4, 4, 0, True)
+      # task = Task(11, '2011-11-11 11:11:11', Server('fubsrvrmnmx03', '193.104.137.133', 'NAMEX', 'Roma'), '/download/40000.rnd', 'upload/1111.rnd', 4, 4, 10, 4, 4, 0, True)
       
       if (task == None): 
         logger.info('Lo scheduler ha inviato un task vuoto.')
       else:
-        task.ftpdownpath = '/download/'+TASK_FILE+'.rnd'
+        task.ftpdownpath = '/download/' + TASK_FILE + '.rnd'
         self._client.profile.upload = int(TASK_FILE)
         logger.info("--------[ TASK ]--------")
         for key, val in task.dict.items():
@@ -199,34 +205,40 @@ class SpeedTester(Thread):
         wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': None})
         return test_status
     else:
+      logger.warning('Errore durante il controllo del numero dei pacchetti totali: %d' % packet_tot)
       info = 'Errore durante la misura, impossibile analizzare i dati di test'
       wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': None})
       return test_status
 
-    if (testtype == DOWN):
+    if (testtype == DOWN or testtype == HTTP_DOWN):
       byte_nem = stats.payload_down_nem_net
       byte_all = byte_nem + stats.byte_down_oth_net
       packet_nem = stats.packet_up_nem_net
       packet_all = packet_nem + stats.packet_up_oth_net
-    else:
+    elif (testtype == UP or testtype == HTTP_UP):
       byte_nem = stats.payload_up_nem_net
       byte_all = byte_nem + stats.byte_up_oth_net
       packet_nem = stats.packet_down_nem_net
       packet_all = packet_nem + stats.packet_down_oth_net
+    else:
+      info = 'Errore durante la misura, impossibile analizzare i dati di test'
+      wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': 'error'})
+      return test_status
 
     logger.info('Analisi dei rapporti di traffico')
+    logger.debug('Dati per la soglia: byte_nem: %d | byte_all: %d | packet_nem: %d | packet_all: %d' % (byte_nem, byte_all, packet_nem, packet_all))
     if byte_all > 0 and packet_all > 0:
       traffic_ratio = float(byte_all - byte_nem) / float(byte_all)
       packet_ratio_inv = float(packet_all - packet_nem) / float(packet_all)
       value1 = "%.2f%%" % (traffic_ratio * 100)
       value2 = "%.2f%%" % (packet_ratio_inv * 100)
-      logger.info('Traffico MIST: [ %d pacchetti di %d totali e %.1f Kbyte di %.1f totali ]' % (packet_nem,  packet_all, byte_nem / 1024.0, byte_all / 1024.0))
+      logger.info('Traffico MIST: [ %d pacchetti di %d totali e %.1f Kbyte di %.1f totali ]' % (packet_nem, packet_all, byte_nem / 1024.0, byte_all / 1024.0))
       logger.info('Percentuale di traffico spurio: %.2f%% traffico e %.2f%% pacchetti' % (traffic_ratio * 100, packet_ratio_inv * 100))
       if (0 <= traffic_ratio <= TH_TRAFFIC) and (0 <= packet_ratio_inv <= TH_INVERTED):
         test_status = True
         info = 'Traffico internet non legato alla misura: percentuali %s/%s' % (value1, value2)
         wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': True, 'info': info, 'value': value1}, False)
-        ## test.bytes = byte_all # Dato da salvare sulla misura?? ##
+        # # test.bytes = byte_all # Dato da salvare sulla misura?? ##
         return test_status
       elif (traffic_ratio > TH_TRAFFIC) or (packet_ratio_inv > TH_INVERTED):
         info = 'Eccessiva presenza di traffico internet non legato alla misura: percentuali %s/%s' % (value1, value2)
@@ -251,6 +263,14 @@ class SpeedTester(Thread):
     else:
       raise Exception("Errore durante la valutazione del test")
   
+  def _get_max_http_bandwidth(self, test):
+
+    rate_max = test.dict().get('rate_max', 0) 
+    if rate_max > 0:
+      return rate_max
+    else:
+      raise Exception("Errore durante la valutazione del test")
+  
   
   def _do_test(self, tester, type, task):
     test_done = 0
@@ -271,6 +291,12 @@ class SpeedTester(Thread):
     elif type == UP:
       stringtype = "ftp upload"
       test_todo = task.upload
+    elif type == HTTP_DOWN:
+      stringtype = "http download"
+      test_todo = task.http_download
+    elif type == HTTP_UP:
+      stringtype = "http upload"
+      test_todo = task.http_upload
 
     self._profiler.set_check(set([RES_HOSTS, RES_TRAFFIC]))
     pre_profiler = self._profiler.get_results()
@@ -282,7 +308,7 @@ class SpeedTester(Thread):
       profiler = self._profiler.get_results()
       sleep(1)
       
-      wx.CallAfter(self._gui._update_messages, "Test %d di %d di %s" % (test_good+1, test_todo, stringtype.upper()), 'blue')
+      wx.CallAfter(self._gui._update_messages, "Test %d di %d di %s" % (test_good + 1, test_todo, stringtype.upper()), 'blue')
       
       test = Proof()
       test.update(pre_profiler)
@@ -290,7 +316,7 @@ class SpeedTester(Thread):
       
       try:
         test_done += 1
-        message =  "Tentativo numero %s con %s riusciti su %s da collezionare" % (test_done,test_good,test_todo)
+        message = "Tentativo numero %s con %s riusciti su %s da collezionare" % (test_done, test_good, test_todo)
         
         if (test_done > 1):
           timeout = (task.multiplier * 2)
@@ -298,14 +324,20 @@ class SpeedTester(Thread):
           timeout = (task.multiplier + 2)
         
         if type == PING:
-          logger.info("[PING] "+message+" [PING]")
+          logger.info("[PING] " + message + " [PING]")
           test.update(tester.testping())
         elif type == DOWN:
-          logger.info("[DOWNLOAD] "+message+" [DOWNLOAD]")
+          logger.info("[FTP DOWNLOAD] " + message + " [FTP DOWNLOAD]")
           test.update(tester.testftpdown(self._client.profile.download * task.multiplier * 1000 / 8, task.ftpdownpath, timeout))
         elif type == UP:
-          logger.info("[UPLOAD] "+message+" [UPLOAD]")
+          logger.info("[FTP UPLOAD] " + message + " [FTP UPLOAD]")
           test.update(tester.testftpup(self._client.profile.upload * task.multiplier * 1000 / 8, task.ftpuppath, timeout))
+        elif type == HTTP_DOWN:
+          logger.info("[HTTP DOWNLOAD] " + message + " [HTTP DOWNLOAD]")
+          test.update(tester.testhttpdown())
+        elif type == HTTP_UP:
+          logger.info("[HTTP UPLOAD] " + message + " [HTTP UPLOAD]")
+          test.update(tester.testhttpup())
         else:
           logger.warn("Tipo di test da effettuare non definito!")
 
@@ -320,10 +352,10 @@ class SpeedTester(Thread):
         else:
           bandwidth = self._get_bandwidth(test)
           
-          if type == DOWN:
+          if type == DOWN or type == HTTP_DOWN:
             self._client.profile.download = min(bandwidth, 40000)
             task.update_ftpdownpath(bandwidth)
-          elif type == UP:
+          elif type == UP or type == HTTP_UP:
             self._client.profile.upload = min(bandwidth, 40000)
           else:
             logger.warn("Tipo di test effettuato non definito!")
@@ -339,6 +371,8 @@ class SpeedTester(Thread):
               if bandwidth > best_value:
                 best_value = bandwidth
                 best_test = test
+          else:
+            best_test = test
             
         wx.CallAfter(self._gui.update_gauge)
         test_good += 1
@@ -360,7 +394,7 @@ class SpeedTester(Thread):
 
     self._running.set()
     
-    wx.CallAfter(self._gui._update_messages, "Inizio dei test di misura", font = (14, 93, 92, 1))
+    wx.CallAfter(self._gui._update_messages, "Inizio dei test di misura", font=(12, 93, 92, 1))
     wx.CallAfter(self._gui.update_gauge)
 
     # Profilazione
@@ -368,29 +402,33 @@ class SpeedTester(Thread):
     self._profiler.start()
     profiler = self._profiler.get_results()
     sleep(1)
+
+    server = None    
+    if (self.is_oneshot()):
+      ping_test = self._get_server()
+      server = ping_test['server']
+
+    task = self._download_task(server)
     
-    #ping_test = self._get_server()
-    #server = ping_test['server']
-    
-    task = self._download_task()
     if task == None:
       wx.CallAfter(self._gui._update_messages, "Impossibile eseguire ora i test di misura. Riprovare tra qualche secondo.", 'red')
     else:
       try:
         wx.CallAfter(self._gui.update_gauge)
         if (task.server.location != None):
-          wx.CallAfter(self._gui._update_messages, "Selezionato il server di misura di %s" % task.server.location,'green')
+          wx.CallAfter(self._gui._update_messages, "Selezionato il server di misura di %s" % task.server.location, 'green')
         
         start_time = datetime.fromtimestamp(timestampNtp())
 
         (ip, dev, os, mac) = (profiler[RES_IP], profiler[RES_DEV], profiler[RES_OS], profiler[RES_MAC])
-        tester = Tester(dev = dev, ip = ip, host = task.server, timeout = self._testtimeout,
-                   username = self._client.username, password = self._client.password)
+        tester = Tester(dev=dev, ip=ip, host=task.server, timeout=self._testtimeout,
+                   username=self._client.username, password=self._client.password)
 
         measure = Measure(self._client, start_time, task.server, ip, os, mac, self._version)
-        #logger.debug("\n\n%s\n\n",str(measure))
+        # logger.debug("\n\n%s\n\n",str(measure))
         
-        test_types = [PING,DOWN,UP]
+        #test_types = [PING, DOWN, HTTP_DOWN, UP, HTTP_UP]
+        test_types = [HTTP_DOWN, HTTP_UP, PING]
         
         # Testa i ping
         for type in test_types:
@@ -399,27 +437,33 @@ class SpeedTester(Thread):
           wx.CallAfter(self._gui._update_messages, "Elaborazione dei dati")
           # if (move_on_key()):
           if (type == PING):
-            wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.time, 'green', font = (14, 93, 92, 1))
+            wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.time, 'green', font=(12, 93, 92, 1))
             wx.CallAfter(self._gui._update_ping, test.time)
           elif (type == DOWN):
-            wx.CallAfter(self._gui._update_messages, "Download bandwidth: %.0f kbps" % self._get_bandwidth(test), 'green', font = (14, 93, 92, 1))
+            wx.CallAfter(self._gui._update_messages, "Download (FTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
             wx.CallAfter(self._gui._update_down, self._get_bandwidth(test))
           elif (type == UP):
-            wx.CallAfter(self._gui._update_messages, "Upload bandwidth: %.0f kbps" % self._get_bandwidth(test), 'green', font = (14, 93, 92, 1))
+            wx.CallAfter(self._gui._update_messages, "Upload (FTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
+            wx.CallAfter(self._gui._update_up, self._get_bandwidth(test))
+          elif (type == HTTP_DOWN):
+            wx.CallAfter(self._gui._update_messages, "Download (HTTP): Media %.0f kbps, Max %.0f kbps" % (self._get_bandwidth(test), self._get_max_http_bandwidth(test)), 'green', font=(12, 93, 92, 1))
+            wx.CallAfter(self._gui._update_down, self._get_bandwidth(test))
+          elif (type == HTTP_UP):
+            wx.CallAfter(self._gui._update_messages, "Upload (HTTP): Media %.0f kbps, Max %.0f kbps" % (self._get_bandwidth(test), self._get_max_http_bandwidth(test)), 'green', font=(12, 93, 92, 1))
             wx.CallAfter(self._gui._update_up, self._get_bandwidth(test))
           # else:
             # raise Exception("chiave USB mancante")
-          #logger.debug("\n\n%s\n\n",str(measure))
+          # logger.debug("\n\n%s\n\n",str(measure))
         
         stop_time = datetime.fromtimestamp(timestampNtp())
-        measure.savetime(start_time,stop_time)
+        measure.savetime(start_time, stop_time)
         
         logger.debug(measure)
         
-        ## Salvataggio della misura ##
+        # # Salvataggio della misura ##
         "TODO: measure.save"
         self._save_measure(measure)
-        ## Fine Salvataggio ##
+        # # Fine Salvataggio ##
         
       except Exception as e:
         logger.warning('Misura sospesa per eccezione: %s.' % e)
@@ -438,12 +482,12 @@ class SpeedTester(Thread):
     f.close()
     
     self._upload()
-    #report = self._upload(f.name)
+    # report = self._upload(f.name)
     
     return f.name
   
   
-  def _upload(self, fname = None, delete = True):
+  def _upload(self, fname=None, delete=True):
     '''
     Cerca di spedire al repository entro il tempo messo a disposizione secondo il parametro httptimeout
     uno o tutti i filename di misura che si trovano nella cartella d'uscita
@@ -457,7 +501,7 @@ class SpeedTester(Thread):
       else:  
         for root, dirs, files in walk(paths.OUTBOX_DIR):
           for file in files:
-            if (re.search('measure_[0-9]{14}.xml',file) != None):
+            if (re.search('measure_[0-9]{14}.xml', file) != None):
               filenames.append(path.join(root, file))
       
       len_filenames = len(filenames)
@@ -480,38 +524,40 @@ class SpeedTester(Thread):
               code = int(code)
               logger.info('Risposta dal server di upload: [%d] %s' % (code, message))
               uploadOK = not bool(code)
-              #logger.debug(uploadOK)
+              # logger.debug(uploadOK)
               
           except Exception as e:
             logger.error('Errore durante la spedizione del file delle misure %s: %s' % (filename, e))
 
           finally:
             if path.exists(filename) and uploadOK:
-              remove(filename)        # Elimino XML se esiste
+              remove(filename)  # Elimino XML se esiste
             if path.exists(zipname):
-              remove(zipname)         # Elimino ZIP se esiste
+              remove(zipname)  # Elimino ZIP se esiste
               
           if uploadOK:
             logger.info('File %s spedito con successo.' % filename)
+            if (self._client.is_oneshot()):
+              remove(paths.CONF_MAIN)
           else:
             logger.info('Errore nella spedizione del file %s.' % filename)
-            sleep_time = 5*(retry+1)
+            sleep_time = 5 * (retry + 1)
             allOK = False
             
         if allOK:
-          wx.CallAfter(self._gui._update_messages, "Salvataggio completato con successo.",'green')
+          wx.CallAfter(self._gui._update_messages, "Salvataggio completato con successo.", 'green')
           break
         else:
-          wx.CallAfter(self._gui._update_messages, "Tentativo di salvataggio numero %s di %s fallito." % (retry+1, MAX_SEND_RETRY),'red')
-          if (retry+1)<MAX_SEND_RETRY:
-            wx.CallAfter(self._gui._update_messages, "Nuovo tentativo fra %s secondi." % sleep_time,'red')
+          wx.CallAfter(self._gui._update_messages, "Tentativo di salvataggio numero %s di %s fallito." % (retry + 1, MAX_SEND_RETRY), 'red')
+          if (retry + 1) < MAX_SEND_RETRY:
+            wx.CallAfter(self._gui._update_messages, "Nuovo tentativo fra %s secondi." % sleep_time, 'red')
             sleep(sleep_time)
           else:
-            wx.CallAfter(self._gui._update_messages, "Impossibile salvare le misure.",'red')
+            wx.CallAfter(self._gui._update_messages, "Impossibile salvare le misure.", 'red')
             if delete:
               for filename in filenames:
                 if path.exists(filename):
-                  remove(filename)        # Elimino XML se esiste
+                  remove(filename)  # Elimino XML se esiste
             else:
               title = "Salvataggio Misure"
               message = \
@@ -523,7 +569,7 @@ class SpeedTester(Thread):
               2) a seguito della prossima misura
               3) al prossimo riavvio di MisuraInternet Speed Test
               ''' % MAX_SEND_RETRY
-              msgBox = wx.MessageDialog(None, message, title, wx.OK|wx.ICON_INFORMATION)
+              msgBox = wx.MessageDialog(None, message, title, wx.OK | wx.ICON_INFORMATION)
               msgBox.ShowModal()
               msgBox.Destroy()
 
@@ -560,7 +606,7 @@ class SpeedTester(Thread):
   def _movefiles(self, filename):
     
     dir = path.dirname(filename)
-    #pattern = path.basename(filename)[0:-4]
+    # pattern = path.basename(filename)[0:-4]
     pattern = path.basename(filename)
 
     try:
@@ -569,7 +615,7 @@ class SpeedTester(Thread):
         if (re.search(pattern, file) != None):
           # Spostarli tutti in self._sent
           old = path.join(dir, file)
-          new = path.join(self._sent,file)
+          new = path.join(self._sent, file)
           shutil.move(old, new)
 
     except Exception as e:
@@ -579,11 +625,11 @@ class SpeedTester(Thread):
   def _remEmptyDir(self, topdir):
     for root, dirs, files in walk(topdir, topdown=False):
       for dir in range(len(dirs)):
-        dirs[dir] = path.join(root,dirs[dir])
+        dirs[dir] = path.join(root, dirs[dir])
         dirs.append(root)
       for dir in dirs:  
         if path.exists(dir):
-          if not listdir(dir):  #to check wither the dir is empty
+          if not listdir(dir):  # to check wither the dir is empty
             logger.info("Elimino la directory vuota: %s" % dir)
             removedirs(dir)
 

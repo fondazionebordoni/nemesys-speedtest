@@ -785,6 +785,7 @@ class SysMonitor():
           if (value != None):
             value = value.upper()
           info = "Mac address dell'interfaccia di rete: %s" % value
+          break
       
       if (value == None):
         info = "Impossibile recuperare il valore del mac address dell'IP %s" % ip

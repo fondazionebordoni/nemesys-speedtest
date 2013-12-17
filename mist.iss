@@ -2,15 +2,15 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "MisuraInternet Speed Test"
-#define MyAppVersion "1.1.1"
+#define MyAppVersion "1.1.3"
 #define MyAppPublisher "Fondazione Ugo Bordoni"
 #define MyAppURL "http://www.misurainternet.it/"
 #define MyAppExeName "MisuraInternetSpeedTest"
 #define MyRoot "C:\[work]"
-#define MyAppDir MyRoot + "\mist\trunk"
+#define MyAppDir MyRoot + "\mist\branches\free"
 
 ; Read the previuos build number. If there is none take 0 instead.
-#define BuildNum Int(ReadIni(SourcePath	+ "\\buildinfo.ini","Info","Build","1"))
+#define BuildNum Int(ReadIni(SourcePath	+ "\\buildinfo.ini","Info","Build","0"))
 ; Increment the build number by one.
 #expr BuildNum = BuildNum + 1
 ; Store the number in the ini file for the next build
@@ -31,7 +31,7 @@ AllowNoIcons=true
 InfoBeforeFile={#MyAppDir}\EULA
 LicenseFile={#MyAppDir}\LICENSE
 OutputDir={#MyAppDir}
-OutputBaseFilename={#MyAppExeName}_v.{#myAppVersion}_b.{#BuildNum}
+OutputBaseFilename={#MyAppExeName}_v.{#myAppVersion}-{#BuildNum}
 SolidCompression=true
 VersionInfoCopyright=(c) 2010-2012 Fondazione Ugo Bordoni
 PrivilegesRequired=admin

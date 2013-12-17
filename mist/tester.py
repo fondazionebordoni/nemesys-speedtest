@@ -33,13 +33,15 @@ import socket
 import sys
 import time
 import errno
-
+from testerhttp import HttpTester
 
 #Parametri Sniffer:
 BUFF = 22 * 1024000     # MegaByte
 SNAPLEN = 160           # Byte
 TIMEOUT = 1             # MilliSeconds
 PROMISC = 1             # Promisc Mode ON/OFF
+
+HTTP_BUFF = 5*1024
 
 logger = logging.getLogger()
 errors = Errorcoder(paths.CONF_ERRORS)
@@ -61,6 +63,8 @@ class Tester:
     self._username = username
     self._password = password
     self._timeout = timeout
+    
+    self._testerhttp = HttpTester(dev, ip, host, timeout, HTTP_BUFF)
     
     
   def _ftp_down(self):
@@ -125,6 +129,14 @@ class Tester:
         raise e
     
     return (size, elapsed)
+
+  def testhttpdown(self):
+    url = "http://%s/file.rnd" % self._host.ip
+    return self._testerhttp.test_down(url)    
+
+  def testhttpup(self):
+    url = "http://%s/file.rnd" % self._host.ip
+    return self._testerhttp.test_up(url)    
     
   def testftpdown(self, bytes, filename, timeout = 11):
     
@@ -285,6 +297,8 @@ class Tester:
       raise Exception(error)
 
     return test
+  
+  
 
 
 def main():
