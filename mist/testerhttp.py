@@ -16,23 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import urllib2
-import threading
-import datetime
-from logger import logging
-from errorcoder import Errorcoder
-import requests
 import random
+import requests
 from string import lowercase
+import threading
+import time
+import urllib2
+
+from errorcoder import Errorcoder
+from logger import logging
 import netstat
-#import paths
+import paths
+from statistics import Statistics
 
 
-THRESHOLD_START=0.1
+TOTAL_MEASURE_TIME = 10
+THRESHOLD_START = 0.05
+
 logger = logging.getLogger()
-#TODO: fix!
-#errors = Errorcoder(paths.CONF_ERRORS)
-errors = Errorcoder("../config/errorcodes.conf")
+errors = Errorcoder(paths.CONF_ERRORS)
 
 ''' 
 NOTE: not thread-safe, make sure to only call 
@@ -41,29 +43,34 @@ one measurement at a time!
 
 class HttpTester:
 
-    #TODO: 
-    def __init__(self, dev, ip, host, timeout = 11, num_bytes = 5*1024):
+    # TODO: 
+    def __init__(self, dev, ip, host, timeout=11, num_bytes=5 * 1024):
     
         self._maxRetry = 8
         
         self._timeout = timeout
         self._num_bytes = num_bytes
-        
+        self._netstat = netstat.get_netstat(dev)
+        self._init_counters()
+    
+    def _init_counters(self):
         self._time_to_stop = False
         self._transfered_bytes = 0
         self._last_transfered_bytes = 0
-        self._last_diff = 0
         self._measures = []
         self._measure_count = 0
         self._go_ahead = False
         self._test = None
-        self._netstat = netstat.get_netstat(dev)
-        
+        self._read_measure_threads = []
+        self._last_diff = 0
+        self._max_transferred_bytes = 0
+        self._last_measured_time = time.time()
+
     def get_measures(self):
         return self._measures
         
     def test_down(self, url):
-        
+        self._init_counters()
         test = _init_test('download')
         bit_per_second = -1
 
@@ -75,16 +82,17 @@ class HttpTester:
             logger.error(error)
             return test
         
-        #TODO: max retry?
+        # TODO: max retry?
         if response.getcode() != 200:
             test['errorcode'] = errors.geterrorcode(response.getcode())
             error = '[%s] Ricevuto errore HTTP: %s' % (response.getcode())
             logger.error(error)
+            response.close()
             return test
         
         # TODO: use requests lib instead?
-        t = threading.Timer(1.0, self._read_measure)
-        t.start()
+        t_start = threading.Timer(1.0, self._read_measure)
+        t_start.start()
         has_more = True
         
         while not self._go_ahead and has_more and not self._time_to_stop:
@@ -93,61 +101,86 @@ class HttpTester:
                 self._transfered_bytes += len(buffer)
             else: 
                 has_more = False
+                
         if self._go_ahead:
             logger.debug("Starting HTTP measurement....")
             start_total_bytes = self._netstat.get_rx_bytes()
-            start_time = datetime.datetime.now()
+            start_time = time.time()
             start_transfered_bytes = self._transfered_bytes
-            t = threading.Timer(10, self._stop_down_measurement)
-            t.start()
+            t_end = threading.Timer(TOTAL_MEASURE_TIME, self._stop_down_measurement)
+            t_end.start()
             while has_more and not self._time_to_stop:
                 buffer = response.read(self._num_bytes)
                 if buffer: 
                     self._transfered_bytes += len(buffer)
                 else: 
                     has_more = False
+                    
             # TODO: abort the connection Not needed?
             if self._time_to_stop:
-                end_time = datetime.datetime.now()
-                elapsed_time = end_time - start_time
-                elapsed_time_seconds = elapsed_time.seconds + elapsed_time.microseconds/1000000.0
+                end_time = time.time()
+                elapsed_time = float((end_time - start_time) * 1000)
                 measured_bytes = self._transfered_bytes - start_transfered_bytes
                 total_bytes = self._netstat.get_rx_bytes() - start_total_bytes
-                bit_per_second = measured_bytes * 8.0 / elapsed_time_seconds
+                kbit_per_second = (measured_bytes * 8.0) / elapsed_time
                 test['bytes'] = measured_bytes
-                test['time'] = elapsed_time_seconds
-                test['rate'] = bit_per_second
-                test['rate_total'] = total_bytes * 8.0 / elapsed_time_seconds
-                logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes,elapsed_time_seconds,bit_per_second))
+                test['time'] = elapsed_time
+                test['rate_avg'] = kbit_per_second
+                test['rate_max'] = self._get_max_rate() 
+                test['bytes_total'] = total_bytes
+                #TODO Compilare i dati prendendo le statistiche da netstat
+                test['stats'] = Statistics(payload_down_nem_net = measured_bytes, packet_down_nem_net = (measured_bytes/self._num_bytes), packet_up_nem_net = (measured_bytes/self._num_bytes), packet_tot_all = 100)
+                logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
             else:
                 test['errorcode'] = errors.geterrorcode("File non sufficientemente grande per la misura")
         else:
             test['errorcode'] = errors.geterrorcode("Bitrate non stabilizzata")
+            
+        t_start.join()
+        t_end.join()
+        response.close()
         return test
-        
+
+    def _get_max_rate(self):
+      
+      max_rate = 0
+      for (count, transferred, elapsed) in self._measures:
+        #logger.debug("Measure %d: transferred = %d bytes, elapsed = %d ms" % (count, transferred, elapsed))
+        max_rate = max(transferred*8.0/elapsed, max_rate)
+      
+      return max_rate
 
     def _stop_down_measurement(self):
-        self._read_measure()
         logger.debug("Stopping....")
         self._time_to_stop = True
+        for t in self._read_measure_threads:
+          t.join()
     
     def _read_measure(self):
+        measuring_time = time.time()
         new_transfered_bytes = self._transfered_bytes
-        # TODO add to array of measurements
-        diff = new_transfered_bytes - self._last_transfered_bytes
-        logger.debug("reading count = %d, diff is %d" % (self._measure_count,diff))
 
-        if (not self._go_ahead) and (self._last_transfered_bytes != 0):
-            acc = (diff - self._last_diff)/self._last_diff
+        diff = new_transfered_bytes - self._last_transfered_bytes
+        elapsed = (measuring_time - self._last_measured_time)*1000.0
+        if self._go_ahead:
+            self._measures.append((self._measure_count, diff, elapsed))
+        
+        logger.debug("Reading... count = %d, diff = %d bytes, total = %d bytes, time = %d ms" % (self._measure_count, diff, self._transfered_bytes, elapsed))
+
+        if (not self._go_ahead) and (self._last_transfered_bytes != 0) and (self._last_diff != 0):
+            acc = abs((diff * 1.0 - self._last_diff) / self._last_diff)
+            logger.debug("acc = abs((%d - %d)/%d) = %.4f" % (diff, self._last_diff, self._last_diff, acc))
             if acc < THRESHOLD_START:
                 self._go_ahead = True
-        #else:
+        
         self._last_diff = diff
-        self._measures.append((self._measure_count, diff))
         self._measure_count += 1
         self._last_transfered_bytes = new_transfered_bytes
+        self._last_measured_time = measuring_time
+          
         if not self._time_to_stop:
             t = threading.Timer(1.0, self._read_measure)
+            self._read_measure_threads.append(t)
             t.start()
 
     def _buffer_generator(self, bufsize):
@@ -158,25 +191,28 @@ class HttpTester:
             self._transfered_bytes += bufsize
         if self._go_ahead:
             logger.debug("Starting HTTP measurement....")
-            start_time = datetime.datetime.now()
+            start_time = time.time()
             start_total_bytes = self._netstat.get_tx_bytes()
             start_transfered_bytes = self._transfered_bytes
-            t = threading.Timer(10, self._stop_down_measurement)
+            t = threading.Timer(TOTAL_MEASURE_TIME, self._stop_down_measurement)
             t.start()
             while not self._time_to_stop:
                 yield random.choice(lowercase) * bufsize
                 self._transfered_bytes += bufsize
-            end_time = datetime.datetime.now()
-            elapsed_time = end_time - start_time
-            elapsed_time_seconds = elapsed_time.seconds + elapsed_time.microseconds/1000000.0
+            end_time = time.time()
+            elapsed_time = float((end_time - start_time) * 1000)
             measured_bytes = self._transfered_bytes - start_transfered_bytes
-            bit_per_second = measured_bytes * 8.0 / elapsed_time_seconds
+            kbit_per_second = (measured_bytes * 8.0) / elapsed_time
             total_bytes = self._netstat.get_tx_bytes() - start_total_bytes
             self._test['bytes'] = measured_bytes
-            self._test['time'] = elapsed_time_seconds
-            self._test['rate'] = bit_per_second
-            self._test['rate_total'] = total_bytes * 8.0 / elapsed_time_seconds
-            logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes,elapsed_time_seconds,bit_per_second))
+            self._test['time'] = elapsed_time
+            self._test['rate_avg'] = kbit_per_second
+            self._test['rate_max'] = self._get_max_rate() 
+            self._test['bytes_total'] = total_bytes
+            #TODO Compilare i dati prendendo le statistiche da netstat
+            self._test['stats'] = Statistics(payload_up_nem_net = measured_bytes, packet_up_nem_net = (measured_bytes/bufsize), packet_down_nem_net = (measured_bytes/self._num_bytes), packet_tot_all = 100)
+            logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
+            t.join()
         else:
             self._test['errorcode'] = errors.geterrorcode("Bitrate non stabilizzata")
 
@@ -184,11 +220,12 @@ class HttpTester:
     
     
     def test_up(self, url):
+        self._init_counters()
         self._test = _init_test('upload')
         t = threading.Timer(1.0, self._read_measure)
         t.start()
-        
-        requests.post(url, data=self._buffer_generator(5*1024))
+        requests.post(url, data=self._buffer_generator(5 * 1024))
+        t.join()
         return self._test
 
 def _init_test(type):
@@ -208,10 +245,14 @@ if __name__ == '__main__':
     import platform
     platform_name = platform.system().lower()
     dev = None
+    host = "eagle2.fub.it"
     if "win" in platform_name:
         dev = "Scheda Ethernet"
     else:
         dev = "eth0"
-    t = HttpTester(dev, "192.168.112.24", "pippo")
-    print t.test_down("http://regopptest6.fub.it")
-    #print t.test_up("http://regopptest6.fub.it/")
+    t = HttpTester(dev, "192.168.112.11", "pippo")
+    print t.test_down("http://%s/" % host)
+    print "\n---------------------------\n"
+    print t.test_up("http://%s/" % host)
+    print "\n---------------------------\n"
+    print t.test_down("http://%s/" % host)

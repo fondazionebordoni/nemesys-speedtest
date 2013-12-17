@@ -27,8 +27,7 @@ logger = logging.getLogger()
 
 class Task:
 
-  def __init__(self, id, start, server, ftpdownpath, ftpuppath, upload=100,
-               download=100, multiplier=5, ping=100, nicmp=4, delay=1, now=False, message=None):
+  def __init__(self, id, start, server, ftpdownpath, ftpuppath, upload=4, download=4, multiplier=10, ping=4, nicmp=1, delay=1, now=False, message=None, http_download=1, http_upload=1):
     
     self._id = id
     self._start = start
@@ -37,6 +36,8 @@ class Task:
     self._ftpuppath = ftpuppath
     self._upload = upload
     self._download = download
+    self._http_upload = http_upload
+    self._http_download = http_download
     self._multiplier = multiplier
     self._ping = ping
     self._nicmp = nicmp
@@ -69,12 +70,20 @@ class Task:
     return self._download
 
   @property
+  def http_download(self):
+    return self._http_download
+
+  @property
   def multiplier(self):
     return self._multiplier
 
   @property
   def upload(self):
     return self._upload
+
+  @property
+  def http_upload(self):
+    return self._http_upload
 
   @property
   def ping(self):
@@ -131,14 +140,16 @@ class Task:
     ('Upload number',self.upload),\
     ('Upload file',self.ftpuppath),\
     ('Multiplier',self.multiplier),\
+    ('Download HTTP number',self.http_download),\
+    ('Upload HTTP number',self.http_upload),\
     ('Now parameter',self.now),\
     ('Message',self.message) \
     ])
     return task 
       
   def __str__(self):
-    return 'id: %s; start: %s; serverip: %s; ftpdownpath: %s; ftpuppath: %s; upload: %d; download: %d; multiplier %d; ping %d; ncimp: %d; delay: %d; now %d; message: %s' % \
-      (self.id, self.start, self.server.ip, self.ftpdownpath, self.ftpuppath, self.upload, self.download, self.multiplier, self.ping, self.nicmp, self.delay, self.now, self.message)
+    return 'id: %s; start: %s; serverip: %s; ftpdownpath: %s; ftpuppath: %s; upload: %d; download: %d; multiplier %d; ping %d; ncimp: %d; delay: %d; now %d; message: %s; http_download: %d; http_upload: %d' % \
+      (self.id, self.start, self.server.ip, self.ftpdownpath, self.ftpuppath, self.upload, self.download, self.multiplier, self.ping, self.nicmp, self.delay, self.now, self.message, self.http_download, self.http_upload)
 
 if __name__ == '__main__':
   s = Server('s1', '127.0.0.1')
