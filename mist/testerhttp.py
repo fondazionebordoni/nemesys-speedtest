@@ -127,7 +127,7 @@ class HttpTester:
                 test['time'] = elapsed_time
                 test['rate_avg'] = kbit_per_second
                 test['rate_max'] = self._get_max_rate() 
-                test['bytes_total'] =  total_bytes
+                test['bytes_total'] = total_bytes
                 #TODO Compilare i dati prendendo le statistiche da netstat
                 test['stats'] = Statistics(payload_down_nem_net = measured_bytes, packet_down_nem_net = (measured_bytes/self._num_bytes), packet_up_nem_net = (measured_bytes/self._num_bytes), packet_tot_all = 100)
                 logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
@@ -162,7 +162,8 @@ class HttpTester:
 
         diff = new_transfered_bytes - self._last_transfered_bytes
         elapsed = (measuring_time - self._last_measured_time)*1000.0
-        self._measures.append((self._measure_count, diff, elapsed))
+        if self._go_ahead:
+            self._measures.append((self._measure_count, diff, elapsed))
         
         logger.debug("Reading... count = %d, diff = %d bytes, total = %d bytes, time = %d ms" % (self._measure_count, diff, self._transfered_bytes, elapsed))
 

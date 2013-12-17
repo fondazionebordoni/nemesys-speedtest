@@ -427,8 +427,8 @@ class SpeedTester(Thread):
         measure = Measure(self._client, start_time, task.server, ip, os, mac, self._version)
         # logger.debug("\n\n%s\n\n",str(measure))
         
-        test_types = [PING, DOWN, HTTP_DOWN, UP, HTTP_UP]
-        #test_types = [HTTP_DOWN, HTTP_UP]
+        #test_types = [PING, DOWN, HTTP_DOWN, UP, HTTP_UP]
+        test_types = [HTTP_DOWN, HTTP_UP, PING]
         
         # Testa i ping
         for type in test_types:
