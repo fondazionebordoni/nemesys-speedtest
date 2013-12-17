@@ -5,7 +5,7 @@ Created on 13/nov/2013
 '''
 
 import platform
-
+import re
 
 LINUX_RESOURCE_PATH="/sys/class/net"
 
@@ -39,17 +39,28 @@ class Netstat(object):
 
 class NetstatWindows(Netstat):
 	'''
-    Netstat funcions on Linux platforms
+    Netstat funcions on Windows platforms
     '''
+
+	def __init__(self, if_device=None):
+		self.if_device_search_string = re.sub('[^0-9a-zA-Z]+', '%', if_device)
+		self.if_device = if_device
+
 
 	def _get_entry(self, entry_name):
 		entry_value = None
-		whereCondition = " WHERE Name Like \"%" + self.if_device + "%\""
+		# Name of interface can be slightly different,
+		# use LIKE with "%" where not alfanumeric character
+#		whereCondition = " WHERE Name Like \"%" + self.if_device + "%\""
+		whereCondition = " WHERE Name Like \"" + self.if_device_search_string + "%\""
 		result = _execute_query("Win32_PerfRawData_Tcpip_NetworkInterface", whereCondition, entry_name)
 		if (result):
 			try:
 				for obj in result:
-					entry_value = _getSingleInfo(obj, entry_name)
+					if not entry_value:
+						entry_value = _getSingleInfo(obj, entry_name)
+					else:
+						raise NetstatException("Found more than one entry for interface " + self.if_device)
 			except:
 				raise NetstatException("Could not get " + entry_name + " from result")
 		else:
