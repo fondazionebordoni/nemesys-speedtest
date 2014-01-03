@@ -21,7 +21,7 @@ from random import randint
 from statistics import Statistics
 from threading import Thread, Event
 import logging
-import pktman
+#import pktman
 import sys
 import time
 

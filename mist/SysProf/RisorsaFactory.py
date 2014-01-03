@@ -38,7 +38,8 @@ class Risorsa(object):
     
     
     def xmlFormat(self,tag,val):
-        val=str(val)
+        #val=str(val)
+        val=unicode(val)
         invalid_char=['<','>']
         for c in invalid_char:
             if c in val:
