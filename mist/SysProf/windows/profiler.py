@@ -225,8 +225,8 @@ class rete(RisorsaWin):
       return False
       
     def InterfaceInfo(self, index):
-        features = {'SettingID':'', 'MACAddress':'', 'IpAddress':'', 'DefaultIPGateway':'', 'IpSubnet':''}
-        info = {'GUID':'unknown', 'MAC':'unknown', 'IP':'unknown', 'Gateway':'unknown', 'Mask':'unknown'}
+        features = {'SettingID':'', 'MACAddress':'', 'IpAddress':'', 'DefaultIPGateway':'', 'IpSubnet':'', 'Description':''}
+        info = {'GUID':'unknown', 'MAC':'unknown', 'IP':'unknown', 'Gateway':'unknown', 'Mask':'unknown', 'IfName':'unknown'}
         items = executeQuery('Win32_NetworkAdapterConfiguration', " WHERE index = %s" % index)
         if (items):
             try:
@@ -247,6 +247,8 @@ class rete(RisorsaWin):
                     info['Gateway'] = features['DefaultIPGateway'][0]
                 if (features['IpSubnet']):
                     info['Mask'] = features['IpSubnet'][0]
+                if (features['Description']):
+                    info['IfName'] = features['Description'][0]
                 return info
         else:
             raise RisorsaException("E' impossibile interrogare le risorse di rete")

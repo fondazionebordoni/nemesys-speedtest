@@ -24,14 +24,14 @@ from xml.etree import ElementTree as ET
 from errorcoder import Errorcoder
 from contabyte import Contabyte
 from platform import system
-from pcapper import Pcapper
 from logger import logging
 
 import sysmonitorexception
 import checkhost
 import netifaces
 import xmltodict
-import pktman
+import netstat
+#import pktman
 import socket
 import paths
 import time
@@ -617,53 +617,55 @@ class SysMonitor():
   def _check_traffic(self, sec = 2, res = RES_TRAFFIC):
     
     try:
-      
+
       value = 'unknown'
-      
+
       self._get_ip()
       ip = self._system[RES_IP][VALUE]
       self._getDev(ip)
       dev = self._system[RES_DEV][VALUE]
-      
-      buff = 8 * 1024 * 1024
-      pcapper = Pcapper(dev, buff, 150)
+
+      my_netstat = netstat.get_netstat(dev)
+
+      logger.debug("getting stats from dev " + dev)
+
+      start_rx_bytes = my_netstat.get_rx_bytes()
+      start_tx_bytes = my_netstat.get_tx_bytes()
+      logger.debug("start rx %d, start tx %d" % (start_rx_bytes,start_tx_bytes))
       start_time = time.time()
-      pcapper.start()
-      pcapper.sniff(Contabyte(ip, '0.0.0.0'))
-      #logger.info("Checking Traffic for %d seconds...." % sec)
-      pcapper.stop_sniff(2.2)
-      stats = pcapper.get_stats()
-      total_time = (time.time() - start_time) * 1000
-      logger.info('Checked Traffic for %s ms' % total_time)
-      pcapper.stop()
-      pcapper.join()
-      
-      UP_kbps = stats.byte_up_all * 8 / total_time
-      DOWN_kbps = stats.byte_down_all * 8 / total_time
-      
+      time.sleep(sec)
+      end_rx_bytes = my_netstat.get_rx_bytes()
+      end_tx_bytes = my_netstat.get_tx_bytes()
+      measure_time_millis = (time.time() - start_time) * 1000
+      logger.debug("end rx %d, end tx %d" % (end_rx_bytes, end_tx_bytes))
+      logger.debug("total time millis %d" % measure_time_millis)
+
+      UP_kbps = (end_tx_bytes - start_tx_bytes) * 8 / measure_time_millis
+      DOWN_kbps = (end_rx_bytes - start_rx_bytes) * 8 / measure_time_millis
+
       value = (DOWN_kbps, UP_kbps)
       info = "%.1f kbps in download e %.1f kbps in upload di traffico globale attuale sull'interfaccia di rete in uso." % (DOWN_kbps, UP_kbps)
-      
+
       if (int(UP_kbps) < 20 and int(DOWN_kbps) < 200):
         value = 'LOW'
       elif (int(UP_kbps) < 180 and int(DOWN_kbps) < 1800):
         value = 'MEDIUM'
       else:
         value = 'HIGH'
-      
+
       if (value != 'LOW'):
         raise Exception(info)
-      
+
       status = True
-      
+
     except Exception as e:
-      
+
       info = e
       status = False
       #raise e
-      
+
     finally:
-      
+
       self._store(res, status, value, info)
   
   

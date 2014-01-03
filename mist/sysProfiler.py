@@ -119,22 +119,24 @@ class sysProfiler(Thread):
     if (self._device == None):
       self._device = dev
       if self._settings[3]:
-        dev_info = self._checker._getDevInfo(dev)
-        dev_type = dev_info['type']
-        dev_descr = dev_info['descr']
-        
-        if (dev_type == 'Ethernet 802.3'):
-          dev_descr = "rete locale via cavo ethernet"
-        elif (dev_type == 'Wireless'):
-          dev_descr = "rete locale wireless"
-        elif (dev_type == 'WWAN') or (dev_type == 'External Modem'):
-          dev_descr = "rete mobile su dispositivo hspa"
+#         dev_info = self._checker._getDevInfo(dev)
+#         dev_type = dev_info['type']
+#         dev_descr = dev_info['descr']
+#         
+#         if (dev_type == 'Ethernet 802.3'):
+#           dev_descr = "rete locale via cavo ethernet"
+#         elif (dev_type == 'Wireless'):
+#           dev_descr = "rete locale wireless"
+#         elif (dev_type == 'WWAN') or (dev_type == 'External Modem'):
+#           dev_descr = "rete mobile su dispositivo hspa"
           
-        wx.CallAfter(self._gui._update_interface, "Interfaccia di test: %s\nIndirizzo IP di rete: %s" % (dev_descr,ip))
+#        wx.CallAfter(self._gui._update_interface, "Interfaccia di test: %s\nIndirizzo IP di rete: %s" % (dev_descr,ip))
+        wx.CallAfter(self._gui._update_interface, "Interfaccia di test: %s\nIndirizzo IP di rete: %s" % (dev,ip))
         
-        dev_descr = dev_info['descr'] 
+#        dev_descr = dev_info['descr'] 
         
-        wx.CallAfter(self._gui._update_messages, "Interfaccia di rete in esame: %s" % dev_descr, 'green')
+#        wx.CallAfter(self._gui._update_messages, "Interfaccia di rete in esame: %s" % dev_descr, 'green')
+        wx.CallAfter(self._gui._update_messages, "Interfaccia di rete in esame: %s" % dev, 'green')
         
     elif (dev != self._device):
       self._cycle_flag.clear()
