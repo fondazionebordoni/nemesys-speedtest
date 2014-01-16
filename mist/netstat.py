@@ -7,7 +7,6 @@ Created on 13/nov/2013
 import platform
 import re
 import netifaces
-import pythoncom
 
 LINUX_RESOURCE_PATH="/sys/class/net"
 
@@ -100,11 +99,12 @@ class NetstatWindows(Netstat):
 
 	def _execute_query(self, wmi_class, whereCondition="", param="*"):
 		queryString = None
-		pythoncom.CoInitialize()
 		try:
     		 import win32com.client
+    		 import pythoncom
 		except ImportError:
 		     raise NetstatException("Missing WMI library")
+		pythoncom.CoInitialize()
 		try:
 			objWMIService = win32com.client.Dispatch("WbemScripting.SWbemLocator")
 			objSWbemServices = objWMIService.ConnectServer(".", "root\cimv2")
