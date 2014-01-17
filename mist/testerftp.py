@@ -53,7 +53,6 @@ class FtpTester:
         self._num_bytes = num_bytes
         self._netstat = netstat.get_netstat(dev)
         self._init_counters()
-        self._bufsize = None
         self._is_up_test = False
     
     def get_measures(self):
@@ -62,15 +61,15 @@ class FtpTester:
     def test_down(self, server, filename, bytes_to_transfer, username='anonymous', password='anonymous@'):
         self._is_up_test = False
         self._init_counters()
-        test = _init_test('download')
+        self._test = _init_test('download')
         url = 'ftp://' + username + ':' + password + '@' + server + '/' + filename
         try:
             response = urllib2.urlopen(url)
         except Exception as e:
-            test['errorcode'] = errors.geterrorcode(e)
+            self._test['errorcode'] = errors.geterrorcode(e)
             error = '[%s] Impossibile aprire la connessione FTP: %s' % (test['errorcode'], e)
             logger.error(error)
-            return test
+            return self._test
         
         # TODO: max retry?
         if (response.getcode() != None) and (response.getcode() != 230):
@@ -78,7 +77,7 @@ class FtpTester:
             error = 'Ricevuto errore FTP: %s' % (response.getcode())
             logger.error(error)
             response.close()
-            return test
+            return self._test
         
         t_start = threading.Timer(1.0, self._read_measure)
         t_start.start()
@@ -94,41 +93,30 @@ class FtpTester:
                 
         if self._go_ahead:
             logger.debug("Starting FTP measurement....")
-            start_total_bytes = self._netstat.get_rx_bytes()
-            start_time = time.time()
-            start_transfered_bytes = self._transfered_bytes
+            self._start_total_bytes = self._netstat.get_rx_bytes()
+            self._start_time = time.time()
+            self._start_transfered_bytes = self._transfered_bytes
             while has_more and not self._time_to_stop:
                 buffer = response.read(self._num_bytes)
                 if buffer: 
                     self._transfered_bytes += len(buffer)
-                    if (self._transfered_bytes - start_transfered_bytes) >= bytes_to_transfer:
+                    if (self._transfered_bytes - self._start_transfered_bytes) >= bytes_to_transfer:
                         self._time_to_stop = True
                 else: 
                     has_more = False
                     
             if self._time_to_stop:
-                end_time = time.time()
-                elapsed_time = float((end_time - start_time) * 1000)
-                measured_bytes = self._transfered_bytes - start_transfered_bytes
-                total_bytes = self._netstat.get_rx_bytes() - start_total_bytes
-                kbit_per_second = (measured_bytes * 8.0) / elapsed_time
-                test['bytes'] = measured_bytes
-                test['time'] = elapsed_time
-                test['rate_avg'] = kbit_per_second
-                test['rate_max'] = self._get_max_rate() 
-                test['bytes_total'] = total_bytes
-                test['stats'] = Statistics(payload_down_nem_net = measured_bytes, packet_down_nem_net = (measured_bytes/self._num_bytes), packet_up_nem_net = (measured_bytes/self._num_bytes), packet_tot_all = 100)
-                logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
+                self._end_time = time.time()
+                self._wait_for_timers()
+                self._calculate_statistics_down()
             else:
                 test['errorcode'] = 99999 # TODO errors.geterrorcode("File non sufficientemente grande per la misura")
                 self._time_to_stop = True
         else:
-            test['errorcode'] = errors.geterrorcode("Bitrate non stabilizzata")
+            self._test['errorcode'] = errors.geterrorcode("Bitrate non stabilizzata")
             
-        for t in self._read_measure_threads:
-            t.join()
         response.close()
-        return test
+        return self._test
     
     def _init_counters(self):
         self._time_to_stop = False
@@ -204,9 +192,15 @@ class FtpTester:
         self._test['time'] = elapsed_time
         self._test['rate_avg'] = kbit_per_second
         self._test['rate_max'] = self._get_max_rate()
-        self._test['stats'] = Statistics(payload_up_nem_net=measured_bytes, packet_up_nem_net=(measured_bytes / self._bufsize), packet_down_nem_net=(measured_bytes / self._num_bytes), packet_tot_all=100)
+        self._test['stats'] = Statistics(payload_up_nem_net=measured_bytes, packet_up_nem_net=(measured_bytes / self._num_bytes), packet_down_nem_net=(measured_bytes / self._num_bytes), packet_tot_all=100)
         logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
     
+
+    def _wait_for_timers(self):
+        for t in self._read_measure_threads:
+            if (t.isAlive()):
+                t.join()
+
     def test_up(self, server, filename, bytes_to_send, username='anonymous', password='anonymous@'):
         self._is_up_test = True
         self._init_counters()
@@ -217,8 +211,7 @@ class FtpTester:
         self._read_measure_threads.append(t_start)
         ftpsession = FTP(server, username, password)
         ftpsession.storbinary('STOR %s' % filename, self._fakefile)
-        for t in self._read_measure_threads:
-            t.join()
+        self._wait_for_timers()
         self._calculate_statistics_up()
         return self._test
     
@@ -236,8 +229,8 @@ class FtpTester:
 
     def add_data(self, bufsize):
         self._transfered_bytes += bufsize
-        if (self._bufsize is None):
-            self._bufsize = bufsize
+        if (self._num_bytes is None):
+            self._num_bytes = bufsize
         
     def get_transfered_bytes(self):
         return self._transfered_bytes
