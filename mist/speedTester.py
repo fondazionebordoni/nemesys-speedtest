@@ -445,7 +445,7 @@ class SpeedTester(Thread):
         # logger.debug("\n\n%s\n\n",str(measure))
         
         #test_types = [PING, DOWN, HTTP_DOWN, UP, HTTP_UP]
-        test_types = [HTTP_DOWN, HTTP_UP, PING]
+        test_types = [DOWN, UP, PING]
         
         # Testa i ping
         for type in test_types:
