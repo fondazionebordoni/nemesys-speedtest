@@ -28,6 +28,8 @@ class Fakefile:
     if self._bytes <= 0:
       return None    
   
-    data = '%s' % random.getrandbits(min(bufsize, self._bytes))
+    data = '%x' % random.randint(0, 2 ** (8 * bufsize) - 1)
+    data = data.rjust(bufsize*2, '0')
+    data = data.decode('hex')
     self._bytes -= len(data)
     return data
