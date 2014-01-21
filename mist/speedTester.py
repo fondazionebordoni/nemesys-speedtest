@@ -227,26 +227,43 @@ class SpeedTester(Thread):
 
     logger.info('Analisi dei rapporti di traffico')
     logger.debug('Dati per la soglia: byte_nem: %d | byte_all: %d | packet_nem: %d | packet_all: %d' % (byte_nem, byte_all, packet_nem, packet_all))
-    if byte_all > 0 and packet_all > 0:
+    if byte_all > 0:
       traffic_ratio = float(byte_all - byte_nem) / float(byte_all)
-      packet_ratio_inv = float(packet_all - packet_nem) / float(packet_all)
       value1 = "%.2f%%" % (traffic_ratio * 100)
-      value2 = "%.2f%%" % (packet_ratio_inv * 100)
       logger.info('Traffico MIST: [ %d pacchetti di %d totali e %.1f Kbyte di %.1f totali ]' % (packet_nem, packet_all, byte_nem / 1024.0, byte_all / 1024.0))
-      logger.info('Percentuale di traffico spurio: %.2f%% traffico e %.2f%% pacchetti' % (traffic_ratio * 100, packet_ratio_inv * 100))
-      if (0 <= traffic_ratio <= TH_TRAFFIC) and (0 <= packet_ratio_inv <= TH_INVERTED):
+      if (0 <= traffic_ratio <= TH_TRAFFIC):
         test_status = True
-        info = 'Traffico internet non legato alla misura: percentuali %s/%s' % (value1, value2)
+        info = 'Traffico internet non legato alla misura: percentuale %s' % value1
         wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': True, 'info': info, 'value': value1}, False)
         # # test.bytes = byte_all # Dato da salvare sulla misura?? ##
         return test_status
-      elif (traffic_ratio > TH_TRAFFIC) or (packet_ratio_inv > TH_INVERTED):
-        info = 'Eccessiva presenza di traffico internet non legato alla misura: percentuali %s/%s' % (value1, value2)
+      elif (traffic_ratio > TH_TRAFFIC):
+        info = 'Eccessiva presenza di traffico internet non legato alla misura: percentuale %s' % value1
         wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': value1})
         return test_status
       else:
         wx.CallAfter(self._gui._update_messages, 'Errore durante la verifica del traffico di misura: impossibile salvare i dati.', 'red')
         return test_status
+#     if byte_all > 0 and packet_all > 0:
+#       traffic_ratio = float(byte_all - byte_nem) / float(byte_all)
+#       packet_ratio_inv = float(packet_all - packet_nem) / float(packet_all)
+#       value1 = "%.2f%%" % (traffic_ratio * 100)
+#       value2 = "%.2f%%" % (packet_ratio_inv * 100)
+#       logger.info('Traffico MIST: [ %d pacchetti di %d totali e %.1f Kbyte di %.1f totali ]' % (packet_nem, packet_all, byte_nem / 1024.0, byte_all / 1024.0))
+#       logger.info('Percentuale di traffico spurio: %.2f%% traffico e %.2f%% pacchetti' % (traffic_ratio * 100, packet_ratio_inv * 100))
+#       if (0 <= traffic_ratio <= TH_TRAFFIC) and (0 <= packet_ratio_inv <= TH_INVERTED):
+#         test_status = True
+#         info = 'Traffico internet non legato alla misura: percentuali %s/%s' % (value1, value2)
+#         wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': True, 'info': info, 'value': value1}, False)
+#         # # test.bytes = byte_all # Dato da salvare sulla misura?? ##
+#         return test_status
+#       elif (traffic_ratio > TH_TRAFFIC) or (packet_ratio_inv > TH_INVERTED):
+#         info = 'Eccessiva presenza di traffico internet non legato alla misura: percentuali %s/%s' % (value1, value2)
+#         wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': value1})
+#         return test_status
+#       else:
+#         wx.CallAfter(self._gui._update_messages, 'Errore durante la verifica del traffico di misura: impossibile salvare i dati.', 'red')
+#         return test_status
     
     else:
       info = 'Errore durante la misura, impossibile analizzare i dati di test'
@@ -328,10 +345,10 @@ class SpeedTester(Thread):
           test.update(tester.testping())
         elif type == DOWN:
           logger.info("[FTP DOWNLOAD] " + message + " [FTP DOWNLOAD]")
-          test.update(tester.testftpdown(self._client.profile.download * task.multiplier * 1000 / 8, task.ftpdownpath, timeout))
+          test.update(tester.testftpdown(self._client.profile.download * task.multiplier * 1000 / 8, task.ftpdownpath))
         elif type == UP:
           logger.info("[FTP UPLOAD] " + message + " [FTP UPLOAD]")
-          test.update(tester.testftpup(self._client.profile.upload * task.multiplier * 1000 / 8, task.ftpuppath, timeout))
+          test.update(tester.testftpup(self._client.profile.upload * task.multiplier * 1000 / 8, task.ftpuppath))
         elif type == HTTP_DOWN:
           logger.info("[HTTP DOWNLOAD] " + message + " [HTTP DOWNLOAD]")
           test.update(tester.testhttpdown())
