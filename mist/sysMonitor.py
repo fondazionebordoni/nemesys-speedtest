@@ -22,7 +22,6 @@ from SysProf.NemesysException import LocalProfilerException, RisorsaException, F
 from SysProf import LocalProfilerFactory
 from xml.etree import ElementTree as ET
 from errorcoder import Errorcoder
-from contabyte import Contabyte
 from platform import system
 from logger import logging
 
