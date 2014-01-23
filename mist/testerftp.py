@@ -16,20 +16,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from errorcoder import Errorcoder
-from fakefile import Fakefile
+import errno
 from ftplib import FTP
-from logger import logging
-from optparse import OptionParser
 import ftplib
-import paths
-import ping
+from optparse import OptionParser
 import socket
 import sys
 import time
-import errno
+
+from errorcoder import Errorcoder
+from fakefile import Fakefile
+from logger import logging
 import netstat
+import paths
+import ping
 from statistics import Statistics
+
 
 logger = logging.getLogger()
 errors = Errorcoder(paths.CONF_ERRORS)
@@ -46,7 +48,7 @@ class FtpTester:
     self._maxRetry = 8
     self._bufsize = bufsize
     self._netstat = netstat.get_netstat(dev)
-    self._timeout = timeout
+    self._timeout = float(timeout * 1000)
     
   def _ftp_down(self):
     size = 0
@@ -88,7 +90,7 @@ class FtpTester:
     
     start = time.time()
     while True:
-      data = self._file.read(8192*4)
+      data = self._file.read(self._bufsize)
       if (data == None):
         break
       conn.sendall(data)
@@ -97,8 +99,7 @@ class FtpTester:
       size += len(data)
       if (elapsed > self._timeout):
         break
-    
-    #logger.info("Elapsed: %s" % (stop-start))
+
     try:
       conn.close()
       self._ftp.voidresp()
@@ -121,13 +122,12 @@ class FtpTester:
     test['errorcode'] = 0
 
     self._file = filename
-    timeout = float(self._timeout * 1000)
 
     try:
       # TODO Il timeout non viene onorato in Python 2.6: http://bugs.python.org/issue8493
       #self._ftp = FTP(self._host.ip, self._username, self._password, timeout=timeout)
 #       self._ftp = FTP(self._host.ip, self._username, self._password)
-      self._ftp = FTP(server, username, password, timeout=timeout)
+      self._ftp = FTP(server, username, password, timeout=self._timeout)
     except ftplib.all_errors as e:
       test['errorcode'] = errors.geterrorcode(e)
       error = '[%s] Impossibile aprire la connessione FTP: %s' % (test['errorcode'], e)
@@ -178,7 +178,6 @@ class FtpTester:
        
     return test
 
-#   def testftpup(self, bytes, path, timeout = 11):
   def testftpup(self, server, filename, bytes, username='anonymous', password='anonymous@'):
     
     test = {}
@@ -190,7 +189,6 @@ class FtpTester:
 
     self._file = Fakefile(bytes)
     self._filepath = filename
-    self._timeout = float(self._timeout * 1000)
 
     try:
       # TODO Il timeout non viene onorato in Python 2.6: http://bugs.python.org/issue8493
@@ -216,6 +214,8 @@ class FtpTester:
       logger.info('Test stopping.... ')
       end_total_bytes = self._netstat.get_tx_bytes()
       test['stats'] = Statistics(payload_up_nem_net = size, packet_down_nem_net = (size/bytes), packet_up_nem_net = (size/bytes), packet_tot_all = 100)
+      total_bytes = end_total_bytes - start_total_bytes
+      test['speed'] = total_bytes/elapsed
       test['bytes_total'] = end_total_bytes - start_total_bytes
 
       logger.info('Test done!')
