@@ -231,7 +231,7 @@ def registration(code):
       dlg.Destroy()
       logger.info("Codici di accesso inseriti dall'utente: %s" % code)
       if (res != wx.ID_OK):
-        logger.warning('Registration aborted at attemp number %d' % (retry + 1))
+        logger.warning('Registration aborted at attempt number %d' % (retry + 1))
         break
       
       filepath = paths.CONF_MAIN 
