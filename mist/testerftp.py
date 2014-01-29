@@ -149,8 +149,8 @@ class FtpTester:
       logger.info('Test stopping.... ')
 
       end_total_bytes = self._netstat.get_rx_bytes()
-      test['stats'] = Statistics(payload_down_nem_net = size, packet_down_nem_net = (size/bytes), packet_up_nem_net = (size/bytes), packet_tot_all = 100)
-      test['bytes_total'] = end_total_bytes - start_total_bytes
+      bytes_total = end_total_bytes - start_total_bytes
+      test['stats'] = Statistics(byte_down_nem = size, byte_down_all = bytes_total)
 
       logger.info("Banda: (%s*8)/%s = %s Kbps" % (size,elapsed,(size*8)/elapsed))
 
@@ -213,10 +213,10 @@ class FtpTester:
       
       logger.info('Test stopping.... ')
       end_total_bytes = self._netstat.get_tx_bytes()
-      test['stats'] = Statistics(payload_up_nem_net = size, packet_down_nem_net = (size/bytes), packet_up_nem_net = (size/bytes), packet_tot_all = 100)
       total_bytes = end_total_bytes - start_total_bytes
+      test['stats'] = Statistics(byte_up_nem = size, byte_up_all = total_bytes)
       test['speed'] = total_bytes/elapsed
-      test['bytes_total'] = end_total_bytes - start_total_bytes
+      test['bytes_total'] = total_bytes
 
       logger.info('Test done!')
 

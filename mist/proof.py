@@ -53,9 +53,9 @@ class Proof:
   @property
   def bytesOth(self):
     if self.type == 'download':
-      return self._test.get('stats',{}).byte_down_oth_net
+      return self._test.get('stats',{}).byte_down_all
     elif self.type == 'upload':
-      return self._test.get('stats',{}).byte_up_oth_net
+      return self._test.get('stats',{}).byte_up_all
     else:
       return 0
 

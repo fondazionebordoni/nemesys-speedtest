@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+try:
+    from logger import logging
+except IOError as e:
+    print "Impossibile inizializzare il logging, assicurarsi che il programma stia girando con i permessi di amministratore."
+    import sys
+    sys.exit()
 from sysMonitor import interfaces, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
 from threading import Thread, Event, enumerate
 from checkSoftware import CheckSoftware
@@ -9,7 +14,6 @@ from sysProfiler import sysProfiler
 from collections import deque
 from datetime import datetime
 from platform import system
-from logger import logging
 from time import sleep
 from os import path
 
