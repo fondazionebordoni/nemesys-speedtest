@@ -129,7 +129,7 @@ class HttpTester:
                 test['rate_max'] = self._get_max_rate() 
                 test['bytes_total'] = total_bytes
                 #TODO Compilare i dati prendendo le statistiche da netstat
-                test['stats'] = Statistics(payload_down_nem_net = measured_bytes, packet_down_nem_net = (measured_bytes/self._num_bytes), packet_up_nem_net = (measured_bytes/self._num_bytes), packet_tot_all = 100)
+                test['stats'] = Statistics(byte_down_nem = measured_bytes, byte_down_all = total_bytes)
                 logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
             else:
                 test['errorcode'] = errors.geterrorcode("File non sufficientemente grande per la misura")
@@ -210,7 +210,7 @@ class HttpTester:
             self._test['rate_max'] = self._get_max_rate() 
             self._test['bytes_total'] = total_bytes
             #TODO Compilare i dati prendendo le statistiche da netstat
-            self._test['stats'] = Statistics(payload_up_nem_net = measured_bytes, packet_up_nem_net = (measured_bytes/bufsize), packet_down_nem_net = (measured_bytes/self._num_bytes), packet_tot_all = 100)
+            self._test['stats'] = Statistics(byte_up_nem = measured_bytes, byte_up_all = total_bytes)
             logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
             t.join()
         else:
