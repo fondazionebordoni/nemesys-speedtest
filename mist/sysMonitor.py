@@ -148,6 +148,7 @@ class SysMonitor():
     self._net_if = {'netifaces':None, 'profiler':None, 'time':None}
   
   
+
   def _clear(self):
     for res in self._system:
       self._system[res].update(OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ]))
@@ -963,6 +964,56 @@ class SysMonitor():
       logger.debug("--------[ %s ]--------" % check)
 
 
+def _checkipsyntax(ip):
+
+  try:
+    socket.inet_aton(ip)
+    parts = ip.split('.')
+    if len(parts) != 4:
+      return False
+  except Exception:
+    return False
+
+  return True
+
+def getIp(host = 'finaluser.agcom244.fub.it', port = 443):
+    '''
+    restituisce indirizzo IP del computer
+    '''
+    s = socket.socket(socket.AF_INET)
+    s.connect((host, port))
+    value = s.getsockname()[0]
+    
+    #value = getstringtag(tag_ip, '90.147.120.2')
+    
+    if not _checkipsyntax(value):
+      #raise Exception('Impossibile ottenere il dettaglio dell\'indirizzo IP')
+      raise sysmonitorexception.UNKIP
+    return value
+
+def getDev(host = 'finaluser.agcom244.fub.it', port = 443, ip = None):
+  '''
+  restituisce scheda attiva (guid della scheda su Windows 
+  '''
+  if not ip:
+    local_ip_address = getIp(host, port)
+  else:
+    local_ip_address = ip
+      
+
+  ''' Now get the associated device '''
+  found = False
+  for ifName in netifaces.interfaces():
+      addresses = netifaces.ifaddresses(ifName)[netifaces.AF_INET]
+      for address in addresses:
+          if address['addr'] == local_ip_address:
+              found = True
+              break
+      if found:
+          break
+  if not found:
+    raise sysmonitorexception.UNKDEV
+  return ifName
 
 
 if __name__ == "__main__":

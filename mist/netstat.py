@@ -7,6 +7,7 @@ Created on 13/nov/2013
 import platform
 import re
 import netifaces
+import psutil
 
 LINUX_RESOURCE_PATH="/sys/class/net"
 
@@ -37,31 +38,51 @@ class Netstat(object):
 	def get_if_device(self):
 		return self.if_device
 
+	def get_rx_bytes(self):
+		counters_per_nic = psutil.network_io_counters(pernic=True)
+		if self.if_device in counters_per_nic:
+			rx_bytes = counters_per_nic[self.if_device].bytes_recv
+		else:
+			raise NetstatException("Could not find counters for device %d" % self.if_device)
+		return long(rx_bytes)
+
+	def get_tx_bytes(self):
+		counters_per_nic = psutil.network_io_counters(pernic=True)
+		if self.if_device in counters_per_nic:
+			tx_bytes = counters_per_nic[self.if_device].bytes_sent
+		else:
+			raise NetstatException("Could not find counters for device %d" % self.if_device)
+		return long(tx_bytes)
+
+
 class NetstatWindows(Netstat):
 	'''
     Netstat funcions on Windows platforms
     '''
 
 	def __init__(self, if_device_guid=None):
+		super(NetstatWindows, self).__init__(if_device_guid)
 		if (if_device_guid != None):
-   		 	self.if_device = self._get_device_from_guid(if_device_guid)
-			self.if_device_search_string = re.sub('[^0-9a-zA-Z]+', '%', self.if_device)
-			print("Found if device: %s" % self.if_device)
+			self.if_device = self._get_psutil_device_from_guid(if_device_guid)
+		else:
+			raise NetstatException("No device given!")
 
 
-	def _get_device_from_guid(self, guid):
-		entry_value = None
-		# Name of interface can be slightly different,
-		# use LIKE with "%" where not alfanumeric character
-		whereCondition = " WHERE SettingId = \"" + guid + "\""
-		entry_name = "Description"
-		return self._get_entry_generic("Win32_NetworkAdapterConfiguration", whereCondition, entry_name)
+	def _get_psutil_device_from_guid(self, guid):
+		# Since Win32_NetworkAdapter does not have GUID on windows XP
+		# We need to get the NetConnectionID in two phases
+		# 1. get the id of the interface from Win32_NetworkAdapterConfiguration
+		try:
+			whereCondition = " WHERE SettingID = \"" + guid + "\""
+			entry_name = "Index"
+			index = self._get_entry_generic("Win32_NetworkAdapterConfiguration", whereCondition, entry_name)
+			# 2. Now get NetConnectionID from Win32_NetworkAdapter
+			whereCondition = " WHERE DeviceId = \"" + str(index) + "\""
+			entry_name = "NetConnectionID"
+			return self._get_entry_generic("Win32_NetworkAdapter", whereCondition, entry_name)
+		except Exception as e:
+			raise NetstatException("Could not find device with GUID %d" % str(guid))
 
-	def get_rx_bytes(self):
-		return self._get_entry_generic(entry_name = "BytesReceivedPerSec")
-
-	def get_tx_bytes(self):
-		return self._get_entry_generic(entry_name = "BytesSentPerSec")
 
 	def get_device_name(self, ip_address):
 		all_devices = netifaces.interfaces()
@@ -112,7 +133,7 @@ class NetstatWindows(Netstat):
 		if not whereCondition:
 		    whereCondition=" WHERE Name Like \"" + self.if_device_search_string + "%\""
 		if not wmi_class:
-		    wmi_class="Win32_PerfRawData_Tcpip_NetworkInterface"
+		    wmi_class="Win32_PerfRawData_Tcpip_NetworkAdapter"
 		queryString = None
 		try:
     		 import win32com.client
@@ -143,22 +164,14 @@ class NetstatWindows(Netstat):
 			raise NetstatException("Query for " + entry_name + " returned empty result")
 		return entry_value
 
+
 class NetstatLinux(Netstat):
 	'''
     Netstat funcions on Linux platforms
     '''
 
 	def __init__(self, if_device):
-		# TODO Check if interface exists
 		super(NetstatLinux, self).__init__(if_device)
-		self.rx_bytes_file=LINUX_RESOURCE_PATH + "/"  + if_device + "/statistics/rx_bytes"
-		self.tx_bytes_file=LINUX_RESOURCE_PATH + "/"  + if_device + "/statistics/tx_bytes"
-
-	def get_rx_bytes(self):
-		return _read_number_from_file(self.rx_bytes_file)
-
-	def get_tx_bytes(self):
-		return _read_number_from_file(self.tx_bytes_file)
 
 	def get_device_name(self, ip_address):
 		all_devices = netifaces.interfaces()
@@ -174,34 +187,22 @@ class NetstatLinux(Netstat):
 			if found: break
 		return if_dev_name
 
-
-
 class NetstatDarwin(NetstatLinux):
 	'''
     Netstat funcions on MacOS platforms
     '''
 
+	def __init__(self, if_device):
+		super(NetstatLinux, self).__init__(if_device)
+
 def _read_number_from_file(filename):
 	with open(filename) as f:
 		return int(f.readline())
 
-
 if __name__ == '__main__':
 	import time
-# 	my_netstat = get_netstat("eth0")
-#TODO: get if name
-	my_netstat = get_netstat("eth0")
-	print my_netstat.get_device_name('192.168.112.24')
-# 	ifdev = my_netstat.get_if_device()
-# 	print ifdev
-#    timestamp,frequency =
-# 	timestamp1 = my_netstat.get_timestamp()
-# 	print "Time1, frequency: %f" % (timestamp1)
-# 	time.sleep(5)
-# 	timestamp2 = my_netstat.get_timestamp()
-# 	print "Time2, frequency: %f" % (timestamp2)
-	#time_passed = (timestamp2-timestamp2)/frequency
-# 	print "Time passed: %f" % (timestamp2 - timestamp1)
-# 	print "Timestamp", my_netstat.get_timestamp()
+	import sysMonitor
+	dev = sysMonitor.getDev()
+	my_netstat = get_netstat(dev)
 	print "RX bytes", my_netstat.get_rx_bytes()
 	print "TX bytes", my_netstat.get_tx_bytes()
