@@ -85,7 +85,7 @@ UNKDEV = SysmonitorException('UNKDEV', 'Impossibile ottenere il nome del device 
 #Warning for absent ETHERNET
 WARNETH = SysmonitorException('WARNETH', "Dispositivi ethernet non attivi o non presenti.")
 #Warning for HSPA or other USB modem
-WARNHSPA = SysmonitorException('WARNHSPA', "Dispositivi HSPA attivi.")
+# WARNHSPA = SysmonitorException('WARNHSPA', "Dispositivi HSPA attivi.")
 #Warning Wireless is activated
 WARNWLAN = SysmonitorException('WARNWLAN', "Dispositivi wireless attivi.")
 #Warning for absent Connection

@@ -62,10 +62,27 @@ class NetstatWindows(Netstat):
 
 	def __init__(self, if_device_guid=None):
 		super(NetstatWindows, self).__init__(if_device_guid)
+		self._device_guid = if_device_guid
 		if (if_device_guid != None):
-			self.if_device = self._get_psutil_device_from_guid(if_device_guid)
+			self.device_id,self.if_device = self._get_psutil_device_from_guid(if_device_guid)
 		else:
 			raise NetstatException("No device given!")
+
+
+	def is_device_active(self, if_device_guid=None):
+		is_active = False
+		if if_device_guid:
+			whereCondition = " WHERE SettingID = \"" + if_device_guid + "\""
+			entry_name = "Index"
+			index = self._get_entry_generic("Win32_NetworkAdapterConfiguration", whereCondition, entry_name)
+		else:
+			index = self.device_id
+		whereCondition = " WHERE DeviceId = \"" + str(index) + "\""
+		entry_name = "NetConnectionStatus"
+		status = self._get_entry_generic("Win32_NetworkAdapter", whereCondition, entry_name)
+		if (status and (int(status) == 2 or int(status) == 9)):
+			is_active = True
+		return is_active
 
 
 	def _get_psutil_device_from_guid(self, guid):
@@ -79,7 +96,7 @@ class NetstatWindows(Netstat):
 			# 2. Now get NetConnectionID from Win32_NetworkAdapter
 			whereCondition = " WHERE DeviceId = \"" + str(index) + "\""
 			entry_name = "NetConnectionID"
-			return self._get_entry_generic("Win32_NetworkAdapter", whereCondition, entry_name)
+			return index,self._get_entry_generic("Win32_NetworkAdapter", whereCondition, entry_name)
 		except Exception as e:
 			raise NetstatException("Could not find device with GUID %d" % str(guid))
 

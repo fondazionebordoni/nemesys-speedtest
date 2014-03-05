@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from sysMonitor import RES_OS, RES_IP, RES_DEV, RES_MAC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
+# from sysMonitor import RES_OS, RES_IP, RES_DEV, RES_MAC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
+from sysMonitor import RES_OS, RES_IP, RES_DEV, RES_MAC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_TRAFFIC, RES_HOSTS
 from xmlutils import getvalues, getxml, xml2task
 from os import path, walk, listdir, remove, removedirs
 from optionParser import OptionParser
@@ -321,7 +322,8 @@ class SpeedTester(Thread):
     while (test_good < test_todo) and (self._running.isSet()):
     
       # Esecuzione del test    
-      self._profiler.set_check(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA]))
+#       self._profiler.set_check(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA]))
+      self._profiler.set_check(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
       profiler = self._profiler.get_results()
       sleep(1)
       
