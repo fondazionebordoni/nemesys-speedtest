@@ -361,8 +361,8 @@ class SysMonitor():
           
           if (system().lower().startswith('win')):
             guid = device.find('GUID').text
-            my_netstat = netstat.get_netstat(dev)
-            if (netstat.is_device_active()):
+            my_netstat = netstat.get_netstat(guid)
+            if (my_netstat.is_device_active()):
                 value = 1
                 info = 'Dispositivi ethernet attivi.'
             else:
@@ -436,17 +436,17 @@ class SysMonitor():
           if (system().lower().startswith('win')):
             guid = device.find('GUID').text
 #            dev_info = self._getDevInfo(guid)
-            if (dev_info != None):
+#            if (dev_info != None):
 #               dev_type = dev_info['type']
 #               if (dev_type == type) or (dev_type == 'Unknown'):
-                status = int(device.find('Status').text)
-                if (status == 7 and value != 1):
-                  value = 0
-                  info = 'Dispositivi wireless non attivi.'
-                elif (status == 2):
-                  value = 1
-                  info = 'Dispositivi wireless attivi.'
-                  raise sysmonitorexception.WARNWLAN
+            status = int(device.find('Status').text)
+            if (status == 7 and value != 1):
+              value = 0
+              info = 'Dispositivi wireless non attivi.'
+            elif (status == 2):
+              value = 1
+              info = 'Dispositivi wireless attivi.'
+              raise sysmonitorexception.WARNWLAN
                 
           elif (system().lower().startswith('lin')):  
             status = device.find('Status').text
