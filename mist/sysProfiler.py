@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from sysMonitor import SysMonitor, RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC
+# from sysMonitor import SysMonitor, RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC
+from sysMonitor import SysMonitor, RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC
 from collections import OrderedDict
 from threading import Thread, Event
 from time import sleep
@@ -11,8 +12,10 @@ import wx
 
 logger = logging.getLogger()
 
-ALL_RES = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC]
-MESSAGE = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_IP, RES_HOSTS, RES_TRAFFIC]
+# ALL_RES = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC]
+# MESSAGE = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_IP, RES_HOSTS, RES_TRAFFIC]
+ALL_RES = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC]
+MESSAGE = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_IP, RES_HOSTS, RES_TRAFFIC]
 
 class sysProfiler(Thread):
 
@@ -35,7 +38,7 @@ class sysProfiler(Thread):
     (RES_RAM, None),\
     (RES_ETH, None),\
     (RES_WIFI, None),\
-    (RES_HSPA, None),\
+#     (RES_HSPA, None),\
     (RES_HOSTS, None),\
     (RES_TRAFFIC, None) \
     ])
@@ -112,7 +115,7 @@ class sysProfiler(Thread):
       info = {'status':False, 'value':-1, 'info':e}
       wx.CallAfter(self._gui.set_resource_info, RES_ETH, info, False)
       wx.CallAfter(self._gui.set_resource_info, RES_WIFI, info, False)
-      wx.CallAfter(self._gui.set_resource_info, RES_HSPA, info, False)
+#       wx.CallAfter(self._gui.set_resource_info, RES_HSPA, info, False)
       wx.CallAfter(self._gui._update_messages, e, 'red')
       return
       
