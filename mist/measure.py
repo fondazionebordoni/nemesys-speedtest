@@ -161,12 +161,13 @@ class Measure:
     
     status = {-1:"none", 0:"false", 1:"true"}
     
-    mobile = {'ID':{'tag':'interface'}, 'attr':{'type':'mobile'}, 'val':[status[test_results['Mobile']]]}
+#    mobile = {'ID':{'tag':'interface'}, 'attr':{'type':'mobile'}, 'val':[status[test_results['Mobile']]]}
     wireless = {'ID':{'tag':'interface'}, 'attr':{'type':'wireless'}, 'val':[status[test_results['Wireless']]]}
     ethernet = {'ID':{'tag':'interface'}, 'attr':{'type':'ethernet'}, 'val':[status[test_results['Ethernet']]]}
     interfaces = {'ID':{'tag':'interfaces'}, 'val':[]}
     
-    for interface in [ethernet, wireless, mobile]:
+#    for interface in [ethernet, wireless, mobile]:
+    for interface in [ethernet, wireless]:
       if interface['val'][0] != 'none':
         interfaces['val'].append(interface)
 
