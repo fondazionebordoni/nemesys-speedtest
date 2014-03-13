@@ -14,11 +14,11 @@ LINUX_RESOURCE_PATH="/sys/class/net"
 
 def get_netstat(if_device):
 	platform_name = platform.system().lower()
-	if "win" in platform_name:
+	if platform_name.startswith('win'):
 		return NetstatWindows(if_device)
-	elif "linux" in platform_name:
+	elif platform_name.startswith('lin'):
  		return NetstatLinux(if_device)
-	elif "darwin" in platform_name:
+	elif platform_name.startswith('darwin'):
 		return NetstatDarwin(if_device)
 
 '''
