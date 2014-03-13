@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 from ctypes.wintypes import DWORD, Structure, windll, byref
 import struct
 import pythoncom
+import psutil
 
 NIC_TYPE = { \
 0:'Ethernet 802.3', \
@@ -103,11 +104,13 @@ class CPU(RisorsaWin):
         return self.xmlFormat("processor", ris)    
     
     def cpuLoad(self, obj):
-        try:
-            val = self.getSingleInfo(obj, 'LoadPercentage')
-        except AttributeError as e:
-            raise AttributeError(e)
-        return self.xmlFormat("cpuLoad", val)
+#         try:
+#             val = self.getSingleInfo(obj, 'LoadPercentage')
+#         except AttributeError as e:
+#             raise AttributeError(e)
+#         return self.xmlFormat("cpuLoad", val)
+        val = psutil.cpu_percent(0.5)
+        return self.xmlFormat('cpuLoad', val)
 
     def cores(self, obj):
         try:
