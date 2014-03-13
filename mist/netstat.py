@@ -104,7 +104,6 @@ class NetstatWindows(Netstat):
 		except Exception as e:
 			raise NetstatException("Could not get index for device with GUID %s" % str(guid))
 		if index != None:
-			print("got index: %d" % int(index))
 # 			# 2. Now get NetConnectionID from Win32_NetworkAdapter
 			try:
 				whereCondition = " WHERE DeviceId = \"" + str(index) + "\""
