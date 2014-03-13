@@ -93,12 +93,19 @@ class NetstatWindows(Netstat):
 			whereCondition = " WHERE SettingID = \"" + guid + "\""
 			entry_name = "Index"
 			index = self._get_entry_generic("Win32_NetworkAdapterConfiguration", whereCondition, entry_name)
-			# 2. Now get NetConnectionID from Win32_NetworkAdapter
-			whereCondition = " WHERE DeviceId = \"" + str(index) + "\""
-			entry_name = "NetConnectionID"
-			return index,self._get_entry_generic("Win32_NetworkAdapter", whereCondition, entry_name)
 		except Exception as e:
-			raise NetstatException("Could not find device with GUID %d" % str(guid))
+			raise NetstatException("Could not get index for device with GUID %s" % str(guid))
+		if index != None:
+			print("got index: %d" % int(index))
+# 			# 2. Now get NetConnectionID from Win32_NetworkAdapter
+			try:
+				whereCondition = " WHERE DeviceId = \"" + str(index) + "\""
+				entry_name = "NetConnectionID"
+				return index,self._get_entry_generic("Win32_NetworkAdapter", whereCondition, entry_name)
+			except Exception as e:
+				raise NetstatException("Could not find device with GUID %s and index %d" % (str(guid),int(index)))
+		else:
+			raise NetstatException("No index found for device with GUID %s" % str(guid))
 
 
 	def get_device_name(self, ip_address):
@@ -169,9 +176,9 @@ class NetstatWindows(Netstat):
 				found = False
 				for obj in result:
 					value = obj.__getattr__(entry_name)
-					if value:
+					if value != None:
 						if found:
-							raise NetstatException("Found more than one entry for interface " + self.if_device)
+							raise NetstatException("Found more than one entry for search string " + whereCondition)
 						else:
 							found = True
 							entry_value = value
