@@ -39,7 +39,11 @@ class Netstat(object):
 		return self.if_device
 
 	def get_rx_bytes(self):
-		counters_per_nic = psutil.network_io_counters(pernic=True)
+		# Handle different versions of psutil
+		try:
+			counters_per_nic = psutil.network_io_counters(pernic=True)
+		except AttributeError:
+			counters_per_nic = psutil.net_io_counters(pernic=True)
 		if self.if_device in counters_per_nic:
 			rx_bytes = counters_per_nic[self.if_device].bytes_recv
 		else:
@@ -47,7 +51,11 @@ class Netstat(object):
 		return long(rx_bytes)
 
 	def get_tx_bytes(self):
-		counters_per_nic = psutil.network_io_counters(pernic=True)
+		# Handle different versions of psutil
+		try:
+			counters_per_nic = psutil.network_io_counters(pernic=True)
+		except AttributeError:
+			counters_per_nic = psutil.net_io_counters(pernic=True)
 		if self.if_device in counters_per_nic:
 			tx_bytes = counters_per_nic[self.if_device].bytes_sent
 		else:
