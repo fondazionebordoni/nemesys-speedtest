@@ -150,6 +150,8 @@ class FtpTester:
 
       end_total_bytes = self._netstat.get_rx_bytes()
       bytes_total = end_total_bytes - start_total_bytes
+      if (bytes_total < 0):
+          raise Exception("Ottenuto banda negativa, possibile azzeramento dei contatori.")
       test['stats'] = Statistics(byte_down_nem = size, byte_down_all = bytes_total)
 
       logger.info("Banda: (%s*8)/%s = %s Kbps" % (size,elapsed,(size*8)/elapsed))
@@ -214,6 +216,8 @@ class FtpTester:
       logger.info('Test stopping.... ')
       end_total_bytes = self._netstat.get_tx_bytes()
       total_bytes = end_total_bytes - start_total_bytes
+      if (total_bytes < 0):
+          raise Exception("Ottenuto banda negativa, possibile azzeramento dei contatori.")
       test['stats'] = Statistics(byte_up_nem = size, byte_up_all = total_bytes)
       test['speed'] = total_bytes/elapsed
       test['bytes_total'] = total_bytes

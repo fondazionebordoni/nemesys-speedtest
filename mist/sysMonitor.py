@@ -649,6 +649,8 @@ class SysMonitor():
 
       UP_kbps = (end_tx_bytes - start_tx_bytes) * 8 / measure_time_millis
       DOWN_kbps = (end_rx_bytes - start_rx_bytes) * 8 / measure_time_millis
+      if ( (UP_kbps < 0) or (DOWN_kbps < 0)):
+          raise Exception("Ottenuto valore di traffico negativo, potrebbe dipendere dall'azzeramento dei contatori.")
 
       value = (DOWN_kbps, UP_kbps)
       info = "%.1f kbps in download e %.1f kbps in upload di traffico globale attuale sull'interfaccia di rete in uso." % (DOWN_kbps, UP_kbps)
