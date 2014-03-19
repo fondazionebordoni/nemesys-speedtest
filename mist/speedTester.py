@@ -351,12 +351,12 @@ class SpeedTester(Thread):
         elif type == UP:
           logger.info("[FTP UPLOAD] " + message + " [FTP UPLOAD]")
           test.update(tester.testftpup(self._client.profile.upload * task.multiplier * 1000 / 8, task.ftpuppath))
-        elif type == HTTP_DOWN:
-          logger.info("[HTTP DOWNLOAD] " + message + " [HTTP DOWNLOAD]")
-          test.update(tester.testhttpdown())
-        elif type == HTTP_UP:
-          logger.info("[HTTP UPLOAD] " + message + " [HTTP UPLOAD]")
-          test.update(tester.testhttpup())
+#         elif type == HTTP_DOWN:
+#           logger.info("[HTTP DOWNLOAD] " + message + " [HTTP DOWNLOAD]")
+#           test.update(tester.testhttpdown())
+#         elif type == HTTP_UP:
+#           logger.info("[HTTP UPLOAD] " + message + " [HTTP UPLOAD]")
+#           test.update(tester.testhttpup())
         else:
           logger.warn("Tipo di test da effettuare non definito!")
 

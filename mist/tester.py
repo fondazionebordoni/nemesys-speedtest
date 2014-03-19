@@ -22,7 +22,7 @@ from optparse import OptionParser
 import ping
 import socket
 import sys
-from testerhttp import HttpTester
+# from testerhttp import HttpTester
 from testerftp import FtpTester
 
 HTTP_BUFF = 8*1024
@@ -47,19 +47,19 @@ class Tester:
     self._password = password
     self._timeout = timeout
     
-    self._testerhttp = HttpTester(dev, ip, host, timeout, HTTP_BUFF)
+#     self._testerhttp = HttpTester(dev, ip, host, timeout, HTTP_BUFF)
     self._testerftp = FtpTester(dev, timeout, HTTP_BUFF)
     
     
 
-  def testhttpdown(self):
-    url = "http://%s/file.rnd" % self._host.ip
-    return self._testerhttp.test_down(url)    
-
-  def testhttpup(self):
-    url = "http://%s/file.rnd" % self._host.ip
-    return self._testerhttp.test_up(url)    
-    
+#   def testhttpdown(self):
+#     url = "http://%s/file.rnd" % self._host.ip
+#     return self._testerhttp.test_down(url)    
+# 
+#   def testhttpup(self):
+#     url = "http://%s/file.rnd" % self._host.ip
+#     return self._testerhttp.test_up(url)    
+#     
   def testftpdown(self, bytes, filename):
     return self._testerftp.testftpdown(self._host.ip, filename, bytes, self._username, self._password)
 
