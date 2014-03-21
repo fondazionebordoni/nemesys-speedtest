@@ -2,12 +2,12 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "MisuraInternet Speed Test"
-#define MyAppVersion "1.1.3"
+#define MyAppVersion "1.2.0"
 #define MyAppPublisher "Fondazione Ugo Bordoni"
 #define MyAppURL "http://www.misurainternet.it/"
 #define MyAppExeName "MisuraInternetSpeedTest"
 #define MyRoot "C:\[work]"
-#define MyAppDir MyRoot + "\mist\branches\free"
+#define MyAppDir MyRoot + "\mist\trunk"
 
 ; Read the previuos build number. If there is none take 0 instead.
 #define BuildNum Int(ReadIni(SourcePath	+ "\\buildinfo.ini","Info","Build","0"))
@@ -50,7 +50,6 @@ Name: italian; MessagesFile: compiler:Languages\Italian.isl
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1; Languages: italian
 
 [Files]
-Source: {#MyAppDir}\mist\MNM34\netmon.msi; Flags: dontcopy
 Source: {#MyAppDir}\mist\dist\*; DestDir: {app}\dist; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: {#MyAppDir}\ABOUT; DestDir: {app}; Flags: ignoreversion
 Source: {#MyAppDir}\mist.ico; DestDir: {app}; Flags: ignoreversion
@@ -117,60 +116,6 @@ procedure CancelButtonClick(CurPageID: Integer; var Cancel, Confirm: Boolean);
 begin
   Cancel := true;
   Confirm := false;
-end;
-
-procedure WinPcapInst();
-var
-  ResultCode: Integer;
-begin
-  ExtractTemporaryFile(ExpandConstant('netmon.msi'));
-  ShellExec('', 'msiexec', ExpandConstant('/I "{tmp}\netmon.msi"'),'', SW_SHOW, ewWaitUntilTerminated, ResultCode);
-  if RegValueExists(HKEY_LOCAL_MACHINE, 'SYSTEM\CurrentControlSet\Services\nm3','Start') then
-    begin
-      RegWriteDWordValue(HKEY_LOCAL_MACHINE, 'SYSTEM\CurrentControlSet\Services\nm3','Start', 1);
-    end
-  else if RegValueExists(HKEY_LOCAL_MACHINE, 'SYSTEM\CurrentControlSet\Services\nm','Start') then
-    begin
-      RegWriteDWordValue(HKEY_LOCAL_MACHINE, 'SYSTEM\CurrentControlSet\Services\nm','Start', 3);
-      RegWriteStringValue(HKEY_CLASSES_ROOT, 'CLSID\{425882B0-B0BF-11CE-B59F-00AA006CB37D}\InProcServer32','ThreadingModel','Both');
-    end
-  else
-    begin
-      MsgBox('Installazione del software NeMeSys terminata poichè si è scelto di non installare le Microsoft Network Monitor',mbInformation, MB_OK);
-      WizardForm.Close;
-    end;
-end;
-
-procedure WinPcapRem();
-var
-  ResultCode: Integer;
-begin
-  if RegValueExists(HKEY_LOCAL_MACHINE, 'SYSTEM\CurrentControlSet\Services\nm3','Start') then
-    begin
-      ShellExec('', 'msiexec', '/I{8C5B5A11-CBF8-451B-B201-77FAB0D0B77D}','', SW_SHOW, ewWaitUntilTerminated, ResultCode);
-    end
-  else if RegValueExists(HKEY_LOCAL_MACHINE, 'SYSTEM\CurrentControlSet\Services\nm','Start') then
-    begin
-      ShellExec('', 'msiexec', '/I{A2F2C44A-869E-4C32-9CEC-E22B1CC91F06}','', SW_SHOW, ewWaitUntilTerminated, ResultCode);
-    end;
-end;
-
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if CurStep = ssInstall
-  then 
-    begin
-      WinPcapInst();
-    end;
-end;
-
-procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
-begin
-    if CurUninstallStep = usPostUninstall
-    then
-      begin
-        WinPcapRem();
-      end;
 end;
 
 var
