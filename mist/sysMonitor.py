@@ -351,6 +351,7 @@ class SysMonitor():
     try:
   
       value = -1
+      num_active_eth = 0
       info = 'Dispositivi ethernet non presenti.'
       devices = self._get_NetIF(True)
       
@@ -363,60 +364,43 @@ class SysMonitor():
             guid = device.find('GUID').text
             my_netstat = netstat.get_netstat(guid)
             if (my_netstat.is_device_active()):
-                value = 1
-                info = 'Dispositivi ethernet attivi.'
+                num_active_eth += 1
             else:
-                value = 0
-                info = 'Dispositivi ethernet non attivi.'
-                raise sysmonitorexception.WARNETH
-#             dev_info = self._getDevInfo(guid)
-#             if (dev_info != None):
-#               dev_type = dev_info['type']
-#               if (dev_type == type) or (dev_type == 'Unknown'):
-#                 status = int(device.find('Status').text)
-#                 if (status == 7 and value != 1):
-#                   value = 0
-#                   info = 'Dispositivi ethernet non attivi.'
-#                   raise sysmonitorexception.WARNETH
-#                 elif (status == 2):
-#                   value = 1
-#                   info = 'Dispositivi ethernet attivi.'
-                  
+                logger.debug("Found inactive Ethernet device")
+
           elif (system().lower().startswith('lin')):
             status = device.find('Status').text
             active = device.find('isActive').text
             if (status == 'Disabled' and value != 1):  
-              value = 0
-              info = 'Dispositivi ethernet non attivi.'
-              raise sysmonitorexception.WARNETH
+              logger.debug("Found inactive Ethernet device")
+              print ET.tostring(device)
             elif (status == 'Enabled' and active == 'True'):
-              value = 1
-              info = 'Dispositivi ethernet attivi.'
+              num_active_eth += 1
               
           elif (system().lower().startswith('dar')):  
             status = device.find('Status').text
             active = device.find('isActive').text
             if (status == 'Enabled' and active == 'True'):
-              value = 1
-              info = 'Dispositivi ethernet attivi.'
-            elif (value != 1):  
-              value = 0
-              info = 'Dispositivi ethernet non attivi.'
-              raise sysmonitorexception.WARNETH
-            
-      if (value == -1):
+              num_active_eth += 1
+            else:  
+              logger.debug("Found inactive Ethernet device")
+
+      if (num_active_eth > 0):
+        info = 'Dispositivi ethernet attivi.'
+        value = 1
+        status = True
+      else:
+        info = 'Dispositivi ethernet non attivi.'
+        value = 0
         raise sysmonitorexception.WARNETH
                 
-      status = True
     
     except Exception as e:
       
       info = e
       status = False
-      #raise e
       
     finally:
-      
       self._store(res, status, value, info)
   
   
@@ -748,35 +732,35 @@ class SysMonitor():
       self._store(res, status, value, info)
   
   
-  def _getDevInfo(self, dev = None):
-    
-    if dev == None:
-      dev = self._get_ActiveIp()
-      
-    dev_info = pktman.getdev(dev)
-    if (dev_info['err_flag'] != 0):
-      dev_info = None
-    else:
-      if (dev_info['type'] == 0):
-        dev_info['type'] = 'Unknown'
-      elif (dev_info['type'] == 14):
-        dev_info['type'] = 'Ethernet 802.3'
-      elif (dev_info['type'] == 25):
-        dev_info['type'] = 'Wireless'
-      elif (dev_info['type'] == 17):
-        dev_info['type'] = 'WWAN'
-      elif (dev_info['type'] == 3) and (dev_info['ip'] != '127.0.0.1'):
-        dev_info['type'] = 'External Modem'
-    
-      if (dev_info.get('descr', 'none') == 'none'):
-        data = self._get_NetIF(True)
-        for device in data.findall('rete/NetworkDevice'):
-          if (device.find('Device').text == dev):
-            dev_info['type'] = device.find('Type').text
-            dev_info['descr'] = "%s (%s)" % (device.find('Name').text, device.find('Type').text)
-    
-    return dev_info
-  
+#   def _getDevInfo(self, dev = None):
+#     
+#     if dev == None:
+#       dev = self._get_ActiveIp()
+#       
+#     dev_info = pktman.getdev(dev)
+#     if (dev_info['err_flag'] != 0):
+#       dev_info = None
+#     else:
+#       if (dev_info['type'] == 0):
+#         dev_info['type'] = 'Unknown'
+#       elif (dev_info['type'] == 14):
+#         dev_info['type'] = 'Ethernet 802.3'
+#       elif (dev_info['type'] == 25):
+#         dev_info['type'] = 'Wireless'
+#       elif (dev_info['type'] == 17):
+#         dev_info['type'] = 'WWAN'
+#       elif (dev_info['type'] == 3) and (dev_info['ip'] != '127.0.0.1'):
+#         dev_info['type'] = 'External Modem'
+#     
+#       if (dev_info.get('descr', 'none') == 'none'):
+#         data = self._get_NetIF(True)
+#         for device in data.findall('rete/NetworkDevice'):
+#           if (device.find('Device').text == dev):
+#             dev_info['type'] = device.find('Type').text
+#             dev_info['descr'] = "%s (%s)" % (device.find('Name').text, device.find('Type').text)
+#     
+#     return dev_info
+#   
   
   def _get_mac(self, ip = None , res = RES_MAC):
     
@@ -1029,8 +1013,9 @@ if __name__ == "__main__":
   monitor = SysMonitor()
   #monitor.interfaces()
   
-  monitor.checkall()
-  
+#  monitor.checkall()
+ 
+  print monitor.checkres(RES_ETH) 
 #  result = monitor.checkres(RES_IP)
 #  for key, val in result.items(): 
 #    logger.info("| %s\t: %s" % (key, val))
