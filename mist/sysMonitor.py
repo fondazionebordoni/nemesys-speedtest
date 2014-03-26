@@ -373,7 +373,6 @@ class SysMonitor():
             active = device.find('isActive').text
             if (status == 'Disabled' and value != 1):  
               logger.debug("Found inactive Ethernet device")
-              print ET.tostring(device)
             elif (status == 'Enabled' and active == 'True'):
               num_active_eth += 1
               
