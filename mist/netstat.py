@@ -122,7 +122,7 @@ class NetstatWindows(Netstat):
 		for if_dev in all_devices:
 			if_all_addresses = netifaces.ifaddresses(if_dev)
 			if netifaces.AF_INET in if_all_addresses:
-				if_ip_addresses = netifaces.ifaddresses(if_dev)[netifaces.AF_INET]
+				if_ip_addresses = if_all_addresses[netifaces.AF_INET]
 				for if_ip_address in if_ip_addresses:
 					if (if_ip_address['addr'] == ip_address):
 						if_dev_name = if_dev
@@ -213,7 +213,7 @@ class NetstatLinux(Netstat):
 		for if_dev in all_devices:
 			if_all_addresses = netifaces.ifaddresses(if_dev)
 			if netifaces.AF_INET in if_all_addresses:
-				if_ip_addresses = netifaces.ifaddresses(if_dev)[netifaces.AF_INET]
+				if_ip_addresses = if_all_addresses[netifaces.AF_INET]
 				for if_ip_address in if_ip_addresses:
 					if (if_ip_address['addr'] == ip_address):
 						if_dev_name = if_dev
