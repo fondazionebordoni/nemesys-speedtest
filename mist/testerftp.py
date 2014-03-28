@@ -48,8 +48,10 @@ class FtpTester:
     self._maxRetry = 8
     self._bufsize = bufsize
     self._netstat = netstat.get_netstat(dev)
+#    self._timeout_secs = timeout_secs
+    #Ignore any given timeout
+    self._timeout_secs = 11
     self._timeout_millis = float(timeout_secs * 1000)
-    self._timeout_secs = timeout_secs
     
   def _ftp_down(self):
     size = 0
