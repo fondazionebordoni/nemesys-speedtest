@@ -38,7 +38,7 @@ errors = Errorcoder(paths.CONF_ERRORS)
 
 class FtpTester:
 
-  def __init__(self, dev, timeout = 11, bufsize = 8 * 1024):
+  def __init__(self, dev, timeout_secs = 11, bufsize = 8 * 1024):
     
     self._nic_if = dev
     
@@ -48,7 +48,8 @@ class FtpTester:
     self._maxRetry = 8
     self._bufsize = bufsize
     self._netstat = netstat.get_netstat(dev)
-    self._timeout = float(timeout * 1000)
+    self._timeout_millis = float(timeout_secs * 1000)
+    self._timeout_secs = timeout_secs
     
   def _ftp_down(self):
     size = 0
@@ -60,10 +61,10 @@ class FtpTester:
     start = time.time()
     while True:
       data = conn.recv(self._bufsize)
+      size += len(data)
       stop = time.time()
       elapsed = float((stop-start)*1000)
-      size += len(data)
-      if (elapsed > self._timeout):
+      if (elapsed > self._timeout_millis):
         break
       elif not data:
         break
@@ -79,6 +80,8 @@ class FtpTester:
       else:
         raise e
     
+    stop = time.time()
+    elapsed = float((stop-start)*1000)
     return (size, elapsed)
     
   def _ftp_up(self):
@@ -92,12 +95,14 @@ class FtpTester:
     while True:
       data = self._file.read(self._bufsize)
       if (data == None):
+        print "NO MORE DATA!"
         break
       conn.sendall(data)
+      size += len(data)
       stop = time.time()
       elapsed = float((stop-start)*1000)
-      size += len(data)
-      if (elapsed > self._timeout):
+      if (elapsed > self._timeout_millis):
+        print "TIMEOUT!"
         break
 
     try:
@@ -110,6 +115,8 @@ class FtpTester:
       else:
         raise e
     
+    stop = time.time()
+    elapsed = float((stop-start)*1000)
     return (size, elapsed)
 
   def testftpdown(self, server, filename, bytes, username='anonymous', password='anonymous@'):
@@ -127,7 +134,7 @@ class FtpTester:
       # TODO Il timeout non viene onorato in Python 2.6: http://bugs.python.org/issue8493
       #self._ftp = FTP(self._host.ip, self._username, self._password, timeout=timeout)
 #       self._ftp = FTP(self._host.ip, self._username, self._password)
-      self._ftp = FTP(server, username, password, timeout=self._timeout)
+      self._ftp = FTP(server, username, password, timeout=self._timeout_secs)
     except ftplib.all_errors as e:
       test['errorcode'] = errors.geterrorcode(e)
       error = '[%s] Impossibile aprire la connessione FTP: %s' % (test['errorcode'], e)
@@ -194,7 +201,7 @@ class FtpTester:
 
     try:
       # TODO Il timeout non viene onorato in Python 2.6: http://bugs.python.org/issue8493
-      self._ftp = FTP(server, username, password)
+      self._ftp = FTP(server, username, password, self._timeout_secs)
     except ftplib.all_errors as e:
       test['errorcode'] = errors.geterrorcode(e)
       error = '[%s] Impossibile aprire la connessione FTP: %s' % (test['errorcode'], e)
@@ -208,9 +215,9 @@ class FtpTester:
       # Il risultato deve essere espresso in millisecondi
       start_total_bytes = self._netstat.get_tx_bytes()
 
+      logger.info('Testing.... ')
+
       (size, elapsed) = self._ftp_up()
-      test['bytes'] = size
-      test['time'] = elapsed
       logger.info("Banda: (%s*8)/%s = %s Kbps" % (size,elapsed,(size*8)/elapsed))
       
       logger.info('Test stopping.... ')
@@ -218,6 +225,8 @@ class FtpTester:
       total_bytes = end_total_bytes - start_total_bytes
       if (total_bytes < 0):
           raise Exception("Ottenuto banda negativa, possibile azzeramento dei contatori.")
+      test['bytes'] = size
+      test['time'] = elapsed
       test['stats'] = Statistics(byte_up_nem = size, byte_up_all = total_bytes)
       test['speed'] = total_bytes/elapsed
       test['bytes_total'] = total_bytes
@@ -256,5 +265,4 @@ if __name__ == '__main__':
 #    print t.testftpdown(nap, '/download/40000.rnd', 1000000, 'nemesys', '4gc0m244')
     print "\n---------------------------\n"
     print t.testftpup(nap, '/upload/r.raw', 100000000, 'nemesys', '4gc0m244')
-#     print "\n---------------------------\n"
-#     print t.test_down("ftp://%s/" % host)
+    
