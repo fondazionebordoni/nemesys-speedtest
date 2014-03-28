@@ -97,14 +97,12 @@ class FtpTester:
     while True:
       data = self._file.read(self._bufsize)
       if (data == None):
-        print "NO MORE DATA!"
         break
       conn.sendall(data)
       size += len(data)
       stop = time.time()
       elapsed = float((stop-start)*1000)
       if (elapsed > self._timeout_millis):
-        print "TIMEOUT!"
         break
 
     try:
