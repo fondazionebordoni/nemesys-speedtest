@@ -228,7 +228,6 @@ class FtpTester:
       test['bytes'] = size
       test['time'] = elapsed
       test['stats'] = Statistics(byte_up_nem = size, byte_up_all = total_bytes)
-      test['speed'] = total_bytes/elapsed
       test['bytes_total'] = total_bytes
 
       logger.info('Test done!')
@@ -256,10 +255,8 @@ if __name__ == '__main__':
     dev = None
     nap = "eagle2.fub.it"
 #     nap = '193.104.137.133'
-    if "win" in platform_name:
-        dev = "Scheda Ethernet"
-    else:
-        dev = "eth0"
+    import sysMonitor
+    dev = sysMonitor.getDev()
     t = FtpTester(dev)
         
 #    print t.testftpdown(nap, '/download/40000.rnd', 1000000, 'nemesys', '4gc0m244')
