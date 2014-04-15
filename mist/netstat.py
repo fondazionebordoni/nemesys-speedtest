@@ -40,24 +40,32 @@ class Netstat(object):
 
 	def get_rx_bytes(self):
 		# Handle different versions of psutil
+		if not self.if_device:
+			raise NetstatException("Cannot get counters for None device")
 		try:
 			counters_per_nic = psutil.network_io_counters(pernic=True)
 		except AttributeError:
 			counters_per_nic = psutil.net_io_counters(pernic=True)
 		if self.if_device in counters_per_nic:
 			rx_bytes = counters_per_nic[self.if_device].bytes_recv
+			if not rx_bytes:
+				raise NetstatException("Got empty counter for device %d" % self.if_device)
 		else:
 			raise NetstatException("Could not find counters for device %d" % self.if_device)
 		return long(rx_bytes)
 
 	def get_tx_bytes(self):
 		# Handle different versions of psutil
+		if not self.if_device:
+			raise NetstatException("Cannot get counters for None device")
 		try:
 			counters_per_nic = psutil.network_io_counters(pernic=True)
 		except AttributeError:
 			counters_per_nic = psutil.net_io_counters(pernic=True)
 		if self.if_device in counters_per_nic:
 			tx_bytes = counters_per_nic[self.if_device].bytes_sent
+			if not tx_bytes:
+				raise NetstatException("Got empty counter for device %d" % self.if_device)
 		else:
 			raise NetstatException("Could not find counters for device %d" % self.if_device)
 		return long(tx_bytes)
