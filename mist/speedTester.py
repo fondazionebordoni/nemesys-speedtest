@@ -351,12 +351,12 @@ class SpeedTester(Thread):
         elif type == UP:
           logger.info("[FTP UPLOAD] " + message + " [FTP UPLOAD]")
           test.update(tester.testftpup(self._client.profile.upload * task.multiplier * 1000 / 8, task.ftpuppath))
-#         elif type == HTTP_DOWN:
-#           logger.info("[HTTP DOWNLOAD] " + message + " [HTTP DOWNLOAD]")
-#           test.update(tester.testhttpdown())
-#         elif type == HTTP_UP:
-#           logger.info("[HTTP UPLOAD] " + message + " [HTTP UPLOAD]")
-#           test.update(tester.testhttpup())
+        elif type == HTTP_DOWN:
+          logger.info("[HTTP DOWNLOAD] " + message + " [HTTP DOWNLOAD]")
+          test.update(tester.testhttpdown())
+        elif type == HTTP_UP:
+          logger.info("[HTTP UPLOAD] " + message + " [HTTP UPLOAD]")
+          test.update(tester.testhttpup())
         else:
           logger.warn("Tipo di test da effettuare non definito!")
 
@@ -460,16 +460,16 @@ class SpeedTester(Thread):
             wx.CallAfter(self._gui._update_ping, test.time)
           elif (type == DOWN):
             wx.CallAfter(self._gui._update_messages, "Download (FTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
-            wx.CallAfter(self._gui._update_down, self._get_bandwidth(test))
+            wx.CallAfter(self._gui._update_ftp_down, self._get_bandwidth(test))
           elif (type == UP):
             wx.CallAfter(self._gui._update_messages, "Upload (FTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
-            wx.CallAfter(self._gui._update_up, self._get_bandwidth(test))
+            wx.CallAfter(self._gui._update_ftp_up, self._get_bandwidth(test))
           elif (type == HTTP_DOWN):
             wx.CallAfter(self._gui._update_messages, "Download (HTTP): Media %.0f kbps, Max %.0f kbps" % (self._get_bandwidth(test), self._get_max_http_bandwidth(test)), 'green', font=(12, 93, 92, 1))
-            wx.CallAfter(self._gui._update_down, self._get_bandwidth(test))
+            wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
           elif (type == HTTP_UP):
             wx.CallAfter(self._gui._update_messages, "Upload (HTTP): Media %.0f kbps, Max %.0f kbps" % (self._get_bandwidth(test), self._get_max_http_bandwidth(test)), 'green', font=(12, 93, 92, 1))
-            wx.CallAfter(self._gui._update_up, self._get_bandwidth(test))
+            wx.CallAfter(self._gui._update_http_up, self._get_bandwidth(test))
           # else:
             # raise Exception("chiave USB mancante")
           # logger.debug("\n\n%s\n\n",str(measure))

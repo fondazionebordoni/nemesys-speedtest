@@ -130,9 +130,6 @@ class FtpTester:
     self._file = filename
 
     try:
-      # TODO Il timeout non viene onorato in Python 2.6: http://bugs.python.org/issue8493
-      #self._ftp = FTP(self._host.ip, self._username, self._password, timeout=timeout)
-#       self._ftp = FTP(self._host.ip, self._username, self._password)
       self._ftp = FTP(server, username, password, timeout=self._timeout_secs)
     except ftplib.all_errors as e:
       test['errorcode'] = errors.geterrorcode(e)
@@ -159,7 +156,7 @@ class FtpTester:
       if (bytes_total < 0):
           raise Exception("Ottenuto banda negativa, possibile azzeramento dei contatori.")
       test['stats'] = Statistics(byte_down_nem = size, byte_down_all = bytes_total)
-
+      test['bytes_total'] = bytes_total
       logger.info("Banda: (%s*8)/%s = %s Kbps" % (size,elapsed,(size*8)/elapsed))
 
       logger.info('Test done!')

@@ -44,12 +44,12 @@ one measurement at a time!
 class HttpTester:
 
     # TODO: 
-    def __init__(self, dev, ip, host, timeout=11, num_bytes=5 * 1024):
+    def __init__(self, dev, ip, host, timeout_secs = 11, bufsize = 8 * 1024):
     
         self._maxRetry = 8
         
-        self._timeout = timeout
-        self._num_bytes = num_bytes
+        self._timeout = timeout_secs
+        self._num_bytes = bufsize
         self._netstat = netstat.get_netstat(dev)
         self._init_counters()
     

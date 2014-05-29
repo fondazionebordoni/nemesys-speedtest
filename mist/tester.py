@@ -22,7 +22,7 @@ from optparse import OptionParser
 import ping
 import socket
 import sys
-# from testerhttp import HttpTester
+from testerhttp import HttpTester
 from testerftp import FtpTester
 
 HTTP_BUFF = 8*1024
@@ -47,19 +47,19 @@ class Tester:
     self._password = password
     self._timeout = timeout
     
-#     self._testerhttp = HttpTester(dev, ip, host, timeout, HTTP_BUFF)
+    self._testerhttp = HttpTester(dev, ip, host, timeout, HTTP_BUFF)
     self._testerftp = FtpTester(dev, timeout, HTTP_BUFF)
     
     
 
-#   def testhttpdown(self):
-#     url = "http://%s/file.rnd" % self._host.ip
-#     return self._testerhttp.test_down(url)    
-# 
-#   def testhttpup(self):
-#     url = "http://%s/file.rnd" % self._host.ip
-#     return self._testerhttp.test_up(url)    
-#     
+  def testhttpdown(self):
+      url = "http://%s/file.rnd" % self._host.ip
+      return self._testerhttp.test_down(url)    
+ 
+  def testhttpup(self):
+      url = "http://%s/file.rnd" % self._host.ip
+      return self._testerhttp.test_up(url)    
+     
   def testftpdown(self, bytes, filename):
     return self._testerftp.testftpdown(self._host.ip, filename, bytes, self._username, self._password)
 
@@ -150,19 +150,19 @@ if __name__ == '__main__':
       logger.info('Test Download %d/%d' % (i, TOT))
       test = t1.testftpdown(10000000, '/download/40000.rnd')
       logger.info(test)
-      logger.info("Risultato di banda in download: %d" % (test.bytes_total * 8 / test.time))
+      logger.info("Risultato di banda in download: %d" % (test['bytes_total'] * 8 / test['time']))
 
     for i in range(1, TOT + 1):
       logger.info('Test Upload %d/%d' % (i, TOT))
       test = t1.testftpup(10000000, '/upload/r.raw')
       logger.info(test)
-      logger.info("Risultato di banda in upload: %d" % (test.bytes_total * 8 / test.time))
+      logger.info("Risultato di banda in upload: %d" % (test['bytes_total'] * 8 / test['time']))
 
     for i in range(1, TOT + 1):
       logger.info('\nTest Ping %d/%d' % (i, TOT))
       test = t1.testping()
       logger.info(test)
-      logger.info("Risultato ping: %d" % test.time)
+      logger.info("Risultato ping: %d" % test['time'])
 
   else:
     main()
