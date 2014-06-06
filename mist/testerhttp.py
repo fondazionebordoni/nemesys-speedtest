@@ -32,6 +32,7 @@ from statistics import Statistics
 
 TOTAL_MEASURE_TIME = 10
 THRESHOLD_START = 0.05
+MAX_TRANSFERED_BYTES = 100 * 1000000 * 8 * 15 # 100 Mbps for 15 seconds
 
 logger = logging.getLogger()
 errors = Errorcoder(paths.CONF_ERRORS)
@@ -46,9 +47,9 @@ class HttpTester:
     # TODO: 
     def __init__(self, dev, ip, host, timeout_secs = 11, bufsize = 8 * 1024):
     
-        self._maxRetry = 8
-        
-        self._timeout = timeout_secs
+    
+        self._maxRetry = 8 # Not used
+        self._timeout_secs = timeout_secs # Not used
         self._num_bytes = bufsize
         self._netstat = netstat.get_netstat(dev)
         self._init_counters()
@@ -107,7 +108,7 @@ class HttpTester:
             start_total_bytes = self._netstat.get_rx_bytes()
             start_time = time.time()
             start_transfered_bytes = self._transfered_bytes
-            t_end = threading.Timer(TOTAL_MEASURE_TIME, self._stop_down_measurement)
+            t_end = threading.Timer(TOTAL_MEASURE_TIME, self._stop_measurement)
             t_end.start()
             while has_more and not self._time_to_stop:
                 buffer = response.read(self._num_bytes)
@@ -152,7 +153,7 @@ class HttpTester:
       
       return max_rate
 
-    def _stop_down_measurement(self):
+    def _stop_measurement(self):
         logger.debug("Stopping....")
         self._time_to_stop = True
         for t in self._read_measure_threads:
@@ -196,9 +197,9 @@ class HttpTester:
             start_time = time.time()
             start_total_bytes = self._netstat.get_tx_bytes()
             start_transfered_bytes = self._transfered_bytes
-            t = threading.Timer(TOTAL_MEASURE_TIME, self._stop_down_measurement)
+            t = threading.Timer(TOTAL_MEASURE_TIME, self._stop_measurement)
             t.start()
-            while not self._time_to_stop:
+            while not self._time_to_stop and self._transfered_bytes < MAX_TRANSFERED_BYTES:
                 yield random.choice(lowercase) * bufsize
                 self._transfered_bytes += bufsize
             end_time = time.time()
