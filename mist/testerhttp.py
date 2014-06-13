@@ -229,7 +229,13 @@ class HttpTester:
         self._test = _init_test('upload')
         t = threading.Timer(1.0, self._read_measure)
         t.start()
-        requests.post(url, data=self._buffer_generator(5 * 1024))
+        try:
+            requests.post(url, data=self._buffer_generator(5 * 1024))
+        except Exception as e:
+            self._test['errorcode'] = errors.geterrorcode(e)
+            error = '[%s] Impossibile aprire la connessione HTTP: %s' % (self._test['errorcode'], e)
+            logger.error(error)
+            self._stop_measurement()
         t.join()
         return self._test
 

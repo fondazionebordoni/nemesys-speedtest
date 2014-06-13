@@ -37,8 +37,8 @@ logger = logging.getLogger()
 TASK_FILE = '40000'
 
 PING = 'ping'
-DOWN = 'down'
-UP = 'up'
+FTP_DOWN = 'down'
+FTP_UP = 'up'
 HTTP_DOWN = 'http_down'
 HTTP_UP = 'http_up'
 
@@ -211,12 +211,12 @@ class SpeedTester(Thread):
 #       wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': None})
 #       return test_status
 
-    if (testtype == DOWN or testtype == HTTP_DOWN):
+    if (testtype == FTP_DOWN or testtype == HTTP_DOWN):
       byte_nem = stats.byte_down_nem
       byte_all = stats.byte_down_all
 #       packet_nem = stats.packet_up_nem_net
 #       packet_all = packet_nem + stats.packet_up_oth_net
-    elif (testtype == UP or testtype == HTTP_UP):
+    elif (testtype == FTP_UP or testtype == HTTP_UP):
       byte_nem = stats.byte_up_nem
       byte_all = stats.byte_up_all
 #       packet_nem = stats.packet_down_nem_net
@@ -303,10 +303,10 @@ class SpeedTester(Thread):
     if type == PING:
       stringtype = "ping"
       test_todo = task.ping
-    elif type == DOWN:
+    elif type == FTP_DOWN:
       stringtype = "ftp download"
       test_todo = task.download
-    elif type == UP:
+    elif type == FTP_UP:
       stringtype = "ftp upload"
       test_todo = task.upload
     elif type == HTTP_DOWN:
@@ -345,10 +345,10 @@ class SpeedTester(Thread):
         if type == PING:
           logger.info("[PING] " + message + " [PING]")
           test.update(tester.testping())
-        elif type == DOWN:
+        elif type == FTP_DOWN:
           logger.info("[FTP DOWNLOAD] " + message + " [FTP DOWNLOAD]")
           test.update(tester.testftpdown(self._client.profile.download * task.multiplier * 1000 / 8, task.ftpdownpath))
-        elif type == UP:
+        elif type == FTP_UP:
           logger.info("[FTP UPLOAD] " + message + " [FTP UPLOAD]")
           test.update(tester.testftpup(self._client.profile.upload * task.multiplier * 1000 / 8, task.ftpuppath))
         elif type == HTTP_DOWN:
@@ -371,10 +371,10 @@ class SpeedTester(Thread):
         else:
           bandwidth = self._get_bandwidth(test)
           
-          if type == DOWN or type == HTTP_DOWN:
+          if type == FTP_DOWN or type == HTTP_DOWN:
             self._client.profile.download = min(bandwidth, 40000)
             task.update_ftpdownpath(bandwidth)
-          elif type == UP or type == HTTP_UP:
+          elif type == FTP_UP or type == HTTP_UP:
             self._client.profile.upload = min(bandwidth, 40000)
           else:
             logger.warn("Tipo di test effettuato non definito!")
@@ -446,8 +446,8 @@ class SpeedTester(Thread):
         measure = Measure(self._client, start_time, task.server, ip, os, mac, self._version)
         # logger.debug("\n\n%s\n\n",str(measure))
         
-        #test_types = [PING, DOWN, HTTP_DOWN, UP, HTTP_UP]
-        test_types = [DOWN, UP, PING]
+        test_types = [PING, FTP_DOWN, HTTP_DOWN, FTP_UP, HTTP_UP]
+        #test_types = [FTP_DOWN, FTP_UP, PING]
         
         # Testa i ping
         for type in test_types:
@@ -458,10 +458,10 @@ class SpeedTester(Thread):
           if (type == PING):
             wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.time, 'green', font=(12, 93, 92, 1))
             wx.CallAfter(self._gui._update_ping, test.time)
-          elif (type == DOWN):
+          elif (type == FTP_DOWN):
             wx.CallAfter(self._gui._update_messages, "Download (FTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
             wx.CallAfter(self._gui._update_ftp_down, self._get_bandwidth(test))
-          elif (type == UP):
+          elif (type == FTP_UP):
             wx.CallAfter(self._gui._update_messages, "Upload (FTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
             wx.CallAfter(self._gui._update_ftp_up, self._get_bandwidth(test))
           elif (type == HTTP_DOWN):

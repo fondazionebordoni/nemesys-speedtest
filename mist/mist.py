@@ -498,6 +498,8 @@ if __name__ == "__main__":
   
   app = wx.PySimpleApp(0)
   
+  # Check if this is the last version
+  # Does not seem to be used
   checker = CheckSoftware(version)
   check = checker.checkIT()
   

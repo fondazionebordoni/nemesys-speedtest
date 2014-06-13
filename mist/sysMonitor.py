@@ -68,18 +68,18 @@ INFO = 'info'
 TIME = 'time'
 
 tag_results = 'SystemProfilerResults'
-tag_threshold = 'SystemProfilerThreshold'
+#tag_threshold = 'SystemProfilerThreshold'
 tag_avMem = 'RAM.totalPhysicalMemory'
 tag_memLoad = 'RAM.RAMUsage'
 tag_wireless = 'wireless.ActiveWLAN'
 tag_ip = 'ipAddr' #to check
 tag_os = 'sistemaOperativo.OperatingSystem'
 tag_cpu = 'CPU.cpuLoad'
-tag_mac = 'rete.NetworkDevice/MACAddress'
-tag_activeNic = 'rete.NetworkDevice/isActive'
-tag_cores = 'CPU.cores'
-tag_proc = 'CPU.processor'
-tag_hosts = 'hostNumber'
+#tag_mac = 'rete.NetworkDevice/MACAddress'
+#tag_activeNic = 'rete.NetworkDevice/isActive'
+#tag_cores = 'CPU.cores'
+#tag_proc = 'CPU.processor'
+#tag_hosts = 'hostNumber'
 
 
 #' SOGLIE '#
@@ -976,10 +976,7 @@ def getIp(host = 'finaluser.agcom244.fub.it', port = 443):
     s.connect((host, port))
     value = s.getsockname()[0]
     
-    #value = getstringtag(tag_ip, '90.147.120.2')
-    
     if not _checkipsyntax(value):
-      #raise Exception('Impossibile ottenere il dettaglio dell\'indirizzo IP')
       raise sysmonitorexception.UNKIP
     return value
 

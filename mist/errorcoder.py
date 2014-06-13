@@ -54,8 +54,10 @@ class Errorcoder:
     Restituisce il codice di errore relativo al messaggio di errore (errormsg),
     secondo la codifica relativa all'dato operatore.
     '''
-
-    error = str(exception.args[0])
+    try:
+        error = str(exception.args[0])
+    except AttributeError:
+        error = str(exception)
 
     try:
       errorcode = self._config.getint('Errors', error)
