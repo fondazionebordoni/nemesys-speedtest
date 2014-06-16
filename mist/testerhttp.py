@@ -24,6 +24,7 @@ import time
 import urllib2
 
 from errorcoder import Errorcoder
+from fakefile import Fakefile
 from logger import logging
 import netstat
 import paths
@@ -74,6 +75,7 @@ class HttpTester:
         self._init_counters()
         test = _init_test('download')
         bit_per_second = -1
+        t_end = None
 
         try:
             response = urllib2.urlopen(url)
@@ -140,7 +142,8 @@ class HttpTester:
             test['errorcode'] = errors.geterrorcode("Bitrate non stabilizzata")
             
         t_start.join()
-        t_end.join()
+        if t_end:
+            t_end.join()
         response.close()
         return test
 
@@ -199,9 +202,11 @@ class HttpTester:
             start_transfered_bytes = self._transfered_bytes
             t = threading.Timer(TOTAL_MEASURE_TIME, self._stop_measurement)
             t.start()
-            while not self._time_to_stop and self._transfered_bytes < MAX_TRANSFERED_BYTES:
-                yield random.choice(lowercase) * bufsize
-                self._transfered_bytes += bufsize
+            data = self._fakefile.read(bufsize)
+            while not self._time_to_stop and data:
+                yield data
+                self._transfered_bytes += len(data)
+                data = self._fakefile.read(bufsize)
             end_time = time.time()
             elapsed_time = float((end_time - start_time) * 1000)
             measured_bytes = self._transfered_bytes - start_transfered_bytes
@@ -226,6 +231,7 @@ class HttpTester:
     
     def test_up(self, url):
         self._init_counters()
+        self._fakefile = Fakefile(MAX_TRANSFERED_BYTES)
         self._test = _init_test('upload')
         t = threading.Timer(1.0, self._read_measure)
         t.start()
@@ -233,8 +239,7 @@ class HttpTester:
             requests.post(url, data=self._buffer_generator(5 * 1024))
         except Exception as e:
             self._test['errorcode'] = errors.geterrorcode(e)
-            error = '[%s] Impossibile aprire la connessione HTTP: %s' % (self._test['errorcode'], e)
-            logger.error(error)
+            logger.error('[%s] Impossibile aprire la connessione HTTP: %s' % (self._test['errorcode'], e))
             self._stop_measurement()
         t.join()
         return self._test
