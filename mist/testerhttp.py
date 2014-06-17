@@ -191,6 +191,7 @@ class HttpTester:
 
     def _buffer_generator(self, bufsize):
         self._transfered_bytes = 0
+        fakefile = Fakefile(MAX_TRANSFERED_BYTES)
         
         while not self._go_ahead and not self._time_to_stop:
             yield random.choice(lowercase) * bufsize
@@ -202,11 +203,11 @@ class HttpTester:
             start_transfered_bytes = self._transfered_bytes
             t = threading.Timer(TOTAL_MEASURE_TIME, self._stop_measurement)
             t.start()
-            data = self._fakefile.read(bufsize)
+            data = fakefile.read(bufsize)
             while not self._time_to_stop and data:
                 yield data
                 self._transfered_bytes += len(data)
-                data = self._fakefile.read(bufsize)
+                data = fakefile.read(bufsize)
             end_time = time.time()
             elapsed_time = float((end_time - start_time) * 1000)
             measured_bytes = self._transfered_bytes - start_transfered_bytes
@@ -231,7 +232,6 @@ class HttpTester:
     
     def test_up(self, url):
         self._init_counters()
-        self._fakefile = Fakefile(MAX_TRANSFERED_BYTES)
         self._test = _init_test('upload')
         t = threading.Timer(1.0, self._read_measure)
         t.start()
