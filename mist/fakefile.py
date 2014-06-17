@@ -28,8 +28,12 @@ class Fakefile:
     if self._bytes <= 0:
       return None    
   
+    # data random between 0 and FFFFF...FF, 
+    # e.g. 0-FF  in case of one byte buffer
     data = '%x' % random.randint(0, 2 ** (8 * bufsize) - 1)
+    # if hex number is e.g. 6, pad with one 0 to 06
     data = data.rjust(bufsize*2, '0')
+    # transform into a string
     data = data.decode('hex')
     self._bytes -= len(data)
     return data
