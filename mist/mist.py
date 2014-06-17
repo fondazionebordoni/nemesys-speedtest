@@ -330,6 +330,8 @@ class mistGUI(wx.Frame):
 
     self.label_http_down_res.SetLabel("- - - -")
     self.label_http_up_res.SetLabel("- - - -")
+    self.label_ftp_down_res.SetLabel("- - - -")
+    self.label_ftp_up_res.SetLabel("- - - -")
     self.label_ping_res.SetLabel("- - - -")
     self.label_interface.SetLabel("")
 
