@@ -287,7 +287,7 @@ class SpeedTester(Thread):
     if rate_max > 0:
       return rate_max
     else:
-      raise Exception("Errore durante la valutazione del test")
+      return self._get_bandwidth(test)
   
   
   def _do_test(self, tester, type, task):

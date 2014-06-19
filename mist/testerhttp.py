@@ -57,11 +57,12 @@ class HttpTester:
     
     def _init_counters(self):
         self._time_to_stop = False
+        self._go_ahead = False
+        self._stop_stabilization = False
         self._transfered_bytes = 0
         self._last_transfered_bytes = 0
         self._measures = []
         self._measure_count = 0
-        self._go_ahead = False
         self._test = None
         self._read_measure_threads = []
         self._last_diff = 0
@@ -96,9 +97,11 @@ class HttpTester:
         # TODO: use requests lib instead?
         t_start = threading.Timer(1.0, self._read_measure)
         t_start.start()
+        t_stabilization = threading.Timer(TOTAL_MEASURE_TIME / 2, self._stabilization_timeout)
+        t_stabilization.start()
         has_more = True
         
-        while not self._go_ahead and has_more and not self._time_to_stop:
+        while not self._go_ahead and has_more and not self._stop_stabilization:
             buffer = response.read(self._num_bytes)
             if buffer: 
                 self._transfered_bytes += len(buffer)
@@ -139,6 +142,7 @@ class HttpTester:
             else:
                 test['errorcode'] = errors.geterrorcode("File non sufficientemente grande per la misura")
         else:
+            self._stop_measurement()
             test['errorcode'] = errors.geterrorcode("Bitrate non stabilizzata")
             
         t_start.join()
@@ -160,7 +164,11 @@ class HttpTester:
         logger.debug("Stopping....")
         self._time_to_stop = True
         for t in self._read_measure_threads:
-          t.join()
+           t.join()
+    
+    def _stabilization_timeout(self):
+        logger.debug("Stopping stabilization....")
+        self._stop_stabilization = True
     
     def _read_measure(self):
         measuring_time = time.time()
@@ -193,10 +201,13 @@ class HttpTester:
         self._transfered_bytes = 0
         fakefile = Fakefile(MAX_TRANSFERED_BYTES)
         
-        while not self._go_ahead and not self._time_to_stop:
+        t_stabilization = threading.Timer(TOTAL_MEASURE_TIME / 2, self._stabilization_timeout)
+        t_stabilization.start()
+        while not self._go_ahead and not self._stop_stabilization:
             yield random.choice(lowercase) * bufsize
             self._transfered_bytes += bufsize
         if self._go_ahead:
+            t_stabilization.cancel()
             logger.debug("Starting HTTP measurement....")
             start_time = time.time()
             start_total_bytes = self._netstat.get_tx_bytes()
@@ -225,6 +236,7 @@ class HttpTester:
             logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
             t.join()
         else:
+            self._stop_measurement()
             self._test['errorcode'] = errors.geterrorcode("Bitrate non stabilizzata")
 
         yield '_ThisIsTheEnd_'
@@ -236,7 +248,7 @@ class HttpTester:
         t = threading.Timer(1.0, self._read_measure)
         t.start()
         try:
-            requests.post(url, data=self._buffer_generator(5 * 1024))
+            requests.post(url, data=self._buffer_generator(self._num_bytes))
         except Exception as e:
             self._test['errorcode'] = errors.geterrorcode(e)
             logger.error('[%s] Impossibile aprire la connessione HTTP: %s' % (self._test['errorcode'], e))
@@ -261,13 +273,12 @@ if __name__ == '__main__':
     import platform
     platform_name = platform.system().lower()
     dev = None
-    host = "eagle2.fub.it"
-    if "win" in platform_name:
-        dev = "Scheda Ethernet"
-    else:
-        dev = "eth0"
-    t = HttpTester(dev, "192.168.112.11", "pippo")
-    print t.test_down("http://%s/" % host)
+#     host = "eagle2.fub.it"
+    host = "billia.fub.it"
+    import sysMonitor
+    dev = sysMonitor.getDev()
+    ip = sysMonitor.getIp()
+    t = HttpTester(dev, ip, "pippo")
     print "\n---------------------------\n"
     print t.test_up("http://%s/" % host)
     print "\n---------------------------\n"
