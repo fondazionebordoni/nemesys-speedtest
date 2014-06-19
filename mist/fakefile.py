@@ -30,7 +30,7 @@ class Fakefile:
     if self._bytes <= 0:
       return None
   
-    if not self.data or self.data_len == bufsize:
+    if not self.data or self.data_len != bufsize:
         # data random between 0 and FFFFF...FF, 
         # e.g. 0-FF  in case of one byte buffer
         data = '%x' % random.randint(0, 2 ** (8 * bufsize) - 1)
@@ -38,6 +38,6 @@ class Fakefile:
         data = data.rjust(bufsize*2, '0')
         # transform into a string
         self.data = data.decode('hex')
-        self.data_len = len(data)
+        self.data_len = len(self.data)
     self._bytes -= self.data_len
     return self.data
