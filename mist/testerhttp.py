@@ -200,8 +200,11 @@ class HttpTester:
             
     def _read_up_measure(self):
         measuring_time = time.time()
+        if not self._go_ahead and measuring_time - self._starttime > TOTAL_MEASURE_TIME:
+            self._stop_up_measure()
+            return
+            
         new_transfered_bytes = self._transfered_bytes
-
         diff = new_transfered_bytes - self._last_transfered_bytes
         elapsed = (measuring_time - self._last_measured_time)*1000.0
         if self._go_ahead:
@@ -209,12 +212,13 @@ class HttpTester:
         
         logger.debug("Reading... count = %d, diff = %d bytes, total = %d bytes, time = %d ms" % (self._measure_count, diff, self._transfered_bytes, elapsed))
 
-        if (not self._go_ahead) and (self._last_transfered_bytes != 0) and (self._last_diff != 0):
+#        if (not self._go_ahead) and (self._last_transfered_bytes != 0) and (self._last_diff != 0):
+        if (not self._go_ahead) and (new_transfered_bytes != 0) and (self._last_diff != 0):
             acc = abs((diff * 1.0 - self._last_diff) / self._last_diff)
             logger.debug("acc = abs((%d - %d)/%d) = %.4f" % (diff, self._last_diff, self._last_diff, acc))
             if acc < THRESHOLD_START:
                 self._go_ahead = True
-                self.starttime = time.time()
+                self._measurement_starttime = time.time()
                 self.startbytes = self._transfered_bytes
                 self.starttotalbytes = self._netstat.get_tx_bytes()
                 t_end = threading.Timer(10.0, self._stop_up_measure)
@@ -235,7 +239,7 @@ class HttpTester:
         if self._go_ahead:
             endtime = time.time()
             endbytes = self._transfered_bytes
-            elapsed_time = float((endtime - self.starttime) * 1000)
+            elapsed_time = float((endtime - self._measurement_starttime) * 1000)
             measured_bytes = self._transfered_bytes - self.startbytes
             kbit_per_second = (measured_bytes * 8.0) / elapsed_time
             total_bytes = self._netstat.get_tx_bytes() - self.starttotalbytes
@@ -319,6 +323,7 @@ class HttpTester:
         self._init_counters()
         self._test = _init_test('upload')
         self._fakefile = Fakefile(MAX_TRANSFERED_BYTES)
+        self._starttime = time.time()
         t = threading.Timer(1.0, self._read_up_measure)
         t.start()
         try:
