@@ -252,13 +252,19 @@ if __name__ == '__main__':
     import platform
     platform_name = platform.system().lower()
     dev = None
-    nap = "eagle2.fub.it"
-#     nap = '193.104.137.133'
+#    nap = "eagle2.fub.it"
+    nap = '193.104.137.133'
     import sysMonitor
     dev = sysMonitor.getDev()
     t = FtpTester(dev)
         
 #    print t.testftpdown(nap, '/download/40000.rnd', 1000000, 'nemesys', '4gc0m244')
+    print "Copyright (c) 2014 Fondazione Ugo Bordoni"
+    print "Autore: ELIN  WEDLUND <ewdlund@fub.it>"
     print "\n---------------------------\n"
+    print "Download test:"
+    print t.testftpdown(nap, '/download/40000.rnd', 1000000, 'nemesys','4gc0m244')
+    print "\n---------------------------\n"
+    print "Upload test:"
     print t.testftpup(nap, '/upload/r.raw', 100000000, 'nemesys', '4gc0m244')
     
