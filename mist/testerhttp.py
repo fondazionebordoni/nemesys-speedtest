@@ -196,6 +196,75 @@ class HttpTester:
             t = threading.Timer(1.0, self._read_measure)
             self._read_measure_threads.append(t)
             t.start()
+            
+            
+    def _read_up_measure(self):
+        measuring_time = time.time()
+        new_transfered_bytes = self._transfered_bytes
+
+        diff = new_transfered_bytes - self._last_transfered_bytes
+        elapsed = (measuring_time - self._last_measured_time)*1000.0
+        if self._go_ahead:
+            self._measures.append((self._measure_count, diff, elapsed))
+        
+        logger.debug("Reading... count = %d, diff = %d bytes, total = %d bytes, time = %d ms" % (self._measure_count, diff, self._transfered_bytes, elapsed))
+
+        if (not self._go_ahead) and (self._last_transfered_bytes != 0) and (self._last_diff != 0):
+            acc = abs((diff * 1.0 - self._last_diff) / self._last_diff)
+            logger.debug("acc = abs((%d - %d)/%d) = %.4f" % (diff, self._last_diff, self._last_diff, acc))
+            if acc < THRESHOLD_START:
+                self._go_ahead = True
+                self.starttime = time.time()
+                self.startbytes = self._transfered_bytes
+                self.starttotalbytes = self._netstat.get_tx_bytes()
+                t_end = threading.Timer(10.0, self._stop_up_measure)
+                t_end.start()
+        
+        self._last_diff = diff
+        self._measure_count += 1
+        self._last_transfered_bytes = new_transfered_bytes
+        self._last_measured_time = measuring_time
+          
+        if not self._time_to_stop:
+            t = threading.Timer(1.0, self._read_up_measure)
+            self._read_measure_threads.append(t)
+            t.start()
+    
+    def _stop_up_measure(self):
+        self._time_to_stop = True
+        if self._go_ahead:
+            endtime = time.time()
+            endbytes = self._transfered_bytes
+            elapsed_time = float((endtime - self.starttime) * 1000)
+            measured_bytes = self._transfered_bytes - self.startbytes
+            kbit_per_second = (measured_bytes * 8.0) / elapsed_time
+            total_bytes = self._netstat.get_tx_bytes() - self.starttotalbytes
+            if (total_bytes < 0):
+                self._test['errorcode'] = errors.geterrorcode("Ottenuto banda negativa, possibile azzeramento dei contatori.")
+            else:
+                self._test['bytes'] = measured_bytes
+                self._test['time'] = elapsed_time
+                self._test['rate_avg'] = kbit_per_second
+                self._test['rate_max'] = self._get_max_rate() 
+                self._test['bytes_total'] = total_bytes
+                #TODO Compilare i dati prendendo le statistiche da netstat
+                self._test['stats'] = Statistics(byte_up_nem = measured_bytes, byte_up_all = total_bytes)
+            logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
+        else:
+            self._test['errorcode'] = errors.geterrorcode("errore di connessione")
+            
+            
+    def read(self, bufsize = -1):
+        if bufsize < 0:
+            bufsize = self._num_bytes
+        if self._time_to_stop:
+            return '_ThisIsTheEnd_'
+#        Needs fixing!
+            #return None
+        data = self._fakefile.read(bufsize)
+        self._transfered_bytes += len(data)
+        return self._fakefile.read(bufsize)
+        
 
     def _buffer_generator(self, bufsize):
         self._transfered_bytes = 0
@@ -204,8 +273,11 @@ class HttpTester:
         t_stabilization = threading.Timer(TOTAL_MEASURE_TIME / 2, self._stabilization_timeout)
         t_stabilization.start()
         while not self._go_ahead and not self._stop_stabilization:
-            yield random.choice(lowercase) * bufsize
-            self._transfered_bytes += bufsize
+            data = fakefile.read(bufsize)
+            if not data:
+                break
+            yield data
+            self._transfered_bytes += len(data)
         if self._go_ahead:
             t_stabilization.cancel()
             logger.debug("Starting HTTP measurement....")
@@ -214,11 +286,12 @@ class HttpTester:
             start_transfered_bytes = self._transfered_bytes
             t = threading.Timer(TOTAL_MEASURE_TIME, self._stop_measurement)
             t.start()
-            data = fakefile.read(bufsize)
-            while not self._time_to_stop and data:
+            while not self._time_to_stop:
+                data = fakefile.read(bufsize)
+                if not data:
+                    break
                 yield data
                 self._transfered_bytes += len(data)
-                data = fakefile.read(bufsize)
             end_time = time.time()
             elapsed_time = float((end_time - start_time) * 1000)
             measured_bytes = self._transfered_bytes - start_transfered_bytes
@@ -245,17 +318,21 @@ class HttpTester:
     def test_up(self, url):
         self._init_counters()
         self._test = _init_test('upload')
-        t = threading.Timer(1.0, self._read_measure)
+        self._fakefile = Fakefile(MAX_TRANSFERED_BYTES)
+        t = threading.Timer(1.0, self._read_up_measure)
         t.start()
         try:
-            requests.post(url, data=self._buffer_generator(self._num_bytes))
+            response = requests.post(url, data=self)
         except Exception as e:
-            self._test['errorcode'] = errors.geterrorcode(e)
-            logger.error('[%s] Impossibile aprire la connessione HTTP: %s' % (self._test['errorcode'], e))
-            self._stop_measurement()
+            if not self._time_to_stop:
+                print "Connection error"
+                self._stop_up_measure()
         t.join()
         return self._test
-
+    
+    def __len__(self):
+        return 1
+    
 def _init_test(type):
     test = {}
     test['type'] = type
@@ -273,8 +350,8 @@ if __name__ == '__main__':
     import platform
     platform_name = platform.system().lower()
     dev = None
-#     host = "eagle2.fub.it"
-    host = "billia.fub.it"
+    host = "eagle2.fub.it"
+#    host = "billia.fub.it"
     import sysMonitor
     dev = sysMonitor.getDev()
     ip = sysMonitor.getIp()
