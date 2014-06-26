@@ -54,6 +54,7 @@ class HttpTester:
         self._num_bytes = bufsize
         self._netstat = netstat.get_netstat(dev)
         self._init_counters()
+        self._fakefile = None
     
     def _init_counters(self):
         self._time_to_stop = False
@@ -95,7 +96,7 @@ class HttpTester:
             return test
         
         # TODO: use requests lib instead?
-        t_start = threading.Timer(1.0, self._read_measure)
+        t_start = threading.Timer(1.0, self._read_down_measure)
         t_start.start()
         t_stabilization = threading.Timer(TOTAL_MEASURE_TIME / 2, self._stabilization_timeout)
         t_stabilization.start()
@@ -122,7 +123,6 @@ class HttpTester:
                 else: 
                     has_more = False
                     
-            # TODO: abort the connection Not needed?
             if self._time_to_stop:
                 end_time = time.time()
                 elapsed_time = float((end_time - start_time) * 1000)
@@ -136,7 +136,6 @@ class HttpTester:
                 test['rate_avg'] = kbit_per_second
                 test['rate_max'] = self._get_max_rate() 
                 test['bytes_total'] = total_bytes
-                #TODO Compilare i dati prendendo le statistiche da netstat
                 test['stats'] = Statistics(byte_down_nem = measured_bytes, byte_down_all = total_bytes)
                 logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
             else:
@@ -155,9 +154,7 @@ class HttpTester:
       
       max_rate = 0
       for (count, transferred, elapsed) in self._measures:
-        #logger.debug("Measure %d: transferred = %d bytes, elapsed = %d ms" % (count, transferred, elapsed))
-        max_rate = max(transferred*8.0/elapsed, max_rate)
-      
+        max_rate = max(transferred*8.0/elapsed, max_rate)      
       return max_rate
 
     def _stop_measurement(self):
@@ -170,7 +167,7 @@ class HttpTester:
         logger.debug("Stopping stabilization....")
         self._stop_stabilization = True
     
-    def _read_measure(self):
+    def _read_down_measure(self):
         measuring_time = time.time()
         new_transfered_bytes = self._transfered_bytes
 
@@ -193,7 +190,7 @@ class HttpTester:
         self._last_measured_time = measuring_time
           
         if not self._time_to_stop:
-            t = threading.Timer(1.0, self._read_measure)
+            t = threading.Timer(1.0, self._read_down_measure)
             self._read_measure_threads.append(t)
             t.start()
             
@@ -204,22 +201,19 @@ class HttpTester:
             self._stop_up_measure()
             return
             
-        new_transfered_bytes = self._transfered_bytes
+        new_transfered_bytes = self._fakefile.get_bytes_read()
         diff = new_transfered_bytes - self._last_transfered_bytes
         elapsed = (measuring_time - self._last_measured_time)*1000.0
         if self._go_ahead:
             self._measures.append((self._measure_count, diff, elapsed))
-        
-        logger.debug("Reading... count = %d, diff = %d bytes, total = %d bytes, time = %d ms" % (self._measure_count, diff, self._transfered_bytes, elapsed))
-
-#        if (not self._go_ahead) and (self._last_transfered_bytes != 0) and (self._last_diff != 0):
+        logger.debug("Reading... count = %d, diff = %d bytes, total = %d bytes, time = %d ms" % (self._measure_count, diff, new_transfered_bytes, elapsed))
         if (not self._go_ahead) and (new_transfered_bytes != 0) and (self._last_diff != 0):
             acc = abs((diff * 1.0 - self._last_diff) / self._last_diff)
             logger.debug("acc = abs((%d - %d)/%d) = %.4f" % (diff, self._last_diff, self._last_diff, acc))
             if acc < THRESHOLD_START:
                 self._go_ahead = True
                 self._measurement_starttime = time.time()
-                self.startbytes = self._transfered_bytes
+                self.startbytes = new_transfered_bytes
                 self.starttotalbytes = self._netstat.get_tx_bytes()
                 t_end = threading.Timer(10.0, self._stop_up_measure)
                 t_end.start()
@@ -238,9 +232,9 @@ class HttpTester:
         self._time_to_stop = True
         if self._go_ahead:
             endtime = time.time()
-            endbytes = self._transfered_bytes
+            endbytes = self._fakefile.get_bytes_read()
             elapsed_time = float((endtime - self._measurement_starttime) * 1000)
-            measured_bytes = self._transfered_bytes - self.startbytes
+            measured_bytes = endbytes - self.startbytes
             kbit_per_second = (measured_bytes * 8.0) / elapsed_time
             total_bytes = self._netstat.get_tx_bytes() - self.starttotalbytes
             if (total_bytes < 0):
@@ -251,7 +245,6 @@ class HttpTester:
                 self._test['rate_avg'] = kbit_per_second
                 self._test['rate_max'] = self._get_max_rate() 
                 self._test['bytes_total'] = total_bytes
-                #TODO Compilare i dati prendendo le statistiche da netstat
                 self._test['stats'] = Statistics(byte_up_nem = measured_bytes, byte_up_all = total_bytes)
             logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
         else:
@@ -259,14 +252,8 @@ class HttpTester:
             
             
     def read(self, bufsize = -1):
-        if bufsize < 0:
-            bufsize = self._num_bytes
         if self._time_to_stop:
             return '_ThisIsTheEnd_'
-#        Needs fixing!
-            #return None
-        data = self._fakefile.read(bufsize)
-        self._transfered_bytes += len(data)
         return self._fakefile.read(bufsize)
         
 
@@ -330,7 +317,7 @@ class HttpTester:
             response = requests.post(url, data=self)
         except Exception as e:
             if not self._time_to_stop:
-                print "Connection error"
+                logger.debug("Connection error")
                 self._stop_up_measure()
         t.join()
         return self._test
@@ -348,9 +335,6 @@ def _init_test(type):
     test['errorcode'] = 0
     return test
         
-    # TODO: also read spurious traffic!
-    
-
 if __name__ == '__main__':
     import platform
     platform_name = platform.system().lower()
@@ -364,4 +348,4 @@ if __name__ == '__main__':
     print "\n---------------------------\n"
     print t.test_up("http://%s/" % host)
     print "\n---------------------------\n"
-    print t.test_down("http://%s/" % host)
+#    print t.test_down("http://%s/" % host)
