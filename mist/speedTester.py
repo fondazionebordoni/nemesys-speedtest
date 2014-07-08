@@ -379,6 +379,7 @@ class SpeedTester(Thread):
           else:
             logger.warn("Tipo di test effettuato non definito!")
             
+          wx.CallAfter(self._gui._update_messages, "Risultato %s (%s di %s): %s" % (stringtype.upper(), test_good + 1, test_todo, int(bandwidth)), 'blue')
           if test_good > 0:
             # Analisi da contabit
             if not (self._test_gating(test, type)):

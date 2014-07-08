@@ -27,7 +27,7 @@ logger = logging.getLogger()
 
 class Task:
 
-  def __init__(self, id, start, server, ftpdownpath, ftpuppath, upload=4, download=4, multiplier=10, ping=4, nicmp=1, delay=1, now=False, message=None, http_download=1, http_upload=1):
+  def __init__(self, id, start, server, ftpdownpath, ftpuppath, upload=4, download=4, multiplier=10, ping=4, nicmp=1, delay=1, now=False, message=None, http_download=4, http_upload=4):
     
     self._id = id
     self._start = start
