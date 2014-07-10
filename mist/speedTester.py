@@ -466,11 +466,17 @@ class SpeedTester(Thread):
             wx.CallAfter(self._gui._update_messages, "Upload (FTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
             wx.CallAfter(self._gui._update_ftp_up, self._get_bandwidth(test))
           elif (type == HTTP_DOWN):
-            wx.CallAfter(self._gui._update_messages, "Download (HTTP): Media %.0f kbps, Max %.0f kbps" % (self._get_bandwidth(test), self._get_max_http_bandwidth(test)), 'green', font=(12, 93, 92, 1))
+            wx.CallAfter(self._gui._update_messages, "Download (HTTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
             wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
           elif (type == HTTP_UP):
-            wx.CallAfter(self._gui._update_messages, "Upload (HTTP): Media %.0f kbps, Max %.0f kbps" % (self._get_bandwidth(test), self._get_max_http_bandwidth(test)), 'green', font=(12, 93, 92, 1))
+            wx.CallAfter(self._gui._update_messages, "Upload (HTTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
             wx.CallAfter(self._gui._update_http_up, self._get_bandwidth(test))
+#           elif (type == HTTP_DOWN):
+#             wx.CallAfter(self._gui._update_messages, "Download (HTTP): Media %.0f kbps, Max %.0f kbps" % (self._get_bandwidth(test), self._get_max_http_bandwidth(test)), 'green', font=(12, 93, 92, 1))
+#             wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
+#           elif (type == HTTP_UP):
+#             wx.CallAfter(self._gui._update_messages, "Upload (HTTP): Media %.0f kbps, Max %.0f kbps" % (self._get_bandwidth(test), self._get_max_http_bandwidth(test)), 'green', font=(12, 93, 92, 1))
+#             wx.CallAfter(self._gui._update_http_up, self._get_bandwidth(test))
           # else:
             # raise Exception("chiave USB mancante")
           # logger.debug("\n\n%s\n\n",str(measure))
