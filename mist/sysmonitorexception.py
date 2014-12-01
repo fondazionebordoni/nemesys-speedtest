@@ -28,13 +28,13 @@ class SysmonitorException(Exception):
 
     self._message = message.decode('utf-8')
 
-  @property
-  def alert_type(self):
-    return self._alert_type.encode('ascii', 'xmlcharrefreplace')
+#  @property
+#  def alert_type(self):
+#    return self._alert_type.encode('ascii', 'xmlcharrefreplace')
 
-  @property
-  def message(self):
-    return self._message.encode('ascii', 'xmlcharrefreplace')
+#  @property
+#  def message(self):
+#    return self._message.encode('ascii', 'xmlcharrefreplace')
 
 #Error while trying to recover the System Profile
 FAILPROF = SysmonitorException('FAILPROF', 'Non sono riuscito a trovare lo stato del computer con SystemProfiler.')

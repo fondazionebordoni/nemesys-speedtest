@@ -29,6 +29,8 @@ from logger import logging
 import netstat
 import paths
 from statistics import Statistics
+from measurementexception import MeasurementException
+from multiprocessing import Queue
 
 
 TOTAL_MEASURE_TIME = 10
@@ -74,6 +76,7 @@ class HttpTester:
         return self._measures
         
     def test_down(self, url):
+        #raise MeasurementException("Test!")
         self._init_counters()
         test = _init_test('download')
         bit_per_second = -1
@@ -82,18 +85,9 @@ class HttpTester:
         try:
             response = urllib2.urlopen(url)
         except Exception as e:
-            test['errorcode'] = errors.geterrorcode(e)
-            error = '[%s] Impossibile aprire la connessione HTTP: %s' % (test['errorcode'], e)
-            logger.error(error)
-            return test
-        
-        # TODO: max retry?
+            raise MeasurementException("Impossibile aprire la connessione HTTP")
         if response.getcode() != 200:
-            test['errorcode'] = errors.geterrorcode(response.getcode())
-            error = '[%s] Ricevuto errore HTTP: %s' % (response.getcode())
-            logger.error(error)
-            response.close()
-            return test
+            raise MeasurementException("Impossibile aprire la connessione HTTP, codice di errore ricevuto: %d" % response.getcode())
         
         # TODO: use requests lib instead?
         t_start = threading.Timer(1.0, self._read_down_measure)
@@ -129,7 +123,8 @@ class HttpTester:
                 measured_bytes = self._transfered_bytes - start_transfered_bytes
                 total_bytes = self._netstat.get_rx_bytes() - start_total_bytes
                 if (total_bytes < 0):
-                    test['errorcode'] = errors.geterrorcode("Ottenuto banda negativa, possibile azzeramento dei contatori.")
+                    raise MeasurementException("Ottenuto banda negativa, possibile azzeramento dei contatori.")
+                    #test['errorcode'] = errors.geterrorcode("Ottenuto banda negativa, possibile azzeramento dei contatori.")
                 kbit_per_second = (measured_bytes * 8.0) / elapsed_time
                 test['bytes'] = measured_bytes
                 test['time'] = elapsed_time
@@ -139,10 +134,12 @@ class HttpTester:
                 test['stats'] = Statistics(byte_down_nem = measured_bytes, byte_down_all = total_bytes)
                 logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
             else:
-                test['errorcode'] = errors.geterrorcode("File non sufficientemente grande per la misura")
+                raise MeasurementException("File non sufficientemente grande per la misura")
+#                test['errorcode'] = errors.geterrorcode("File non sufficientemente grande per la misura")
         else:
             self._stop_measurement()
-            test['errorcode'] = errors.geterrorcode("Bitrate non stabilizzata")
+            raise MeasurementException("Bitrate non stabilizzata")
+#            test['errorcode'] = errors.geterrorcode("Bitrate non stabilizzata")
             
         t_start.join()
         if t_end:
@@ -198,8 +195,9 @@ class HttpTester:
     def _read_up_measure(self):
         measuring_time = time.time()
         if not self._go_ahead and measuring_time - self._starttime > TOTAL_MEASURE_TIME:
-            self._stop_up_measure()
-            return
+            self._kill_up_measure()
+            if self._exception_queue:
+                self._exception_queue.put("Bitrate non stabilizzata")
             
         new_transfered_bytes = self._fakefile.get_bytes_read()
         diff = new_transfered_bytes - self._last_transfered_bytes
@@ -238,7 +236,8 @@ class HttpTester:
             kbit_per_second = (measured_bytes * 8.0) / elapsed_time
             total_bytes = self._netstat.get_tx_bytes() - self.starttotalbytes
             if (total_bytes < 0):
-                self._test['errorcode'] = errors.geterrorcode("Ottenuto banda negativa, possibile azzeramento dei contatori.")
+                if self._exception_queue:
+                    self._exception_queue.put("Ottenuto banda negativa, possibile azzeramento dei contatori")
             else:
                 self._test['bytes'] = measured_bytes
                 self._test['time'] = elapsed_time
@@ -248,7 +247,12 @@ class HttpTester:
                 self._test['stats'] = Statistics(byte_up_nem = measured_bytes, byte_up_all = total_bytes)
             logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
         else:
-            self._test['errorcode'] = errors.geterrorcode("errore di connessione")
+            if self._exception_queue:
+                self._exception_queue.put("Errore di connessione")
+            
+            
+    def _kill_up_measure(self):
+        self._time_to_stop = True
             
             
     def read(self, bufsize = -1):
@@ -257,56 +261,59 @@ class HttpTester:
         return self._fakefile.read(bufsize)
         
 
-    def _buffer_generator(self, bufsize):
-        self._transfered_bytes = 0
-        fakefile = Fakefile(MAX_TRANSFERED_BYTES)
-        
-        t_stabilization = threading.Timer(TOTAL_MEASURE_TIME / 2, self._stabilization_timeout)
-        t_stabilization.start()
-        while not self._go_ahead and not self._stop_stabilization:
-            data = fakefile.read(bufsize)
-            if not data:
-                break
-            yield data
-            self._transfered_bytes += len(data)
-        if self._go_ahead:
-            t_stabilization.cancel()
-            logger.debug("Starting HTTP measurement....")
-            start_time = time.time()
-            start_total_bytes = self._netstat.get_tx_bytes()
-            start_transfered_bytes = self._transfered_bytes
-            t = threading.Timer(TOTAL_MEASURE_TIME, self._stop_measurement)
-            t.start()
-            while not self._time_to_stop:
-                data = fakefile.read(bufsize)
-                if not data:
-                    break
-                yield data
-                self._transfered_bytes += len(data)
-            end_time = time.time()
-            elapsed_time = float((end_time - start_time) * 1000)
-            measured_bytes = self._transfered_bytes - start_transfered_bytes
-            kbit_per_second = (measured_bytes * 8.0) / elapsed_time
-            total_bytes = self._netstat.get_tx_bytes() - start_total_bytes
-            if (total_bytes < 0):
-                test['errorcode'] = errors.geterrorcode("Ottenuto banda negativa, possibile azzeramento dei contatori.")
-            self._test['bytes'] = measured_bytes
-            self._test['time'] = elapsed_time
-            self._test['rate_avg'] = kbit_per_second
-            self._test['rate_max'] = self._get_max_rate() 
-            self._test['bytes_total'] = total_bytes
-            #TODO Compilare i dati prendendo le statistiche da netstat
-            self._test['stats'] = Statistics(byte_up_nem = measured_bytes, byte_up_all = total_bytes)
-            logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
-            t.join()
-        else:
-            self._stop_measurement()
-            self._test['errorcode'] = errors.geterrorcode("Bitrate non stabilizzata")
-
-        yield '_ThisIsTheEnd_'
+#     def _buffer_generator(self, bufsize):
+#         self._transfered_bytes = 0
+#         fakefile = Fakefile(MAX_TRANSFERED_BYTES)
+#         
+#         t_stabilization = threading.Timer(TOTAL_MEASURE_TIME / 2, self._stabilization_timeout)
+#         t_stabilization.start()
+#         while not self._go_ahead and not self._stop_stabilization:
+#             data = fakefile.read(bufsize)
+#             if not data:
+#                 break
+#             yield data
+#             self._transfered_bytes += len(data)
+#         if self._go_ahead:
+#             t_stabilization.cancel()
+#             logger.debug("Starting HTTP measurement....")
+#             start_time = time.time()
+#             start_total_bytes = self._netstat.get_tx_bytes()
+#             start_transfered_bytes = self._transfered_bytes
+#             t = threading.Timer(TOTAL_MEASURE_TIME, self._stop_measurement)
+#             t.start()
+#             while not self._time_to_stop:
+#                 data = fakefile.read(bufsize)
+#                 if not data:
+#                     break
+#                 yield data
+#                 self._transfered_bytes += len(data)
+#             end_time = time.time()
+#             elapsed_time = float((end_time - start_time) * 1000)
+#             measured_bytes = self._transfered_bytes - start_transfered_bytes
+#             kbit_per_second = (measured_bytes * 8.0) / elapsed_time
+#             total_bytes = self._netstat.get_tx_bytes() - start_total_bytes
+#             if (total_bytes < 0):
+#                 test['errorcode'] = errors.geterrorcode("Ottenuto banda negativa, possibile azzeramento dei contatori.")
+#             self._test['bytes'] = measured_bytes
+#             self._test['time'] = elapsed_time
+#             self._test['rate_avg'] = kbit_per_second
+#             self._test['rate_max'] = self._get_max_rate() 
+#             self._test['bytes_total'] = total_bytes
+#             #TODO Compilare i dati prendendo le statistiche da netstat
+#             self._test['stats'] = Statistics(byte_up_nem = measured_bytes, byte_up_all = total_bytes)
+#             logger.info("Banda: (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
+#             t.join()
+#         else:
+#             self._stop_measurement()
+#             if self._exception_queue:
+#                 self._exception_queue.put("Bitrate non stabilizzata.")
+#             #self._test['errorcode'] = errors.geterrorcode("Bitrate non stabilizzata")
+# 
+#         yield '_ThisIsTheEnd_'
     
     
     def test_up(self, url):
+        self._exception_queue = Queue()
         self._init_counters()
         self._test = _init_test('upload')
         self._fakefile = Fakefile(MAX_TRANSFERED_BYTES)
@@ -318,8 +325,12 @@ class HttpTester:
         except Exception as e:
             if not self._time_to_stop:
                 logger.debug("Connection error")
-                self._stop_up_measure()
+                self._kill_up_measure()
+                raise MeasurementException("Errore di connessione")
         t.join()
+        if not self._exception_queue.empty():
+            error = self._exception_queue.get()
+            raise MeasurementException(error)
         return self._test
     
     def __len__(self):
