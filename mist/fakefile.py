@@ -47,5 +47,4 @@ class Fakefile:
     return self.data
 
   def get_bytes_read(self):
-      print "bytes read: %d" % int(self._initial_bytes - self._bytes)
       return int(self._initial_bytes - self._bytes)
