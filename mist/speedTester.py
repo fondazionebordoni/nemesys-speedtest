@@ -194,34 +194,12 @@ class SpeedTester(Thread):
     logger.info('Sniffer Statistics: %s' % stats)
     test_status = False
 
-#     logger.info('Analisi della percentuale dei pacchetti persi')
-#     packet_drop = stats.packet_drop
-#     packet_tot = stats.packet_tot_all
-    
-#     if (packet_tot > 0):
-#       logger.info('Persi %s pacchetti di %s' % (packet_drop, packet_tot))
-#       packet_ratio = float(packet_drop) / float(packet_tot)
-#       logger.info('Percentuale di pacchetti persi: %.2f%%' % (packet_ratio * 100))
-#       if (packet_ratio > TH_PACKETDROP):
-#         info = 'Eccessiva presenza di traffico di rete, impossibile analizzare i dati di test'
-#         wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': None})
-#         return test_status
-#     else:
-#       logger.warning('Errore durante il controllo del numero dei pacchetti totali: %d' % packet_tot)
-#       info = 'Errore durante la misura, impossibile analizzare i dati di test'
-#       wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': None})
-#       return test_status
-
     if (testtype == FTP_DOWN or testtype == HTTP_DOWN):
       byte_nem = stats.byte_down_nem
       byte_all = stats.byte_down_all
-#       packet_nem = stats.packet_up_nem_net
-#       packet_all = packet_nem + stats.packet_up_oth_net
     elif (testtype == FTP_UP or testtype == HTTP_UP):
       byte_nem = stats.byte_up_nem
       byte_all = stats.byte_up_all
-#       packet_nem = stats.packet_down_nem_net
-#       packet_all = packet_nem + stats.packet_down_oth_net
     else:
       info = 'Errore durante la misura, impossibile analizzare i dati di test'
       wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': 'error'})
