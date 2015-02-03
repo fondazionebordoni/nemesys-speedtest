@@ -30,10 +30,13 @@ class Fakefile:
       
     if bufsize <= 0:
         bufsize = 8192
+    
+    if (self._bytes < bufsize):
+        bufsize = self._bytes
   
     if self._bytes <= 0:
-      return None
-  
+        return None
+ 
     if not self.data or self.data_len != bufsize:
         # data random between 0 and FFFFF...FF, 
         # e.g. 0-FF  in case of one byte buffer
