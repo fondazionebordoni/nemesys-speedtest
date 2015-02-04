@@ -259,8 +259,8 @@ def _test_from_server_response(response):
     test['type'] = 'upload'
     test['protocol'] = 'http'
     results = str(response).split(',')
-    medium_rate = results[0]
-    partial_rates = results[1:]
+    medium_rate = float(results[0])
+    partial_rates = [float(x) for x in results[1:]] 
     test['rate_medium'] = medium_rate
     test['rate_max'] = max(partial_rates)
     test['errorcode'] = 0
@@ -274,8 +274,8 @@ if __name__ == '__main__':
 #    host = "10.80.1.1"
 #    host = "193.104.137.133"
 #    host = "regopptest6.fub.it"
-#    host = "eagle2.fub.it"
-    host = "rocky.fub.it"
+    host = "eagle2.fub.it"
+#    host = "rocky.fub.it"
 #    host = "billia.fub.it"
     import sysMonitor
     dev = sysMonitor.getDev()
