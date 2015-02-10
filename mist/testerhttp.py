@@ -88,7 +88,6 @@ class HttpTester:
         if response.getcode() != 200:
             raise MeasurementException("Impossibile aprire la connessione HTTP, codice di errore ricevuto: %d" % response.getcode())
         
-        # TODO: use requests lib instead?
         t_start = threading.Timer(self._rampup_secs, self._start_measure)
         t_start.start()
         has_more = True
@@ -130,13 +129,16 @@ class HttpTester:
                 kbit_per_second = (measured_bytes * 8.0) / elapsed_time
                 test['bytes'] = measured_bytes
                 test['time'] = elapsed_time
-                test['rate_avg'] = kbit_per_second
+                test['rate_medium'] = kbit_per_second
                 test['rate_max'] = self._get_max_rate() 
+                test['rate_secs'] = self._measures
                 test['bytes_total'] = total_bytes
+                spurio = float(test['bytes_total']-test['bytes'])/float(test['bytes_total'])
+                test['spurious'] = spurio 
                 test['stats'] = Statistics(byte_down_nem = measured_bytes, byte_down_all = total_bytes)
                 logger.info("Banda (payload): (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
                 logger.info("Banda (totale): (%s*8)/%s = %s Kbps" % (total_bytes, elapsed_time, (total_bytes*8/elapsed_time)))
-                logger.info("Traffico spurio: %f" % (float(test['bytes_total']-test['bytes'])/float(test['bytes_total'])))
+                logger.info("Traffico spurio: %f" % spurio)
             else:
                 raise MeasurementException("File non sufficientemente grande per la misura")
         else:
@@ -151,11 +153,7 @@ class HttpTester:
         return test
 
     def _get_max_rate(self):
-      
-      max_rate = 0
-      for (count, transferred, elapsed) in self._measures:
-        max_rate = max(transferred*8.0/elapsed, max_rate)      
-      return max_rate
+      return max(self._measures)
 
     def _start_measure(self):
         logger.info("Starting measure...")
@@ -175,7 +173,8 @@ class HttpTester:
         rx_diff = new_rx_bytes - self._last_rx_bytes
         diff = new_transfered_bytes - self._last_file_bytes
         elapsed = (measuring_time - self._last_measured_time)*1000.0
-        self._measures.append((self._measure_count, diff, elapsed))
+        rate = float(diff*8)/float(elapsed)
+        self._measures.append(rate)
         
         logger.debug("Reading... count = %d, diff = %d, total = %d, rx diff= %d, total = %d, rx - read = %d" 
               % (self._measure_count, diff, new_transfered_bytes, rx_diff, new_rx_bytes, (rx_diff - diff)))
@@ -234,7 +233,6 @@ class HttpTester:
         read_bytes = self._fakefile.get_bytes_read()
         spurious = (float(tx_diff - read_bytes)/float(tx_diff))
         self._test['spurious'] = spurious
-        #logger.info("Tx: %s, Payload: %s, Spurious: %s" % (tx_diff, read_bytes, spurious))
         return self._test
     
     def _response_received(self, r, *args, **kwargs):
@@ -263,6 +261,7 @@ def _test_from_server_response(response):
     partial_rates = [float(x) for x in results[1:]] 
     test['rate_medium'] = medium_rate
     test['rate_max'] = max(partial_rates)
+    test['rate_secs'] = partial_rates
     test['errorcode'] = 0
     return test
         
@@ -280,8 +279,10 @@ if __name__ == '__main__':
     import sysMonitor
     dev = sysMonitor.getDev()
     t = HttpTester(dev, rampup_secs=0)
-    print "\n------ UPLOAD ---------\n"
-    res = t.test_up("http://%s/" % host, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 1024)
+#    print "\n------ UPLOAD ---------\n"
+#    res = t.test_up("http://%s/" % host, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 1024)
+#    print("Medium: %s, Max: %s, Spurious: %s" % (res['rate_medium'], res['rate_max'], res['spurious']))
+    print "\n------ DOWNLOAD -------\n"
+    res = t.test_down("http://%s/" % host)
     print("Medium: %s, Max: %s, Spurious: %s" % (res['rate_medium'], res['rate_max'], res['spurious']))
-#    print "\n------ DOWNLOAD -------\n"
-#    print t.test_down("http://%s/" % host)
+    print res['rate_secs']
