@@ -3,16 +3,20 @@ Created on 13/nov/2013
 
 @author: ewedlund
 '''
-
+from logger import logging
 import platform
 import re
 import netifaces
 import psutil
 
+logger = logging.getLogger()
+
 LINUX_RESOURCE_PATH="/sys/class/net"
 
 
 def get_netstat(if_device):
+	if not if_device:
+		raise NetstatException("Nessun identificatore di device.")
 	platform_name = platform.system().lower()
 	if platform_name.startswith('win'):
 		return NetstatWindows(if_device)
@@ -39,35 +43,35 @@ class Netstat(object):
 		return self.if_device
 
 	def get_rx_bytes(self):
-		# Handle different versions of psutil
 		if not self.if_device:
-			raise NetstatException("Cannot get counters for None device")
+			raise NetstatException("Nessun identificatore di device")
+		# Handle different versions of psutil
 		try:
 			counters_per_nic = psutil.network_io_counters(pernic=True)
 		except AttributeError:
 			counters_per_nic = psutil.net_io_counters(pernic=True)
 		if self.if_device in counters_per_nic:
 			rx_bytes = counters_per_nic[self.if_device].bytes_recv
-			if not rx_bytes:
-				raise NetstatException("Got empty counter for device %d" % self.if_device)
+			if rx_bytes == None:
+				raise NetstatException("Ottenuto contatore vuoto per il device %d" % self.if_device)
 		else:
-			raise NetstatException("Could not find counters for device %d" % self.if_device)
+			raise NetstatException("Contatore non trovato per il device %s" % str(self.if_device))
 		return long(rx_bytes)
 
 	def get_tx_bytes(self):
-		# Handle different versions of psutil
 		if not self.if_device:
-			raise NetstatException("Cannot get counters for None device")
+			raise NetstatException("Nessun identificatore di device")
+		# Handle different versions of psutil
 		try:
 			counters_per_nic = psutil.network_io_counters(pernic=True)
 		except AttributeError:
 			counters_per_nic = psutil.net_io_counters(pernic=True)
 		if self.if_device in counters_per_nic:
 			tx_bytes = counters_per_nic[self.if_device].bytes_sent
-			if not tx_bytes:
-				raise NetstatException("Got empty counter for device %d" % self.if_device)
+			if tx_bytes == None:
+				raise NetstatException("Ottenuto contatore vuoto per il device %s" % str(self.if_device))
 		else:
-			raise NetstatException("Could not find counters for device %d" % self.if_device)
+			raise NetstatException("Contatore non trovato per il device %s" % str(self.if_device))
 		return long(tx_bytes)
 
 
@@ -82,7 +86,7 @@ class NetstatWindows(Netstat):
 		if (if_device_guid != None):
 			self.device_id,self.if_device = self._get_psutil_device_from_guid(if_device_guid)
 		else:
-			raise NetstatException("No device given!")
+			raise NetstatException("Nessun device identificato!")
 
 
 	def is_device_active(self, if_device_guid=None):
@@ -93,6 +97,8 @@ class NetstatWindows(Netstat):
 			index = self._get_entry_generic("Win32_NetworkAdapterConfiguration", whereCondition, entry_name)
 		else:
 			index = self.device_id
+		if index == None:
+			raise NetstatException("Non trovo l'indice dell'interfaccia, impossibile verificare lo stato")
 		whereCondition = " WHERE DeviceId = \"" + str(index) + "\""
 		entry_name = "NetConnectionStatus"
 		status = self._get_entry_generic("Win32_NetworkAdapter", whereCondition, entry_name)
@@ -105,22 +111,29 @@ class NetstatWindows(Netstat):
 		# Since Win32_NetworkAdapter does not have GUID on windows XP
 		# We need to get the NetConnectionID in two phases
 		# 1. get the id of the interface from Win32_NetworkAdapterConfiguration
+		index = None
+		device = None
 		try:
 			whereCondition = " WHERE SettingID = \"" + guid + "\""
 			entry_name = "Index"
 			index = self._get_entry_generic("Win32_NetworkAdapterConfiguration", whereCondition, entry_name)
 		except Exception as e:
-			raise NetstatException("Could not get index for device with GUID %s" % str(guid))
+			logger.error("Eccezione durante la ricerca dell'indice per l'interfaccia con guid = %s" % str(guid))
+			logger.error("Eccezione = %s" % str(e))
 		if index != None:
 # 			# 2. Now get NetConnectionID from Win32_NetworkAdapter
 			try:
 				whereCondition = " WHERE DeviceId = \"" + str(index) + "\""
 				entry_name = "NetConnectionID"
-				return index,self._get_entry_generic("Win32_NetworkAdapter", whereCondition, entry_name)
+				device = self._get_entry_generic("Win32_NetworkAdapter", whereCondition, entry_name)
 			except Exception as e:
-				raise NetstatException("Could not find device with GUID %s and index %d" % (str(guid),int(index)))
+				logger.error("Eccezione durante la ricerca dell'interfaccia con GUID %s e indice %d" % (str(guid), int(index)))
+				logger.error("Eccezione = %s" % str(e))
+				raise NetstatException("impossibile ottenere il dettaglio dell'interfaccia di rete")
+		if index == None or not device:
+			raise NetstatException("impossibile ottenere il dettaglio dell'interfaccia di rete")
 		else:
-			raise NetstatException("No index found for device with GUID %s" % str(guid))
+			return index,device
 
 
 	def get_device_name(self, ip_address):
@@ -181,6 +194,7 @@ class NetstatWindows(Netstat):
     		 import pythoncom
 		except ImportError:
 		     raise NetstatException("Missing WMI library")
+		result = None
 		try:
 			objWMIService = win32com.client.Dispatch("WbemScripting.SWbemLocator")
 			objSWbemServices = objWMIService.ConnectServer(".", "root\cimv2")
@@ -188,7 +202,7 @@ class NetstatWindows(Netstat):
 			result = objSWbemServices.ExecQuery(queryString)
 		except Exception as e:
 			raise NetstatException("Impossibile eseguire query al server root\cimv2: ")
-		if (result):
+		if result:
 			try:
 				found = False
 				for obj in result:
