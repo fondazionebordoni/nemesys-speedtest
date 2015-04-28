@@ -16,14 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from errorcoder import Errorcoder
 from host import Host
 from logger import logging
 from optparse import OptionParser
+import paths
 import ping
 import socket
 import sys
 # from testerhttp import HttpTester
 from testerftp import FtpTester
+
+errors = Errorcoder(paths.CONF_ERRORS)
 
 HTTP_BUFF = 8*1024
 
@@ -140,7 +144,8 @@ if __name__ == '__main__':
     s.connect(('www.fub.it', 80))
     ip = s.getsockname()[0]
     s.close()
-    nap = '193.104.137.133'
+#    nap = '193.104.137.133'
+    nap = '90.147.120.12'
 
     TOT = 5
 
@@ -150,19 +155,19 @@ if __name__ == '__main__':
       logger.info('Test Download %d/%d' % (i, TOT))
       test = t1.testftpdown(10000000, '/download/40000.rnd')
       logger.info(test)
-      logger.info("Risultato di banda in download: %d" % (test.bytes_total * 8 / test.time))
+      logger.info("Risultato di banda in download: %d" % (test['bytes'] * 8 / test['time']))
 
     for i in range(1, TOT + 1):
       logger.info('Test Upload %d/%d' % (i, TOT))
       test = t1.testftpup(10000000, '/upload/r.raw')
       logger.info(test)
-      logger.info("Risultato di banda in upload: %d" % (test.bytes_total * 8 / test.time))
+      logger.info("Risultato di banda in upload: %d" % (test['bytes'] * 8 / test['time']))
 
     for i in range(1, TOT + 1):
       logger.info('\nTest Ping %d/%d' % (i, TOT))
       test = t1.testping()
       logger.info(test)
-      logger.info("Risultato ping: %d" % test.time)
+      logger.info("Risultato ping: %d" % test['time'])
 
   else:
     main()
