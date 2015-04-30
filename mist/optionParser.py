@@ -92,6 +92,14 @@ class OptionParser(OptionParser):
     self.add_option('--progress-url', dest = option, default = value,
                       help = 'complete URL for progress request [%s]' % value)
     
+    option = 'servernames'
+    value = ''
+    try:
+        value = config.get(section, option)
+    except (ValueError, NoOptionError):
+      config.set(section, option, value)
+    self.add_option('--server-names', dest = option, default = value,
+                      help = 'list of servers to choose from [%s]' % value)
     # Client options
     # --------------------------------------------------------------------------
     section = 'client'

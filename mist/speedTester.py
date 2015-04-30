@@ -53,7 +53,7 @@ MAX_SEND_RETRY = 3
 
 class SpeedTester(Thread):
 
-  def __init__(self, gui, version):
+  def __init__(self, gui, version, server_name = None):
     Thread.__init__(self)
     
     paths_check = paths.check_paths()
@@ -65,6 +65,7 @@ class SpeedTester(Thread):
 
     self._gui = gui
     self._version = version
+    self._server_name = server_name
     self._profiler = sysProfiler(self._gui, 'tester')
 
     parser = OptionParser(version=self._version, description='')
@@ -148,7 +149,7 @@ class SpeedTester(Thread):
     return best
   
   
-  def _download_task(self, server=None):
+  def _download_task(self, server = None, server_name = None):
     # Scarica il prossimo task dallo scheduler #
     # logger.info('Reading resource %s for client %s' % (self._scheduler, self._client))
 
@@ -159,6 +160,8 @@ class SpeedTester(Thread):
       connection = httputils.getverifiedconnection(url=url, certificate=certificate, timeout=self._httptimeout)
       if (server != None):
         connection.request('GET', '%s?clientid=%s&version=%s&confid=%s&server=%s' % (url.path, self._client.id, self._version, self._md5conf, server.ip))
+      elif (server_name != None):
+        connection.request('GET', '%s?clientid=%s&version=%s&confid=%s&servername=%s' % (url.path, self._client.id, self._version, self._md5conf, server_name))
       else:
         connection.request('GET', '%s?clientid=%s&version=%s&confid=%s' % (url.path, self._client.id, self._version, self._md5conf))
       
@@ -422,12 +425,15 @@ class SpeedTester(Thread):
     profiler = self._profiler.get_results()
     sleep(1)
 
-    server = None    
-    if (self.is_oneshot()):
-      ping_test = self._get_server()
-      server = ping_test['server']
-
-    task = self._download_task(server)
+    if (self._server_name != None):
+        task = self._download_task(server_name = self._server_name)
+    else:
+        server = None    
+        if (self.is_oneshot()):
+          ping_test = self._get_server()
+          server = ping_test['server']
+    
+        task = self._download_task(server)
     
     if task == None:
       wx.CallAfter(self._gui._update_messages, "Impossibile eseguire ora i test di misura. Riprovare tra qualche secondo.", 'red')

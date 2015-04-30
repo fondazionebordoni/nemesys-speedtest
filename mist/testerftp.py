@@ -19,7 +19,6 @@
 import errno
 from ftplib import FTP
 import ftplib
-from optparse import OptionParser
 import socket
 import sys
 import time

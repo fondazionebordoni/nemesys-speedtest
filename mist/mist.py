@@ -10,6 +10,7 @@ except IOError as e:
 from sysMonitor import interfaces, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_TRAFFIC, RES_HOSTS
 from threading import Thread, Event, enumerate
 from checkSoftware import CheckSoftware
+from optionParser import OptionParser
 from speedTester import SpeedTester
 from sysProfiler import sysProfiler
 from collections import deque
@@ -36,7 +37,7 @@ espressi attraverso i valori di ping, download e upload.'''
 class mistGUI(wx.Frame):
   def __init__(self, *args, **kwds):
     self._version = __version__
-    
+
     self._stream = deque([], maxlen = 800)
     self._stream_flag = Event()
 
@@ -47,6 +48,14 @@ class mistGUI(wx.Frame):
     
     # begin wxGlade: Frame.__init__
     wx.Frame.__init__(self, *args, **kwds)
+
+    # Read server names from configuration
+    parser = OptionParser(version=self._version, description='')
+    (options, args, md5conf) = parser.parse()
+    self._server_list = options.servernames.split(',')
+    print "got servers %s" % str(self._server_list)
+    
+
     
     self.SetIcon(wx.Icon(path.join(paths._APP_PATH, u"mist.ico"), wx.BITMAP_TYPE_ICO))
     
@@ -92,7 +101,7 @@ class mistGUI(wx.Frame):
 #     self.grid_sizer_system_indicators = wx.FlexGridSizer(2, 7, 0, 0)
     self.grid_sizer_system_indicators = wx.FlexGridSizer(2, 6, 0, 0)
     self.grid_sizer_results = wx.FlexGridSizer(2, 3, 0, 0)
-    self.grid_sizer_servers = wx.FlexGridSizer(2, 6, 0, 0)
+    self.grid_sizer_servers = wx.FlexGridSizer(1, 2, 0, 0)
 
     self.sizer_root = wx.BoxSizer(wx.VERTICAL)
     self.sizer_first_row = wx.BoxSizer(wx.HORIZONTAL)
@@ -100,8 +109,19 @@ class mistGUI(wx.Frame):
     self.sizer_results_frame = wx.StaticBoxSizer(self.staticbox_result_display, wx.VERTICAL)
     self.sizer_messages_frame = wx.StaticBoxSizer(self.staticbox_messages, wx.VERTICAL)
     self.sizer_system_indicators_frame = wx.StaticBoxSizer(self.staticbox_system_indicators, wx.VERTICAL)
-    self.sizer_servers_frame = wx.StaticBoxSizer(self.staticbox_servers, wx.VERTICAL)
     
+    #Server choice
+    self.sizer_servers_frame = wx.StaticBoxSizer(self.staticbox_servers, wx.VERTICAL)
+    self.label_current_server = wx.StaticText(self, -1, "Current server: %s" % self._server_list[0], style=wx.ALIGN_LEFT)
+    self.label_server_choice = wx.StaticText(self, -1, "Change server:", style=wx.ALIGN_RIGHT)
+    self.text_server_choice = wx.ComboBox(self, choices=self._server_list, style=wx.CB_READONLY)
+    self.text_server_choice.SetStringSelection(self._server_list[0])
+    self.button_server = wx.Button(self, wx.ID_OK, "go")
+    self.hbox_server_choice = wx.BoxSizer(wx.HORIZONTAL)
+    self.hbox_server_choice.Add(self.label_server_choice)
+    self.hbox_server_choice.Add(self.text_server_choice)
+    self.hbox_server_choice.Add(self.button_server)
+
     self.__set_properties()
     self.__do_layout()
     
@@ -109,6 +129,7 @@ class mistGUI(wx.Frame):
     self.Bind(wx.EVT_CLOSE, self._on_close)
     self.Bind(wx.EVT_BUTTON, self._play, self.bitmap_button_play)
     self.Bind(wx.EVT_BUTTON, self._check, self.bitmap_button_check)
+    self.Bind(wx.EVT_BUTTON, self._server_button_pressed, self.button_server)
     # end wxGlade
 
   def __set_properties(self):
@@ -121,11 +142,6 @@ class mistGUI(wx.Frame):
     self.bitmap_button_play.SetMinSize((120, 120))
     self.bitmap_button_check.SetMinSize((40, 120))
     self.bitmap_logo.SetMinSize((101, 111))
-    self.bitmap_cpu.SetMinSize((60, 60))
-    self.bitmap_ram.SetMinSize((60, 60))
-    self.bitmap_wifi.SetMinSize((60, 60))
-    self.bitmap_hosts.SetMinSize((60, 60))
-    self.bitmap_traffic.SetMinSize((60, 60))
     
     self._font_italic = wx.Font(12, wx.ROMAN, wx.ITALIC, wx.NORMAL, 0, "")
     self._font_italic_bold = wx.Font(12, wx.ROMAN, wx.ITALIC, wx.BOLD, 0, "")
@@ -144,10 +160,34 @@ class mistGUI(wx.Frame):
     self.messages_area.SetBackgroundColour(wx.Colour(242, 242, 242))
     self.SetBackgroundColour(wx.Colour(242, 242, 242))
     
+    self.bitmap_cpu.SetMinSize((60, 60))
+    self.bitmap_ram.SetMinSize((60, 60))
+    self.bitmap_wifi.SetMinSize((60, 60))
+    self.bitmap_hosts.SetMinSize((60, 60))
+    self.bitmap_traffic.SetMinSize((60, 60))
+    
+    self.label_server_choice.SetMinSize((110, 26))
+    self.label_current_server.SetMinSize((180, 26))
+    self.text_server_choice.SetMinSize((180, 26))
+    self.button_server.SetMinSize((30, 26))
+
     # end wxGlade
 
   def __do_layout(self):
     # begin wxGlade: Frame.__do_layout
+    
+    self.grid_sizer_results.Add(self.label_ping, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
+    self.grid_sizer_results.Add(self.label_download, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
+    self.grid_sizer_results.Add(self.label_upload, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
+    
+    self.grid_sizer_results.Add(self.label_ping_result, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
+    self.grid_sizer_results.Add(self.label_download_result, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
+    self.grid_sizer_results.Add(self.label_upload_result, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
+    
+    self.sizer_results_and_status.Add(self.grid_sizer_results, 0, wx.ALL | wx.EXPAND, 0)
+    self.sizer_results_and_status.Add(wx.StaticLine(self, -1), 0, wx.ALL | wx.EXPAND, 4)
+    self.sizer_results_and_status.Add(self.label_status, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
+    #self.sizer_results_frame.Add(wx.StaticLine(self, -1, style = wx.LI_VERTICAL), 0, wx.RIGHT | wx.EXPAND, 4)
     
     self.grid_sizer_system_indicators.Add(self.bitmap_cpu, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
     self.grid_sizer_system_indicators.Add(self.bitmap_ram, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
@@ -165,18 +205,11 @@ class mistGUI(wx.Frame):
     self.grid_sizer_system_indicators.Add(self.label_hosts, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
     self.grid_sizer_system_indicators.Add(self.label_traffic, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
     
-    self.grid_sizer_results.Add(self.label_ping, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
-    self.grid_sizer_results.Add(self.label_download, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
-    self.grid_sizer_results.Add(self.label_upload, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
-    
-    self.grid_sizer_results.Add(self.label_ping_result, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
-    self.grid_sizer_results.Add(self.label_download_result, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
-    self.grid_sizer_results.Add(self.label_upload_result, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
-    
-    self.sizer_results_and_status.Add(self.grid_sizer_results, 0, wx.ALL | wx.EXPAND, 0)
-    self.sizer_results_and_status.Add(wx.StaticLine(self, -1), 0, wx.ALL | wx.EXPAND, 4)
-    self.sizer_results_and_status.Add(self.label_status, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
-    #self.sizer_results_frame.Add(wx.StaticLine(self, -1, style = wx.LI_VERTICAL), 0, wx.RIGHT | wx.EXPAND, 4)
+    self.grid_sizer_servers.Add(self.label_current_server, 2, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL, 0)
+    self.grid_sizer_servers.Add(self.hbox_server_choice, 1, wx.RIGHT | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
+#     self.grid_sizer_servers.Add(self.label_server_choice, 2, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
+#     self.grid_sizer_servers.Add(self.text_server_choice, 1,  wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
+#     self.grid_sizer_servers.Add(self.button_server, 1,  wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
     
     self.sizer_results_frame.Add(self.sizer_results_and_status, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
     
@@ -188,13 +221,13 @@ class mistGUI(wx.Frame):
     
     self.sizer_messages_frame.Add(self.messages_area, 0, wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
     self.sizer_system_indicators_frame.Add(self.grid_sizer_system_indicators, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
-    self.sizer_servers_frame.Add(self.grid_sizer_servers, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
+    self.sizer_servers_frame.Add(self.grid_sizer_servers, 0, wx.ALL | wx.EXPAND, 4)
 
     self.sizer_root.Add(self.sizer_first_row, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
     self.sizer_root.Add(self.gauge_progress, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
     self.sizer_root.Add(self.sizer_messages_frame, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
     self.sizer_root.Add(self.sizer_system_indicators_frame, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
-    self.sizer_root.Add(self.sizer_servers_frame, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
+    self.sizer_root.Add(self.sizer_servers_frame, 0, wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL, 4)
 
     self.SetSizer(self.sizer_root)
     self.SetSizeHints(800, 460)
@@ -217,17 +250,13 @@ class mistGUI(wx.Frame):
     results_height = 120
     gauge_height = 20
     indicators_height = 120
-    servers_height = 40
+    servers_height = 60
     self.sizer_results_frame.SetMinSize((W-300, results_height))
     self.gauge_progress.SetMinSize((W-width_margin, gauge_height))
-#    self.sizer_messages_frame.SetMinSize((W-20, H-(310+extra)))
-#    self.sizer_messages_frame.SetMinSize((W-width_margin, H-(360+extra)))
     self.sizer_messages_frame.SetMinSize((W - width_margin, H-results_height - gauge_height - indicators_height - servers_height - (3*width_margin) - extra))
-    self.sizer_system_indicators_frame.SetMinSize((W-width_margin, indicators_height))
-    self.sizer_servers_frame.SetMinSize((W-width_margin, servers_height))
+    self.sizer_system_indicators_frame.SetMinSize((W - width_margin, indicators_height))
+    self.sizer_servers_frame.SetMinSize((W - width_margin, servers_height))
     
-#    self.messages_area.SetMinSize((W-40, H-(330+extra)))
-#    self.messages_area.SetMinSize((W -(2 * width_margin), H-(380+extra)))
     self.messages_area.SetMinSize((W -(2 * width_margin), H-results_height - gauge_height - indicators_height - servers_height - (4*width_margin) - extra))
     
     self.Refresh()
@@ -271,10 +300,16 @@ class mistGUI(wx.Frame):
           except:
             logger.error("%s could not be terminated" % str(thread.getName()))
     
+  def _server_button_pressed(self, event):
+    self.chosen_server = self._server_list[self.text_server_choice.GetSelection()]
+    self.label_current_server.SetLabel("Current server: %s" % self.chosen_server)
+    
   def _check(self, event):
     self._button_check = True
     self.bitmap_button_play.Disable()
     self.bitmap_button_check.Disable()
+    self.text_server_choice.Disable()
+    self.button_server.Disable()
     self._reset_info()
     self._update_messages("Profilazione dello stato del sistema di misura", 'black', font = (12, 93, 92, 1))
     self._profiler = sysProfiler(self)
@@ -285,7 +320,7 @@ class mistGUI(wx.Frame):
     if (self._button_play):
       self._button_play = False
       self._button_check = False
-      self._tester = SpeedTester(self, self._version)
+      self._tester = SpeedTester(self, self._version, self.chosen_server)
       self._tester.start()
     else:
       # move_on_key()
@@ -295,6 +330,9 @@ class mistGUI(wx.Frame):
 
   def _enable_button(self):
     self.bitmap_button_check.Enable()
+    self.text_server_choice.Enable()
+    self.button_server.Enable()
+
     if (self._tester is None or not self._tester.is_oneshot()):
       self.bitmap_button_play.Enable()
 

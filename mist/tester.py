@@ -19,7 +19,6 @@
 from errorcoder import Errorcoder
 from host import Host
 from logger import logging
-from optparse import OptionParser
 import paths
 import ping
 import socket
@@ -139,6 +138,7 @@ def main():
 
 
 if __name__ == '__main__':
+  from optparse import OptionParser
   if len(sys.argv) < 2:
     s = socket.socket(socket.AF_INET)
     s.connect(('www.fub.it', 80))
