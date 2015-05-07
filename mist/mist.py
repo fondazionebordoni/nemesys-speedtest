@@ -53,9 +53,6 @@ class mistGUI(wx.Frame):
     parser = OptionParser(version=self._version, description='')
     (options, args, md5conf) = parser.parse()
     self._server_list = options.servernames.split(',')
-    print "got servers %s" % str(self._server_list)
-    
-
     
     self.SetIcon(wx.Icon(path.join(paths._APP_PATH, u"mist.ico"), wx.BITMAP_TYPE_ICO))
     
@@ -102,7 +99,6 @@ class mistGUI(wx.Frame):
     self.grid_sizer_system_indicators = wx.FlexGridSizer(2, 6, 0, 0)
     self.grid_sizer_results = wx.FlexGridSizer(2, 3, 0, 0)
     self.grid_sizer_servers = wx.FlexGridSizer(1, 2, 0, 0)
-
     self.sizer_root = wx.BoxSizer(wx.VERTICAL)
     self.sizer_first_row = wx.BoxSizer(wx.HORIZONTAL)
     self.sizer_results_and_status = wx.BoxSizer(wx.VERTICAL)
@@ -166,8 +162,8 @@ class mistGUI(wx.Frame):
     self.bitmap_hosts.SetMinSize((60, 60))
     self.bitmap_traffic.SetMinSize((60, 60))
     
-    self.label_server_choice.SetMinSize((110, 26))
     self.label_current_server.SetMinSize((180, 26))
+    self.label_server_choice.SetMinSize((110, 26))
     self.text_server_choice.SetMinSize((180, 26))
     self.button_server.SetMinSize((30, 26))
 
@@ -205,8 +201,8 @@ class mistGUI(wx.Frame):
     self.grid_sizer_system_indicators.Add(self.label_hosts, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
     self.grid_sizer_system_indicators.Add(self.label_traffic, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
     
-    self.grid_sizer_servers.Add(self.label_current_server, 2, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL, 0)
-    self.grid_sizer_servers.Add(self.hbox_server_choice, 1, wx.RIGHT | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
+    self.grid_sizer_servers.Add(self.label_current_server, 2, wx.ALIGN_LEFT, 0)
+    self.grid_sizer_servers.Add(self.hbox_server_choice, 1, wx.RIGHT | wx.ALIGN_RIGHT, 0)
 #     self.grid_sizer_servers.Add(self.label_server_choice, 2, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
 #     self.grid_sizer_servers.Add(self.text_server_choice, 1,  wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
 #     self.grid_sizer_servers.Add(self.button_server, 1,  wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
@@ -221,13 +217,13 @@ class mistGUI(wx.Frame):
     
     self.sizer_messages_frame.Add(self.messages_area, 0, wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
     self.sizer_system_indicators_frame.Add(self.grid_sizer_system_indicators, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
-    self.sizer_servers_frame.Add(self.grid_sizer_servers, 0, wx.ALL | wx.EXPAND, 4)
+    self.sizer_servers_frame.Add(self.grid_sizer_servers, 0, wx.ALL | wx.EXPAND| wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
 
     self.sizer_root.Add(self.sizer_first_row, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
     self.sizer_root.Add(self.gauge_progress, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
     self.sizer_root.Add(self.sizer_messages_frame, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
     self.sizer_root.Add(self.sizer_system_indicators_frame, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 4)
-    self.sizer_root.Add(self.sizer_servers_frame, 0, wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL, 4)
+    self.sizer_root.Add(self.sizer_servers_frame, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 4)
 
     self.SetSizer(self.sizer_root)
     self.SetSizeHints(800, 460)
