@@ -6,7 +6,7 @@ from xml.etree import ElementTree as ET
 import modulefinder
 from glob import glob
 
-__version__ = '1.1.2'
+__version__ = '1.2.1'
 
 sys.path.append("C:\\Microsoft.VC90.CRT")
 
@@ -23,7 +23,7 @@ class Target:
         # for the versioninfo resources
         self.version = __version__
         self.company_name = "Fondazione Ugo Bordoni"
-        self.copyright = "(c)2012 Fondazione Ugo Bordoni"
+        self.copyright = "(c)2015 Fondazione Ugo Bordoni"
         self.name = "MisuraInternet Speed Test"
 
 setup(
