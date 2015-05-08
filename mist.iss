@@ -2,12 +2,12 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "MisuraInternet Speed Test"
-#define MyAppVersion "1.2.0"
+#define MyAppVersion "1.2.1"
 #define MyAppPublisher "Fondazione Ugo Bordoni"
 #define MyAppURL "http://www.misurainternet.it/"
 #define MyAppExeName "MisuraInternetSpeedTest"
-#define MyRoot "C:\[work]"
-#define MyAppDir MyRoot + "\mist\trunk"
+#define MyRoot "."
+#define MyAppDir MyRoot + ""
 
 ; Read the previuos build number. If there is none take 0 instead.
 #define BuildNum Int(ReadIni(SourcePath	+ "\\buildinfo.ini","Info","Build","0"))
@@ -33,7 +33,7 @@ LicenseFile={#MyAppDir}\LICENSE
 OutputDir={#MyAppDir}
 OutputBaseFilename={#MyAppExeName}_v.{#myAppVersion}-{#BuildNum}
 SolidCompression=true
-VersionInfoCopyright=(c) 2010-2012 Fondazione Ugo Bordoni
+VersionInfoCopyright=(c) 2010-2015 Fondazione Ugo Bordoni
 PrivilegesRequired=admin
 SetupIconFile={#MyAppDir}\mist.ico
 WizardSmallImageFile={#MyAppDir}\mist_55.bmp
@@ -126,14 +126,14 @@ begin
 
   WarningPage := CreateOutputMsgPage(wpInfoBefore,
     'Attenzione', 'Prima di continuare l''installazione....',
-    '....è consigliato controllare che sia tutto in ordine per ottenere un risultato il più possibile attendibile. In particolare:'#13#13
+    '....ï¿½ consigliato controllare che sia tutto in ordine per ottenere un risultato il piï¿½ possibile attendibile. In particolare:'#13#13
     '1. Hai connesso il PC al modem via cavo?'#13#13 +
     '2. Hai chiuso tutte le applicazioni che accedono ad Internet? Ad esempio:'#13 +
     '   * programmi per l''accesso alla posta elettronica'#13 +
     '   * altri programmi come: Skype, MSN Messenger, Dropbox, etc....'#13#13 +
     '3. Hai spento tutti i dispositivi che accedono ad Internet? Ad esempio:'#13 +
     '   * Console        * Smart-TV        * Smartphone        * IPTV        * VoIP'#13#13 +
-    'L’interfaccia grafica di MisuraInternet Speed Test ti aiuterà nel controllo delle impostazioni del PC e della rete domestica per minimizzare le interferenze con le misure.'#13#13
+    'Lï¿½interfaccia grafica di MisuraInternet Speed Test ti aiuterï¿½ nel controllo delle impostazioni del PC e della rete domestica per minimizzare le interferenze con le misure.'#13#13
     'Controlla di aver verificato che tutte le condizioni siano rispettate,'#13 +
     'poi procedi pure con l''installazione.');
 
