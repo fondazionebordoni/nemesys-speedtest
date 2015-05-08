@@ -466,7 +466,7 @@ if __name__ == "__main__":
 
   logger.info('Starting %s v.%s' % (SWN, version)) 
   
-  app = wx.PySimpleApp(0)
+  app = wx.App(False)
   
   checker = CheckSoftware(version)
   check = checker.checkIT()
