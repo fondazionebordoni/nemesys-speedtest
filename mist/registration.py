@@ -61,7 +61,7 @@ ErrorCode = \
 "message": \
 '''
 Le credenziali di accesso inserite sono errate.\n
-Controllare la loro correttezza accedendo all'area 
+Controllare la loro correttezza accedendo all'area
 personale sul sito www.misurainternet.it
 '''
 }
@@ -124,7 +124,7 @@ class Dialog(wx.Dialog):
   def __set_properties(self, title):
     # begin wxGlade: MyFrame.__set_properties
     self.SetTitle(title)
-    self.SetSize((360, 294))
+    self.SetSize((360, 340))
     self.label_username.SetMinSize((80, 26))
     self.text_username.SetMinSize((180, 26))
     self.label_password.SetMinSize((80, 26))
@@ -157,7 +157,7 @@ class Dialog(wx.Dialog):
     sizer_1.Add(sizer_3, 1, wx.ALIGN_CENTER_HORIZONTAL, 8)
 
     sizer_1.Add(self.button_1, 0, wx.BOTTOM | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
-    
+
     self.SetSizer(sizer_1)
     self.Layout()
     # end wxGlade
@@ -189,11 +189,11 @@ def showDialog(dialog, message=None):
     msgBox = wx.MessageDialog(None, message, dialog['title'], dialog['style'])
   msgBox.ShowModal()
   msgBox.Destroy()
-  
+
 def getconf(code, filepath, url):
   # # Scarica il file di configurazione dalla url (HTTPS) specificata, salvandolo nel file specificato. ##
   # # Solleva eccezioni in caso di problemi o file ricevuto non corretto. ##
-  
+
   url = urlparse.urlparse(url)
   connection = httplib.HTTPSConnection(host=url.hostname)
   # Warning This does not do any verification of the server's certificate. #
@@ -201,9 +201,9 @@ def getconf(code, filepath, url):
   connection.request('GET', '%s?clientid=%s' % (url.path, code))
   logger.debug("Dati inviati: %s" % code)
 
-  data = connection.getresponse().read() 
+  data = connection.getresponse().read()
   logger.debug("Dati ricevuti:\n%s" % data)
-  
+
   # Controllo se nel file di configurazione e' presente il codice di attivazione. #
   if (data.find(code) != -1 or data.find("username") != -1):
     data2file = open(filepath, 'w')
@@ -212,7 +212,7 @@ def getconf(code, filepath, url):
     raise Exception(data.replace(";", ""))
 
   return os.path.exists(filepath)
-  
+
 def registration(code):
   if len(code) < 4:
     regOK = False
@@ -233,8 +233,8 @@ def registration(code):
       if (res != wx.ID_OK):
         logger.warning('Registration aborted at attempt number %d' % (retry + 1))
         break
-      
-      filepath = paths.CONF_MAIN 
+
+      filepath = paths.CONF_MAIN
       try:
         if(code != None and len(code) > 4):
           # Prendo il file di configurazione. #
@@ -255,17 +255,17 @@ def registration(code):
       except Exception as error:
         logger.error('Configuration file not downloaded or incorrect: %s' % error)
         showDialog(ErrorDownload, str(error))
-      
+
       if not (retry + 1 < MAXretry):
         showDialog(ErrorRetry)
-        
+
     if not regOK:
       logger.info('Verifica della registrazione del software fallita')
       showDialog(ErrorRegistration)
-    
+
   else:
     regOK = True
-  
+
   return regOK
 
 if __name__ == '__main__':
