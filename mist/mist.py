@@ -172,8 +172,8 @@ class mistGUI(wx.Frame):
         self.bitmap_hosts.SetMinSize((60, 60))
         self.bitmap_traffic.SetMinSize((60, 60))
 
-        self.label_server_choice.SetMinSize((180, 18))
-        self.text_server_choice.SetMinSize((200, 26))
+        self.label_server_choice.SetMinSize((180, 22))
+        self.text_server_choice.SetMinSize((200, 30))
 
         # end wxGlade
 

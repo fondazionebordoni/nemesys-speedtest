@@ -127,14 +127,14 @@ begin
   WarningPage := CreateOutputMsgPage(wpInfoBefore,
     'Attenzione', 'Prima di continuare l''installazione....',
     '....è consigliato controllare che sia tutto in ordine per ottenere un risultato il pi� possibile attendibile. In particolare:' +
-    '1. Hai connesso il PC al modem via cavo?' +
-    '2. Hai chiuso tutte le applicazioni che accedono ad Internet? Ad esempio:' +
-    '   * programmi per l''accesso alla posta elettronica' +
-    '   * altri programmi come: Skype, MSN Messenger, Dropbox, etc....' +
-    '3. Hai spento tutti i dispositivi che accedono ad Internet? Ad esempio:' +
-    '   * Console        * Smart-TV        * Smartphone        * IPTV        * VoIP' +
-    'L'interfaccia grafica di MisuraInternet Speed Test ti aiuter� nel controllo delle impostazioni del PC e della rete domestica per minimizzare le interferenze con le misure.' +
-    'Controlla di aver verificato che tutte le condizioni siano rispettate,' +
+    '1. Hai connesso il PC al modem via cavo?\n' +
+    '2. Hai chiuso tutte le applicazioni che accedono ad Internet? Ad esempio:\n' +
+    '   * programmi per l''accesso alla posta elettronica\n' +
+    '   * altri programmi come: Skype, MSN Messenger, Dropbox, etc....\n' +
+    '3. Hai spento tutti i dispositivi che accedono ad Internet? Ad esempio:\n' +
+    '   * Console\n   * Smart-TV\n   * Smartphone\n   * IPTV\n   * VoIP\n' +
+    'L''interfaccia grafica di MisuraInternet Speed Test ti aiuterà nel controllo delle impostazioni del PC e della rete domestica per minimizzare le interferenze con le misure.\n' +
+    'Controlla di aver verificato che tutte le condizioni siano rispettate,\n' +
     'poi procedi pure con l''installazione.');
 
 end;
