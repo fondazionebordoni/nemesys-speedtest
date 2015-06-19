@@ -2,3 +2,5 @@ logs
 *.pyc
 config/client.conf
 config/log.conf
+mist/build
+mist/dist
