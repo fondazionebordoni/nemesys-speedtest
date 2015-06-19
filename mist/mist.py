@@ -141,7 +141,7 @@ class mistGUI(wx.Frame):
     def __set_properties(self):
         # begin wxGlade: Frame.__set_properties
         self.SetTitle("%s - versione %s" % (SWN, self._version))
-        self.SetSize((800, 460))
+        self.SetSize((800, 540))
 
         self.messages_area_style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP | wx.BORDER_NONE
 
@@ -471,7 +471,7 @@ class mistGUI(wx.Frame):
         self._stream_flag.set()
         while (len(self._stream) > 0):
 
-            # basic_font = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, "")
+	    basic_font = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, "")
             words = {}
 
             (message, colour, font, fill) = self._stream.popleft()
@@ -482,12 +482,12 @@ class mistGUI(wx.Frame):
                 text = "\n"
             else:
                 self.messages_area.SetWindowStyleFlag(self.messages_area_style)
-                self.messages_area.SetFont(self._font_normal)
+                self.messages_area.SetFont(basic_font)
                 text = ""
 
             date = date + "  "
             text = text + date
-            words[date] = (colour, wx.NullColour, self._font_normal)
+            words[date] = (colour, wx.NullColour, basic_font)
 
             text = text + message
 
@@ -556,7 +556,7 @@ if __name__ == "__main__":
 
     logger.info('Starting %s v.%s' % (SWN, version))
 
-    app = wx.PySimpleApp(0)
+    app = wx.App(False)
 
     checker = CheckSoftware(version)
     check = checker.checkIT()
@@ -565,7 +565,6 @@ if __name__ == "__main__":
         interfaces()
         if (system().lower().startswith('win')):
             wx.CallLater(200, sleeper)
-        wx.InitAllImageHandlers()
         GUI = mistGUI(None, -1, "", style=wx.DEFAULT_FRAME_STYLE)  # & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
         app.SetTopWindow(GUI)
         GUI.Show()
