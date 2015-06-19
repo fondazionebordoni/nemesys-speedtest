@@ -7,18 +7,19 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from errorcoder import Errorcoder
 from host import Host
 from logger import logging
+from optparse import OptionParser
 import paths
 import ping
 import socket
@@ -36,33 +37,33 @@ logger = logging.getLogger()
 class Tester:
 
   def __init__(self, dev, ip, host, username = 'anonymous', password = 'anonymous@', timeout = 11):
-    
+
     self._nic_if = dev
     self._if_ip = ip
     self._host = host
-    
+
     self._ftp = None
     self._file = None
     self._filepath = None
     self._maxRetry = 8
-    
+
     self._username = username
     self._password = password
     self._timeout = timeout
-    
+
 #     self._testerhttp = HttpTester(dev, ip, host, timeout, HTTP_BUFF)
     self._testerftp = FtpTester(dev, timeout, HTTP_BUFF)
-    
-    
+
+
 
 #   def testhttpdown(self):
 #     url = "http://%s/file.rnd" % self._host.ip
-#     return self._testerhttp.test_down(url)    
-# 
+#     return self._testerhttp.test_down(url)
+#
 #   def testhttpup(self):
 #     url = "http://%s/file.rnd" % self._host.ip
-#     return self._testerhttp.test_up(url)    
-#     
+#     return self._testerhttp.test_up(url)
+#
   def testftpdown(self, bytes, filename):
     return self._testerftp.testftpdown(self._host.ip, filename, bytes, self._username, self._password)
 
@@ -70,15 +71,15 @@ class Tester:
     return self._testerftp.testftpup(self._host.ip, filename, bytes, self._username, self._password)
 
   def testping(self):
-    
+
     # si utilizza funzione ping.py
     test = {}
     test['type'] = 'ping'
     test['time'] = 0
     test['errorcode'] = 0
-    
+
     self._timeout = float(22)
-    
+
     try:
       # Il risultato deve essere espresso in millisecondi
       RTT = ping.do_one(self._host.ip, self._timeout) * 1000
@@ -92,8 +93,8 @@ class Tester:
       raise Exception(error)
 
     return test
-  
-  
+
+
 
 
 def main():
@@ -171,4 +172,3 @@ if __name__ == '__main__':
 
   else:
     main()
-
