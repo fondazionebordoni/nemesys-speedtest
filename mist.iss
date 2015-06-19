@@ -2,12 +2,12 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "MisuraInternet Speed Test"
-#define MyAppVersion "1.2.0"
+#define MyAppVersion "1.2.1"
 #define MyAppPublisher "Fondazione Ugo Bordoni"
 #define MyAppURL "http://www.misurainternet.it/"
 #define MyAppExeName "MisuraInternetSpeedTest"
-#define MyRoot "C:\[work]"
-#define MyAppDir MyRoot + "\mist\trunk"
+#define MyRoot "."
+#define MyAppDir MyRoot + ""
 
 ; Read the previuos build number. If there is none take 0 instead.
 #define BuildNum Int(ReadIni(SourcePath	+ "\\buildinfo.ini","Info","Build","0"))
@@ -33,7 +33,7 @@ LicenseFile={#MyAppDir}\LICENSE
 OutputDir={#MyAppDir}
 OutputBaseFilename={#MyAppExeName}_v.{#myAppVersion}-{#BuildNum}
 SolidCompression=true
-VersionInfoCopyright=(c) 2010-2012 Fondazione Ugo Bordoni
+VersionInfoCopyright=(c) 2010-2015 Fondazione Ugo Bordoni
 PrivilegesRequired=admin
 SetupIconFile={#MyAppDir}\mist.ico
 WizardSmallImageFile={#MyAppDir}\mist_55.bmp
@@ -71,17 +71,17 @@ Name: {commondesktop}\{#MyAppName}; Filename: {app}\dist\mist.exe; IconIndex: 0
 Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}; Filename: {app}\dist\mist.exe; Tasks: quicklaunchicon; IconIndex: 0
 
 [Run]
-Filename: {sys}\netsh.exe; Parameters: " int ip set global taskoffload=disabled"; Description: "Disable TCP Task Offload"; Flags: RunHidden RunAsCurrentUser; 
-Filename: {sys}\netsh.exe; Parameters: " firewall add allowedprogram ""{app}\dist\mist.exe"" ""MisuraInternetSpeedTest"" ENABLE CUSTOM 193.104.137.0/24 ALL"; Description: "Enable MisuraInternet Speed Test traffic"; Flags: RunHidden RunAsCurrentUser; 
-Filename: {sys}\netsh.exe; Parameters: " advfirewall firewall add rule name=""MisuraInternetSpeedTest"" dir=out action=allow program=""{app}\dist\mist.exe"" enable=yes"; Description: "Enable MisuraInternet Speed Test traffic"; Flags: RunHidden RunAsCurrentUser; MinVersion: 0,6.1.7600; 
+Filename: {sys}\netsh.exe; Parameters: " int ip set global taskoffload=disabled"; Description: "Disable TCP Task Offload"; Flags: RunHidden RunAsCurrentUser;
+Filename: {sys}\netsh.exe; Parameters: " firewall add allowedprogram ""{app}\dist\mist.exe"" ""MisuraInternetSpeedTest"" ENABLE CUSTOM 193.104.137.0/24 ALL"; Description: "Enable MisuraInternet Speed Test traffic"; Flags: RunHidden RunAsCurrentUser;
+Filename: {sys}\netsh.exe; Parameters: " advfirewall firewall add rule name=""MisuraInternetSpeedTest"" dir=out action=allow program=""{app}\dist\mist.exe"" enable=yes"; Description: "Enable MisuraInternet Speed Test traffic"; Flags: RunHidden RunAsCurrentUser; MinVersion: 0,6.1.7600;
 Filename: {app}\dist\mist.exe; Parameters: start; Description: "Avvia MisuraInternet Speed Test"; Flags: PostInstall runmaximized RunAsCurrentUser; StatusMsg: "Avvia MisuraInternet Speed Test";
-;Filename: {app}\dist\Nemesys.exe; Parameters: "--startup auto install"; Description: "Installazione del servizio Nemesys."; StatusMsg: "Installazione del servizio Nemesys"; Flags: RunHidden RunAsCurrentUser; 
+;Filename: {app}\dist\Nemesys.exe; Parameters: "--startup auto install"; Description: "Installazione del servizio Nemesys."; StatusMsg: "Installazione del servizio Nemesys"; Flags: RunHidden RunAsCurrentUser;
 ;Filename: {app}\dist\Nemesys.exe; Parameters: start; Description: "Avvia il servizio Nemesys"; Flags: PostInstall RunHidden RunAsCurrentUser; StatusMsg: "Avvia il servizio Nemesys";
 
- 
+
 [UninstallRun]
 Filename: taskkill; Parameters: /f /im mist.exe; WorkingDir: {sys}; Flags: runminimized RunAsCurrentUser
-Filename: {sys}\netsh.exe; Parameters: " firewall delete allowedprogram program=""{app}\dist\mist.exe"""; Flags: RunHidden RunAsCurrentUser; 
+Filename: {sys}\netsh.exe; Parameters: " firewall delete allowedprogram program=""{app}\dist\mist.exe"""; Flags: RunHidden RunAsCurrentUser;
 ;Filename: {app}\dist\Nemesys.exe; Parameters: " --wait 25 stop"; Flags: runminimized RunAsCurrentUser
 ;Filename: {app}\dist\NemesysSpeedtest.exe; Parameters: " remove"; Flags: runminimized RunAsCurrentUser
 
@@ -107,9 +107,9 @@ Type: filesandordirs; Name: {app}
 [Registry]
 ;root: HKLM; subkey: SYSTEM\CurrentControlSet\Services\Nemesys; valuetype: expandsz; valuename: ImagePath; valuedata: {app}; Flags: UninsDeleteKey DeleteKey
 ;root: HKLM; subkey: SYSTEM\CurrentControlSet\Services\Nemesys; valuetype: multisz; valuename: DependOnService; valuedata: EventSystem{break}Tcpip{break}Netman{break}EventLog{break}; Flags: UninsDeleteKey DeleteKey
-;root: HKLM; subkey: SYSTEM\CurrentControlSet\Services\Nemesys; valuetype: binary; valuename: FailureActions; Flags: UninsDeleteKey DeleteKey; ValueData: 00 00 00 00 00 00 00 00 00 00 00 00 03 00 00 00 53 00 65 00 01 00 00 00 60 ea 00 00 01 00 00 00 60 ea 00 00 01 00 00 00 60 ea 00 00 
+;root: HKLM; subkey: SYSTEM\CurrentControlSet\Services\Nemesys; valuetype: binary; valuename: FailureActions; Flags: UninsDeleteKey DeleteKey; ValueData: 00 00 00 00 00 00 00 00 00 00 00 00 03 00 00 00 53 00 65 00 01 00 00 00 60 ea 00 00 01 00 00 00 60 ea 00 00 01 00 00 00 60 ea 00 00
 root: HKLM; subkey: SYSTEM\CurrentControlSet\Services\EventSystem; valuetype: dword; valuename: Start; valuedata: 2
-root: HKLM; subkey: SYSTEM\CurrentControlSet\Services\Tcpip\Parameters; valuetype: dword; valuename: DisableTaskOffload; valuedata: 1; 
+root: HKLM; subkey: SYSTEM\CurrentControlSet\Services\Tcpip\Parameters; valuetype: dword; valuename: DisableTaskOffload; valuedata: 1;
 
 [Code]
 procedure CancelButtonClick(CurPageID: Integer; var Cancel, Confirm: Boolean);
@@ -126,16 +126,15 @@ begin
 
   WarningPage := CreateOutputMsgPage(wpInfoBefore,
     'Attenzione', 'Prima di continuare l''installazione....',
-    '....è consigliato controllare che sia tutto in ordine per ottenere un risultato il più possibile attendibile. In particolare:'#13#13
-    '1. Hai connesso il PC al modem via cavo?'#13#13 +
-    '2. Hai chiuso tutte le applicazioni che accedono ad Internet? Ad esempio:'#13 +
-    '   * programmi per l''accesso alla posta elettronica'#13 +
-    '   * altri programmi come: Skype, MSN Messenger, Dropbox, etc....'#13#13 +
-    '3. Hai spento tutti i dispositivi che accedono ad Internet? Ad esempio:'#13 +
-    '   * Console        * Smart-TV        * Smartphone        * IPTV        * VoIP'#13#13 +
-    'L’interfaccia grafica di MisuraInternet Speed Test ti aiuterà nel controllo delle impostazioni del PC e della rete domestica per minimizzare le interferenze con le misure.'#13#13
-    'Controlla di aver verificato che tutte le condizioni siano rispettate,'#13 +
+    '....Ã¨ consigliato controllare che sia tutto in ordine per ottenere un risultato il piï¿½ possibile attendibile. In particolare:' +
+    '1. Hai connesso il PC al modem via cavo?' +
+    '2. Hai chiuso tutte le applicazioni che accedono ad Internet? Ad esempio:' +
+    '   * programmi per l''accesso alla posta elettronica' +
+    '   * altri programmi come: Skype, MSN Messenger, Dropbox, etc....' +
+    '3. Hai spento tutti i dispositivi che accedono ad Internet? Ad esempio:' +
+    '   * Console        * Smart-TV        * Smartphone        * IPTV        * VoIP' +
+    'L'interfaccia grafica di MisuraInternet Speed Test ti aiuterï¿½ nel controllo delle impostazioni del PC e della rete domestica per minimizzare le interferenze con le misure.' +
+    'Controlla di aver verificato che tutte le condizioni siano rispettate,' +
     'poi procedi pure con l''installazione.');
 
 end;
-
