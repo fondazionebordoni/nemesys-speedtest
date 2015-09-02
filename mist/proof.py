@@ -79,7 +79,9 @@ class Proof:
             % (self.type, self.done, self.time, self.bytes, self.bytesOth, self.counter_stats, self.errorcode)
 
 if __name__ == '__main__':
-    test = Proof({'type':'download','time':8642,'bytes':50000,'stats':{},'errorcode':0})
+    from statistics import Statistics
+    stats = Statistics(byte_down_all = 51000)
+    test = Proof({'type':'download','time':8642,'bytes':50000, 'stats': stats,'errorcode':0})
     print str(test)
     
     
