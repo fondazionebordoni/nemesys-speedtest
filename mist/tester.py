@@ -47,7 +47,7 @@ class Tester:
     self._password = password
     self._timeout = timeout
     
-    self._testerhttp = HttpTester(dev, ip, host, timeout, HTTP_BUFF)
+    self._testerhttp = HttpTester(dev, timeout, HTTP_BUFF)
     self._testerftp = FtpTester(dev, timeout, HTTP_BUFF)
     
     
