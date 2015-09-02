@@ -34,6 +34,13 @@ class Statistics:
     self._byte_down_all = byte_down_all
     
     self._packet_drop = packet_drop
+    
+  def __str__(self):
+    s = "Bytes up Nemesys: %d" % self.byte_up_nem
+    s += "\nBytes up all: %d" % self.byte_up_all
+    s += "\nBytes down Nemesys: %d" % self.byte_down_nem
+    s += "\nBytes down all: %d" % self.byte_down_all
+    return s
 
   @property
   def byte_up_nem(self):
