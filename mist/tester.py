@@ -16,9 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from errorcoder import Errorcoder
 from host import Host
 from logger import logging
 from optparse import OptionParser
+import paths
 import ping
 import socket
 import sys
@@ -28,6 +30,7 @@ from testerftp import FtpTester
 HTTP_BUFF = 8*1024
 
 logger = logging.getLogger()
+errors = Errorcoder(paths.CONF_ERRORS)
 
 
 class Tester:
