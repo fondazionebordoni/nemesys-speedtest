@@ -191,7 +191,7 @@ class SpeedTester(Thread):
     Funzione per l'analisi del contabit ed eventuale gating dei risultati del test
     '''
     stats = test.counter_stats
-    logger.info('Sniffer Statistics: %s' % stats)
+    logger.info('Statistics: %s' % stats)
     test_status = False
 
     if (testtype == FTP_DOWN or testtype == HTTP_DOWN):
@@ -426,8 +426,8 @@ class SpeedTester(Thread):
         measure = Measure(self._client, start_time, task.server, ip, os, mac, self._version)
         # logger.debug("\n\n%s\n\n",str(measure))
         
-        test_types = [PING, HTTP_DOWN, HTTP_UP]
-#        test_types = [PING, FTP_DOWN, HTTP_DOWN, FTP_UP, HTTP_UP]
+#        test_types = [PING, HTTP_DOWN, HTTP_UP]
+        test_types = [PING, FTP_DOWN, HTTP_DOWN, FTP_UP, HTTP_UP]
         #test_types = [FTP_DOWN, FTP_UP, PING]
         
         # Testa i ping
