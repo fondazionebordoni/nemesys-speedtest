@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import random
 import requests
-from string import lowercase
 import threading
 import time
 import urllib2
@@ -30,11 +28,11 @@ import netstat
 import paths
 from statistics import Statistics
 from measurementexception import MeasurementException
-from multiprocessing import Queue
 
 
 TOTAL_MEASURE_TIME = 10
 MAX_TRANSFERED_BYTES = 100 * 1000000 * 11 / 8 # 100 Mbps for 11 seconds
+BUF_SIZE = 8*1024
 END_STRING = '_ThisIsTheEnd_'
 
 logger = logging.getLogger()
@@ -47,12 +45,9 @@ one measurement at a time!
 
 class HttpTester:
 
-    # TODO: 
     def __init__(self, dev, timeout_secs = 11, bufsize = 8 * 1024, rampup_secs = 0):
-    
-    
         self._maxRetry = 8 # Not used
-        self._timeout_secs = timeout_secs # Not used
+        self._timeout_secs = timeout_secs
         self._num_bytes = bufsize
         self._rampup_secs = rampup_secs
         self._netstat = netstat.get_netstat(dev)
@@ -79,12 +74,12 @@ class HttpTester:
         
     def test_down(self, url):
         self._init_counters()
-        test = _init_test('download')
+        test = _init_test('download_http')
         t_end = None
         try:
             response = urllib2.urlopen(url)
         except Exception as e:
-            raise MeasurementException("Impossibile aprire la connessione HTTP")
+            raise MeasurementException("Impossibile aprire la connessione HTTP: %s" % str(e))
         if response.getcode() != 200:
             raise MeasurementException("Impossibile aprire la connessione HTTP, codice di errore ricevuto: %d" % response.getcode())
         
@@ -145,7 +140,7 @@ class HttpTester:
             raise MeasurementException("File non sufficientemente grande per fare partire la misura")
             
         for t in self._read_measure_threads:
-           t.join()
+            t.join()
         t_start.join()
         if t_end:
             t_end.join()
@@ -153,7 +148,10 @@ class HttpTester:
         return test
 
     def _get_max_rate(self):
-      return max(self._measures)
+        try:
+            return max(self._measures)
+        except Exception:
+            return 0
 
     def _start_measure(self):
         logger.info("Starting measure...")
@@ -163,7 +161,7 @@ class HttpTester:
         logger.debug("Stopping....")
         self._time_to_stop = True
         for t in self._read_measure_threads:
-           t.join()
+            t.join()
     
    
     def _read_down_measure(self):
@@ -202,6 +200,20 @@ class HttpTester:
         else:
             return None
 
+    def gen_chunk(self):
+        time_to_stop = False
+        while not time_to_stop:
+            elapsed = time.time() - self._starttime
+            if not self._time_to_stop and (elapsed < self._timeout_secs) and (self._fakefile.get_bytes_read() < MAX_TRANSFERED_BYTES):
+                yield self._fakefile.read(BUF_SIZE)
+            elif not self._has_stopped:
+                self._has_stopped = True
+                yield END_STRING * (self._recv_bufsize / len(END_STRING) + 1)
+            else:
+                time_to_stop = True
+                yield ""
+
+
         
     '''
     Upload test is done server side. We just measure
@@ -210,16 +222,16 @@ class HttpTester:
     '''
     def test_up(self, url, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 8 * 1024):
         self._has_stopped = False
+        self._time_to_stop = False
         self._recv_bufsize = recv_bufsize
-        self._test = _init_test('upload')
-        headers = {'X-buf-size': str(recv_bufsize)}
+        self._test = _init_test('upload_http')
 
         self._fakefile = Fakefile(file_size)
         response = None
         self._starttime = time.time()
         start_tx_bytes = self._netstat.get_tx_bytes()
         try:
-            response = requests.post(url, headers=headers, data=self)#, hooks = dict(response = self._response_received))
+            response = requests.post(url, data=self.gen_chunk())#, hooks = dict(response = self._response_received))
         except Exception as e:
             raise MeasurementException("Errore di connessione: %s" % str(e))
         if response:
@@ -233,19 +245,16 @@ class HttpTester:
         read_bytes = self._fakefile.get_bytes_read()
         spurious = (float(tx_diff - read_bytes)/float(tx_diff))
         self._test['spurious'] = spurious
+        self._test['stats'] = Statistics(byte_up_nem = self._test['bytes'], 
+                                         byte_up_all = self._test['bytes'] * (1 + spurious))
         return self._test
-    
-    def _response_received(self, r, *args, **kwargs):
-        logger.info("Got response: %s" % r.text)
-        self._time_to_stop = True
     
     def __len__(self):
         return 1
     
-def _init_test(type):
+def _init_test(testtype):
     test = {}
-    test['type'] = type
-    test['protocol'] = 'http'
+    test['type'] = testtype
     test['time'] = 0
     test['bytes'] = 0
     test['stats'] = {}
@@ -253,22 +262,37 @@ def _init_test(type):
     return test
         
 def _test_from_server_response(response):
+    '''
+    Server response is a comma separated string containing:
+    <test time>, <total total_bytes received>, <total_bytes received last second>, <total_bytes received 0th second>, ... 
+    '''
+    logger.info("Ricevuto risposta dal server: %s" % str(response))
     test = {}
-    test['type'] = 'upload'
-    test['protocol'] = 'http'
-    results = str(response).split(',')
-    medium_rate = float(results[0])
-    partial_rates = [float(x) for x in results[1:]] 
-    test['rate_medium'] = medium_rate
-    test['rate_max'] = max(partial_rates)
-    test['rate_secs'] = partial_rates
-    test['errorcode'] = 0
+    test['type'] = 'upload_http'
+    if not response or len(response) == 0:
+        logger.error("Got empty response from server")
+        test['rate_medium'] = -1
+        test['rate_max'] = -1
+        test['rate_secs'] = -1
+        test['errorcode'] = 1
+    else:
+        results = str(response).split(',')
+        test['time'] = int(results[0])
+        total_bytes = int(results[1])
+        test['bytes'] = total_bytes
+        medium_rate = float(total_bytes) * 8 / test['time']
+        test['rate_medium'] = medium_rate
+        partial_bytes = [float(x) for x in results[2:]] 
+        if partial_bytes:
+            bytes_max = max(partial_bytes)
+            test['rate_max'] = bytes_max * 8 / test['time']
+            test['rate_secs'] = [ b * 8 / test['time'] for b in partial_bytes ]
+        else:
+            test['rate_max'] = 0
+            test['rate_secs'] = []
     return test
         
         
-# def pippo(r, *args, **kwargs):
-#     print "Pippo"
-    
 if __name__ == '__main__':
 #    host = "10.80.1.1"
 #    host = "193.104.137.133"
@@ -279,10 +303,13 @@ if __name__ == '__main__':
     import sysMonitor
     dev = sysMonitor.getDev()
     t = HttpTester(dev, rampup_secs=0)
-#    print "\n------ UPLOAD ---------\n"
+#     print "\n------ DOWNLOAD -------\n"
+#     res = t.test_down("http://%s" % host)
+#     print("Medium: %s, Max: %s, Spurious: %s" % (res['rate_medium'], res['rate_max'], res['spurious']))
+#     print res['rate_secs']
+    print "\n------ UPLOAD ---------\n"
+    res = t.test_up("http://%s/file.rnd" % "193.104.137.133")
+    print res
 #    res = t.test_up("http://%s/" % host, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 1024)
-#    print("Medium: %s, Max: %s, Spurious: %s" % (res['rate_medium'], res['rate_max'], res['spurious']))
-    print "\n------ DOWNLOAD -------\n"
-    res = t.test_down("http://%s/" % host)
     print("Medium: %s, Max: %s, Spurious: %s" % (res['rate_medium'], res['rate_max'], res['spurious']))
-    print res['rate_secs']
+    print res['stats']
