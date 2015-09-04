@@ -365,7 +365,6 @@ def do_win_arping(IPsrc = None, NETmask=24, realSubnet=True):
 
 def _send_one_win_arp(IPdst, result_queue):
     # Send ARP reuqest
-    logger.debug("Sending ARP to \'%s\'" % IPdst)
     IPdst = str(IPdst)
     mac_addr = (c_ulong*2)()
     addr_len = c_ulong(6)
