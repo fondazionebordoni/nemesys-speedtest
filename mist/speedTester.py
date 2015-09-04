@@ -190,21 +190,10 @@ class SpeedTester(Thread):
     '''
     Funzione per l'analisi del contabit ed eventuale gating dei risultati del test
     '''
-    stats = test.counter_stats
-    logger.info('Statistics: %s' % stats)
     test_status = False
 
-    if (testtype == FTP_DOWN or testtype == HTTP_DOWN):
-      byte_nem = stats.byte_down_nem
-      byte_all = stats.byte_down_all
-    elif (testtype == FTP_UP or testtype == HTTP_UP):
-      byte_nem = stats.byte_up_nem
-      byte_all = stats.byte_up_all
-    else:
-      info = 'Errore durante la misura, impossibile analizzare i dati di test'
-      wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': 'error'})
-      return test_status
-
+    byte_nem = test['bytes']
+    byte_all = test['bytes_total']
     logger.info('Analisi dei rapporti di traffico')
     logger.debug('Dati per la soglia: byte_nem: %d | byte_all: %d' % (byte_nem, byte_all))
     if byte_all > 0:
@@ -223,28 +212,7 @@ class SpeedTester(Thread):
         return test_status
       else:
         wx.CallAfter(self._gui._update_messages, 'Errore durante la verifica del traffico di misura: impossibile salvare i dati.', 'red')
-        return test_status
-#     if byte_all > 0 and packet_all > 0:
-#       traffic_ratio = float(byte_all - byte_nem) / float(byte_all)
-#       packet_ratio_inv = float(packet_all - packet_nem) / float(packet_all)
-#       value1 = "%.2f%%" % (traffic_ratio * 100)
-#       value2 = "%.2f%%" % (packet_ratio_inv * 100)
-#       logger.info('Traffico MIST: [ %d pacchetti di %d totali e %.1f Kbyte di %.1f totali ]' % (packet_nem, packet_all, byte_nem / 1024.0, byte_all / 1024.0))
-#       logger.info('Percentuale di traffico spurio: %.2f%% traffico e %.2f%% pacchetti' % (traffic_ratio * 100, packet_ratio_inv * 100))
-#       if (0 <= traffic_ratio <= TH_TRAFFIC) and (0 <= packet_ratio_inv <= TH_INVERTED):
-#         test_status = True
-#         info = 'Traffico internet non legato alla misura: percentuali %s/%s' % (value1, value2)
-#         wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': True, 'info': info, 'value': value1}, False)
-#         # # test.bytes = byte_all # Dato da salvare sulla misura?? ##
-#         return test_status
-#       elif (traffic_ratio > TH_TRAFFIC) or (packet_ratio_inv > TH_INVERTED):
-#         info = 'Eccessiva presenza di traffico internet non legato alla misura: percentuali %s/%s' % (value1, value2)
-#         wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': value1})
-#         return test_status
-#       else:
-#         wx.CallAfter(self._gui._update_messages, 'Errore durante la verifica del traffico di misura: impossibile salvare i dati.', 'red')
-#         return test_status
-    
+        return test_status    
     else:
       info = 'Errore durante la misura, impossibile analizzare i dati di test'
       wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': 'error'})
@@ -253,10 +221,17 @@ class SpeedTester(Thread):
     return test_status
   
   
-  def _get_bandwidth(self, test):
+  def _get_bandwidth(self, myProof):
+     
+    if myProof.time > 0:
+      return float( ( myProof.bytes + myProof.bytesOth ) * 8 / myProof.time )
+    else:
+      raise Exception("Errore durante la valutazione del test")
+  
+  def _get_bandwidth_from_test(self, test):
 
-    if test.time > 0:
-      return float(test.bytes * 8 / test.time)
+    if test['time'] > 0:
+      return float( test['bytes_total'] * 8 / test['time'] )
     else:
       raise Exception("Errore durante la valutazione del test")
   
@@ -308,9 +283,9 @@ class SpeedTester(Thread):
       
       wx.CallAfter(self._gui._update_messages, "Test %d di %d di %s" % (test_good + 1, test_todo, stringtype.upper()), 'blue')
       
-      test = Proof()
-      test.update(pre_profiler)
-      test.update(profiler)
+      myProof = Proof()
+      myProof.update(pre_profiler)
+      myProof.update(profiler)
       
       try:
         test_done += 1
@@ -323,32 +298,33 @@ class SpeedTester(Thread):
         
         if type == PING:
           logger.info("[PING] " + message + " [PING]")
-          test.update(tester.testping())
+          testres = tester.testping()
         elif type == FTP_DOWN:
           logger.info("[FTP DOWNLOAD] " + message + " [FTP DOWNLOAD]")
-          test.update(tester.testftpdown(self._client.profile.download * task.multiplier * 1000 / 8, task.ftpdownpath))
+          testres = tester.testftpdown(self._client.profile.download * task.multiplier * 1000 / 8, task.ftpdownpath)
         elif type == FTP_UP:
           logger.info("[FTP UPLOAD] " + message + " [FTP UPLOAD]")
-          test.update(tester.testftpup(self._client.profile.upload * task.multiplier * 1000 / 8, task.ftpuppath))
+          testres = tester.testftpup(self._client.profile.upload * task.multiplier * 1000 / 8, task.ftpuppath)
         elif type == HTTP_DOWN:
           logger.info("[HTTP DOWNLOAD] " + message + " [HTTP DOWNLOAD]")
-          test.update(tester.testhttpdown())
+          testres = tester.testhttpdown()
         elif type == HTTP_UP:
           logger.info("[HTTP UPLOAD] " + message + " [HTTP UPLOAD]")
-          test.update(tester.testhttpup())
+          testres = tester.testhttpup()
         else:
           logger.warn("Tipo di test da effettuare non definito!")
 
         if type == PING:
-          logger.info("[ Ping: %s ] [ Actual Best: %s ]" % (test.time, best_value))
+          logger.info("[ Ping: %s ] [ Actual Best: %s ]" % (testres['time'], best_value))
           if best_value == None:
             best_value = 4444
-          if test.time < best_value:
-            best_value = test.time
-            best_test = test
+          if testres['time'] < best_value:
+            best_value = testres['time']
+            myProof.update(testres)
+            best_testres = testres
             
         else:
-          bandwidth = self._get_bandwidth(test)
+          bandwidth = self._get_bandwidth_from_test(testres)
           
           if type == FTP_DOWN or type == HTTP_DOWN:
             self._client.profile.download = min(bandwidth, 40000)
@@ -361,7 +337,7 @@ class SpeedTester(Thread):
           wx.CallAfter(self._gui._update_messages, "Risultato %s (%s di %s): %s" % (stringtype.upper(), test_good + 1, test_todo, int(bandwidth)), 'blue')
           if test_good > 0:
             # Analisi da contabit
-            if not (self._test_gating(test, type)):
+            if not (self._test_gating(testres, type)):
               raise Exception("superata la soglia di traffico spurio.")
             else:              
               logger.info("[ Bandwidth in %s : %s ] [ Actual Best: %s ]" % (type, bandwidth, best_value))
@@ -369,9 +345,9 @@ class SpeedTester(Thread):
                 best_value = 0
               if bandwidth > best_value:
                 best_value = bandwidth
-                best_test = test
+                best_testres = testres
           else:
-            best_test = test
+            best_testres = testres
             
         wx.CallAfter(self._gui.update_gauge)
         test_good += 1
@@ -385,8 +361,9 @@ class SpeedTester(Thread):
         else:
           raise Exception("Superato il numero massimo di errori possibili durante una misura.")
           
-    best_test.done = test_done
-    return best_test
+    best_testres['done'] = test_done
+    myProof.update(best_testres)
+    return myProof
   
   
   def run(self):

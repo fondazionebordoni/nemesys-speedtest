@@ -29,8 +29,6 @@ from fakefile import Fakefile
 from logger import logging
 import netstat
 import paths
-import ping
-from statistics import Statistics
 
 
 logger = logging.getLogger()
@@ -124,7 +122,6 @@ class FtpTester:
     test['type'] = 'download'
     test['time'] = 0
     test['bytes'] = 0
-    test['stats'] = {}
     test['errorcode'] = 0
 
     self._file = filename
@@ -155,7 +152,6 @@ class FtpTester:
       bytes_total = end_total_bytes - start_total_bytes
       if (bytes_total < 0):
           raise Exception("Ottenuto banda negativa, possibile azzeramento dei contatori.")
-      test['stats'] = Statistics(byte_down_nem = size, byte_down_all = bytes_total)
       test['bytes_total'] = bytes_total
       logger.info("Banda: (%s*8)/%s = %s Kbps" % (size,elapsed,(size*8)/elapsed))
 
@@ -189,7 +185,6 @@ class FtpTester:
     test['type'] = 'upload'
     test['time'] = 0
     test['bytes'] = 0
-    test['stats'] = {}
     test['errorcode'] = 0
 
     self._file = Fakefile(bytes)
@@ -223,7 +218,6 @@ class FtpTester:
           raise Exception("Ottenuto banda negativa, possibile azzeramento dei contatori.")
       test['bytes'] = size
       test['time'] = elapsed
-      test['stats'] = Statistics(byte_up_nem = size, byte_up_all = total_bytes)
       test['bytes_total'] = total_bytes
 
       logger.info('Test done!')
@@ -255,7 +249,7 @@ if __name__ == '__main__':
     dev = sysMonitor.getDev()
     t = FtpTester(dev)
         
-#    print t.testftpdown(nap, '/download/40000.rnd', 1000000, 'nemesys', '4gc0m244')
+    print t.testftpdown(nap, '/download/40000.rnd', 1000000, 'nemesys', '4gc0m244')
     print "\n---------------------------\n"
     print t.testftpup(nap, '/upload/r.raw', 100000000, 'nemesys', '4gc0m244')
     

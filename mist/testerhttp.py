@@ -26,7 +26,6 @@ from fakefile import Fakefile
 from logger import logging
 import netstat
 import paths
-from statistics import Statistics
 from measurementexception import MeasurementException
 
 
@@ -129,8 +128,6 @@ class HttpTester:
                 test['rate_secs'] = self._measures
                 test['bytes_total'] = total_bytes
                 spurio = float(test['bytes_total']-test['bytes'])/float(test['bytes_total'])
-                test['spurious'] = spurio 
-                test['stats'] = Statistics(byte_down_nem = measured_bytes, byte_down_all = total_bytes)
                 logger.info("Banda (payload): (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
                 logger.info("Banda (totale): (%s*8)/%s = %s Kbps" % (total_bytes, elapsed_time, (total_bytes*8/elapsed_time)))
                 logger.info("Traffico spurio: %f" % spurio)
@@ -244,9 +241,7 @@ class HttpTester:
         tx_diff = self._netstat.get_tx_bytes() - start_tx_bytes
         read_bytes = self._fakefile.get_bytes_read()
         spurious = (float(tx_diff - read_bytes)/float(tx_diff))
-        self._test['spurious'] = spurious
-        self._test['stats'] = Statistics(byte_up_nem = self._test['bytes'], 
-                                         byte_up_all = self._test['bytes'] * (1 + spurious))
+        self._test['bytes_total'] = int(self._test['bytes'] * (1 + spurious))
         return self._test
     
     def __len__(self):
@@ -257,7 +252,7 @@ def _init_test(testtype):
     test['type'] = testtype
     test['time'] = 0
     test['bytes'] = 0
-    test['stats'] = {}
+    test['bytes_total'] = 0
     test['errorcode'] = 0
     return test
         
@@ -285,7 +280,7 @@ def _test_from_server_response(response):
         partial_bytes = [float(x) for x in results[2:]] 
         if partial_bytes:
             bytes_max = max(partial_bytes)
-            test['rate_max'] = bytes_max * 8 / test['time']
+            test['rate_max'] = bytes_max * 8 / 1000 # Bytes in one second
             test['rate_secs'] = [ b * 8 / test['time'] for b in partial_bytes ]
         else:
             test['rate_max'] = 0
@@ -303,13 +298,10 @@ if __name__ == '__main__':
     import sysMonitor
     dev = sysMonitor.getDev()
     t = HttpTester(dev, rampup_secs=0)
-#     print "\n------ DOWNLOAD -------\n"
-#     res = t.test_down("http://%s" % host)
-#     print("Medium: %s, Max: %s, Spurious: %s" % (res['rate_medium'], res['rate_max'], res['spurious']))
-#     print res['rate_secs']
+    print "\n------ DOWNLOAD -------\n"
+    res = t.test_down("http://%s" % host)
+    print res
     print "\n------ UPLOAD ---------\n"
     res = t.test_up("http://%s/file.rnd" % "193.104.137.133")
     print res
 #    res = t.test_up("http://%s/" % host, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 1024)
-    print("Medium: %s, Max: %s, Spurious: %s" % (res['rate_medium'], res['rate_max'], res['spurious']))
-    print res['stats']

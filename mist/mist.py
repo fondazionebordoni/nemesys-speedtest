@@ -25,7 +25,7 @@ __version__ = '1.2.0'
 
 SWN = 'MisuraInternet Speed Test'
 
-TOTAL_STEPS = 19
+TOTAL_STEPS = 19 + 8 # 4 http up + 4 http down
 
 logger = logging.getLogger()
 
