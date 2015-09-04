@@ -8,8 +8,10 @@ import platform
 import re
 import netifaces
 import psutil
+import logging
 
 LINUX_RESOURCE_PATH="/sys/class/net"
+logger = logging.getLogger()
 
 
 def get_netstat(if_device):
@@ -153,7 +155,7 @@ class NetstatWindows(Netstat):
         entry_value = None
         where_condition = " WHERE SettingID = \"" + if_dev_name + "\""
         entry_name = "Description"
-        entry_value = self._get_entry_generic("Win32_NetworkAdapterConfiguration", whereCondition, entry_name)
+        entry_value = self._get_entry_generic("Win32_NetworkAdapterConfiguration", where_condition, entry_name)
         return entry_value
 
     def get_timestamp(self):
