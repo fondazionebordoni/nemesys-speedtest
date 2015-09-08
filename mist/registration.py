@@ -269,6 +269,6 @@ def registration(code):
   return regOK
 
 if __name__ == '__main__':
-  app = wx.PySimpleApp(0)
+  app = wx.App(False)
   registration()
   # getconf('ab0cd1ef2gh3ij4kl5mn6op7qr8st9uv', './../config/client.conf', 'https://finaluser.agcom244.fub.it/Config')

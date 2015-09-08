@@ -502,7 +502,7 @@ if __name__ == "__main__":
 
   logger.info('Starting %s v.%s' % (SWN, version)) 
   
-  app = wx.PySimpleApp(0)
+  app = wx.App(False)
   
   # Check if this is the last version
   # Does not seem to be used

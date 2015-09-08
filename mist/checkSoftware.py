@@ -183,6 +183,6 @@ class CheckSoftware():
 
 
 if __name__ == '__main__':
-  app = wx.PySimpleApp(0)
+  app = wx.App(False)
   checker = CheckSoftware("1.1.2")
   checker.checkIT()
