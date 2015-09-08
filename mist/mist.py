@@ -513,7 +513,6 @@ if __name__ == "__main__":
     interfaces()
     if (system().lower().startswith('win')):
       wx.CallLater(200, sleeper)
-    wx.InitAllImageHandlers()
     GUI = mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE) #& ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
     app.SetTopWindow(GUI)
     GUI.Show()
