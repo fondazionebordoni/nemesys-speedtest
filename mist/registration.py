@@ -102,9 +102,9 @@ ErrorRegistration = \
 
 class Dialog(wx.Dialog):
 
-  def __init__(self, parent, title, default, caption):
+  def __init__(self, parent, title, default, caption, pos=(200,200)):
     # kwds["style"] = wx.DEFAULT_FRAME_STYLE
-    wx.Dialog.__init__(self, None, -1, "")
+    wx.Dialog.__init__(self, None, -1, "", pos)
     self.label_1 = wx.StaticText(self, -1, "\nSe e' stata effettuata l'iscrizione inserire\ni codici di accesso (username e password)\nutilizzati per accedere all'area personale.\n", style=wx.ALIGN_CENTRE)
     self.label_username = wx.StaticText(self, -1, "Username:", style=wx.ALIGN_RIGHT)
     self.text_username = wx.TextCtrl(self, -1, default)
@@ -184,9 +184,9 @@ class Dialog(wx.Dialog):
 
 def showDialog(dialog, message=None):
   if (message == None):
-    msgBox = wx.MessageDialog(None, dialog['message'], dialog['title'], dialog['style'])
+    msgBox = wx.MessageDialog(None, dialog['message'], dialog['title'], dialog['style'], pos=(200,200))
   else:
-    msgBox = wx.MessageDialog(None, message, dialog['title'], dialog['style'])
+    msgBox = wx.MessageDialog(None, message, dialog['title'], dialog['style'], pos=(200,200))
   msgBox.ShowModal()
   msgBox.Destroy()
   
@@ -225,7 +225,7 @@ def registration(code):
       logger.info('Tentativo di registrazione %s di %s' % (retry + 1, MAXretry))
       title = "Tentativo %s di %s" % (retry + 1, MAXretry)
       default = ""
-      dlg = Dialog(None, title, default, wx.ID_OK)
+      dlg = Dialog(None, title, default, wx.ID_OK, pos=(200,200))
       res = dlg.ShowModal()
       code = dlg.GetValue()
       dlg.Destroy()
