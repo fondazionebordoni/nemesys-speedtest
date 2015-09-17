@@ -72,12 +72,21 @@ class HttpTester:
     def get_measures(self):
         return self._measures
         
-    def test_down(self, url):
+    def test_down(self, url, total_test_time_secs = None, callback_update_speed = None):
+        if callback_update_speed:
+            self.callback_update_speed = callback_update_speed
+        if total_test_time_secs:
+            self.total_measure_time = total_test_time_secs
+            file_size = MAX_TRANSFERED_BYTES * total_test_time_secs / TOTAL_MEASURE_TIME
+        else:
+            self.total_measure_time = TOTAL_MEASURE_TIME
+            file_size = MAX_TRANSFERED_BYTES
         self._init_counters()
         test = _init_test('download_http')
         t_end = None
         try:
-            response = urllib2.urlopen(url)
+            request = urllib2.Request(url, headers = {"X-requested-file-size" : file_size})
+            response = urllib2.urlopen(request)
         except Exception as e:
             raise MeasurementException("Impossibile aprire la connessione HTTP: %s" % str(e))
         if response.getcode() != 200:
@@ -105,7 +114,7 @@ class HttpTester:
             self._measurement_starttime = time.time()
             self.startbytes = 0
             self._starttime = time.time()
-            t_end = threading.Timer(TOTAL_MEASURE_TIME, self._stop_down_measure)
+            t_end = threading.Timer(self.total_measure_time, self._stop_down_measure)
             t_end.start()
             while has_more and not self._time_to_stop:
                 my_buffer = response.read(self._num_bytes)
@@ -167,6 +176,8 @@ class HttpTester:
         
         logger.debug("Reading... count = %d, diff = %d, total = %d, rx diff= %d, total = %d, rx - read = %d" 
               % (self._measure_count, diff, new_transfered_bytes, rx_diff, new_rx_bytes, (rx_diff - diff)))
+        if self.callback_update_speed:
+            self.callback_update_speed(second=self._measure_count + 1, speed=float(rx_diff * 8/1000))
         self._measure_count += 1
         self._last_file_bytes = new_transfered_bytes
         self._last_rx_bytes = new_rx_bytes

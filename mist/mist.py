@@ -72,16 +72,17 @@ class mistGUI(wx.Frame):
     self.label_traffic = wx.StaticText(self, -1, "%s\n- - - -" % RES_TRAFFIC, style = wx.ALIGN_CENTRE)
     self.gauge = wx.Gauge(self, -1, TOTAL_STEPS, style = wx.GA_HORIZONTAL | wx.GA_SMOOTH)
     
-    self.label_ping = wx.StaticText(self, -1, "Ping", style = wx.ALIGN_CENTRE)
-    self.label_http_down = wx.StaticText(self, -1, "HTTP Down", style = wx.ALIGN_CENTRE)
+    self.label_test_message = wx.StaticText(self, -1, "Speedtest distribuzione per confronto HTTP-FTP", style = wx.ALIGN_CENTRE)
+#     self.label_ping = wx.StaticText(self, -1, "Ping", style = wx.ALIGN_CENTRE)
+#     self.label_http_down = wx.StaticText(self, -1, "HTTP Down", style = wx.ALIGN_CENTRE)
 #    self.label_http_up = wx.StaticText(self, -1, "HTTP Up", style = wx.ALIGN_CENTRE)
-    self.label_ftp_down = wx.StaticText(self, -1, "FTP Down", style = wx.ALIGN_CENTRE)
+#     self.label_ftp_down = wx.StaticText(self, -1, "FTP Down", style = wx.ALIGN_CENTRE)
 #    self.label_ftp_up = wx.StaticText(self, -1, "FTP Up", style = wx.ALIGN_CENTRE)
     
-    self.label_ping_res = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
-    self.label_http_down_res = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
+#     self.label_ping_res = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
+#     self.label_http_down_res = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
 #    self.label_http_up_res = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
-    self.label_ftp_down_res = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
+#     self.label_ftp_down_res = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
 #    self.label_ftp_up_res = wx.StaticText(self, -1, "- - - -", style = wx.ALIGN_CENTRE)
     
     self.messages_area = wx.TextCtrl(self, -1, "", style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP | wx.BORDER_NONE)
@@ -130,15 +131,16 @@ class mistGUI(wx.Frame):
     self._font_normal = wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD, 0, "")
     
     self.label_interface.SetFont(self._font_italic)
-    self.label_ping.SetFont(self._font_italic_bold)
-    self.label_http_down.SetFont(self._font_italic_bold)
+    self.label_test_message.SetFont(self._font_italic_bold)
+#     self.label_ping.SetFont(self._font_italic_bold)
+#     self.label_http_down.SetFont(self._font_italic_bold)
 #     self.label_http_up.SetFont(self._font_italic_bold)
-    self.label_ftp_down.SetFont(self._font_italic_bold)
+#     self.label_ftp_down.SetFont(self._font_italic_bold)
 #     self.label_ftp_up.SetFont(self._font_italic_bold)
-    self.label_ping_res.SetFont(self._font_normal)
-    self.label_http_down_res.SetFont(self._font_normal)
+#     self.label_ping_res.SetFont(self._font_normal)
+#     self.label_http_down_res.SetFont(self._font_normal)
 #     self.label_http_up_res.SetFont(self._font_normal)
-    self.label_ftp_down_res.SetFont(self._font_normal)
+#     self.label_ftp_down_res.SetFont(self._font_normal)
 #     self.label_ftp_up_res.SetFont(self._font_normal)
     
     #self.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
@@ -172,16 +174,17 @@ class mistGUI(wx.Frame):
 #     self.grid_sizer_results.Add(self.label_ftp_down, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
 #     self.grid_sizer_results.Add(self.label_ftp_up, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
 
-    self.grid_sizer_results.Add(self.label_ping, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
-    self.grid_sizer_results.Add(self.label_http_down, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
-#     self.grid_sizer_results.Add(self.label_http_up, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
-    self.grid_sizer_results.Add(self.label_ftp_down, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
-#     self.grid_sizer_results.Add(self.label_ftp_up, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
-    
-    self.grid_sizer_results.Add(self.label_ping_res, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
-    self.grid_sizer_results.Add(self.label_http_down_res, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
-#     self.grid_sizer_results.Add(self.label_http_up_res, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
-    self.grid_sizer_results.Add(self.label_ftp_down_res, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
+    self.grid_sizer_results.Add(self.label_test_message, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
+#     self.grid_sizer_results.Add(self.label_ping, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
+#     self.grid_sizer_results.Add(self.label_http_down, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
+# #     self.grid_sizer_results.Add(self.label_http_up, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
+#     self.grid_sizer_results.Add(self.label_ftp_down, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 44)
+# #     self.grid_sizer_results.Add(self.label_ftp_up, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
+#     
+#     self.grid_sizer_results.Add(self.label_ping_res, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
+#     self.grid_sizer_results.Add(self.label_http_down_res, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
+# #     self.grid_sizer_results.Add(self.label_http_up_res, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
+#     self.grid_sizer_results.Add(self.label_ftp_down_res, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
 #     self.grid_sizer_results.Add(self.label_ftp_up_res, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
     
     self.sizer_results.Add(self.grid_sizer_results, 0, wx.ALL | wx.EXPAND, 0)
@@ -297,8 +300,9 @@ class mistGUI(wx.Frame):
       self.bitmap_button_play.Enable()
 
   def _update_http_down(self, downwidth):
-    self.label_http_down_res.SetLabel("%.0f kbps" % downwidth)
-    self.Layout()
+      pass
+#     self.label_http_down_res.SetLabel("%.0f kbps" % downwidth)
+#     self.Layout()
 
   def _update_http_up(self, upwidth):
       pass
@@ -306,8 +310,9 @@ class mistGUI(wx.Frame):
 #     self.Layout()
 
   def _update_ftp_down(self, downwidth):
-    self.label_ftp_down_res.SetLabel("%.0f kbps" % downwidth)
-    self.Layout()
+      pass
+#     self.label_ftp_down_res.SetLabel("%.0f kbps" % downwidth)
+#     self.Layout()
 
   def _update_ftp_up(self, upwidth):
       pass
@@ -315,8 +320,9 @@ class mistGUI(wx.Frame):
 #     self.Layout()
 
   def _update_ping(self, rtt):
-    self.label_ping_res.SetLabel("%.1f ms" % rtt)
-    self.Layout()
+      pass
+#     self.label_ping_res.SetLabel("%.1f ms" % rtt)
+#     self.Layout()
 
   def _update_interface(self, message, font = (10, 93, 90, 0)):
     (size, italic, bold, underline) = font
@@ -332,11 +338,11 @@ class mistGUI(wx.Frame):
     for resource in checkable_set:
       self.set_resource_info(resource, {'status': None, 'info': None, 'value': None})
 
-    self.label_http_down_res.SetLabel("- - - -")
-#     self.label_http_up_res.SetLabel("- - - -")
-    self.label_ftp_down_res.SetLabel("- - - -")
-#     self.label_ftp_up_res.SetLabel("- - - -")
-    self.label_ping_res.SetLabel("- - - -")
+#     self.label_http_down_res.SetLabel("- - - -")
+# #     self.label_http_up_res.SetLabel("- - - -")
+#     self.label_ftp_down_res.SetLabel("- - - -")
+# #     self.label_ftp_up_res.SetLabel("- - - -")
+#     self.label_ping_res.SetLabel("- - - -")
     self.label_interface.SetLabel("")
 
     self.messages_area.Clear()
