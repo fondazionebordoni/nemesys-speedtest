@@ -52,6 +52,7 @@ class HttpTester:
         self._netstat = netstat.get_netstat(dev)
         self._init_counters()
         self._fakefile = None
+        self._upload_sending_time_secs = TOTAL_MEASURE_TIME + 1
     
     def _init_counters(self):
         self._time_to_stop = False
@@ -95,9 +96,9 @@ class HttpTester:
         if self._go_ahead:
     
             self._starttime = time.time()
-            t = threading.Timer(1.0, self._read_down_measure)
-            t.start()
-            self._read_measure_threads.append(t)
+            http_tester = threading.Timer(1.0, self._read_down_measure)
+            http_tester.start()
+            self._read_measure_threads.append(http_tester)
             
             logger.debug("Starting HTTP measurement....")
             self.starttotalbytes = self._netstat.get_rx_bytes()
@@ -136,8 +137,8 @@ class HttpTester:
         else:
             raise MeasurementException("File non sufficientemente grande per fare partire la misura")
             
-        for t in self._read_measure_threads:
-            t.join()
+        for http_tester in self._read_measure_threads:
+            http_tester.join()
         t_start.join()
         if t_end:
             t_end.join()
@@ -154,13 +155,6 @@ class HttpTester:
         logger.info("Starting measure...")
         self._go_ahead = True
 
-    def _stop_measurement(self):
-        logger.debug("Stopping....")
-        self._time_to_stop = True
-        for t in self._read_measure_threads:
-            t.join()
-    
-   
     def _read_down_measure(self):
         measuring_time = time.time()
         new_transfered_bytes = self._file_bytes
@@ -179,29 +173,19 @@ class HttpTester:
         self._last_measured_time = measuring_time
           
         if not self._time_to_stop:
-            t = threading.Timer(1.0, self._read_down_measure)
-            self._read_measure_threads.append(t)
-            t.start()
+            http_tester = threading.Timer(1.0, self._read_down_measure)
+            self._read_measure_threads.append(http_tester)
+            http_tester.start()
             
     def _stop_down_measure(self):
         self._time_to_stop = True
             
-            
-    def read(self, bufsize = -1):
-        elapsed = time.time() - self._starttime
-        if not self._time_to_stop and (elapsed < self._timeout_secs) and (self._fakefile.get_bytes_read() < MAX_TRANSFERED_BYTES):
-            return self._fakefile.read(bufsize)
-        elif not self._has_stopped:
-            self._has_stopped = True
-            return END_STRING * (self._recv_bufsize / len(END_STRING) + 1)
-        else:
-            return None
-
+           
     def gen_chunk(self):
         time_to_stop = False
         while not time_to_stop:
             elapsed = time.time() - self._starttime
-            if not self._time_to_stop and (elapsed < self._timeout_secs) and (self._fakefile.get_bytes_read() < MAX_TRANSFERED_BYTES):
+            if not self._time_to_stop and (elapsed < self._upload_sending_time_secs) and (self._fakefile.get_bytes_read() < MAX_TRANSFERED_BYTES):
                 yield self._fakefile.read(BUF_SIZE)
             elif not self._has_stopped:
                 self._has_stopped = True
@@ -228,12 +212,18 @@ class HttpTester:
         self._starttime = time.time()
         start_tx_bytes = self._netstat.get_tx_bytes()
         try:
+            logger.info("Connecting to server, sending time is %d" % self._upload_sending_time_secs)
             response = requests.post(url, data=self.gen_chunk())#, hooks = dict(response = self._response_received))
         except Exception as e:
             raise MeasurementException("Errore di connessione: %s" % str(e))
         if response:
             if response.status_code == 200:
                 self._test = _test_from_server_response(response.content)
+                if self._test['time'] < 9999:
+                    # Probably slow creation of connection, needs more time
+                    # Double the sending time
+                    self._upload_sending_time_secs = 2 * self._upload_sending_time_secs
+                    raise MeasurementException("Test non sufficientemente lungo, aumento del tempo di misura.")
             else:
                 raise MeasurementException("Ricevuto risposta %d dal server" % response.status_code)
         else:
@@ -275,16 +265,20 @@ def _test_from_server_response(response):
         test['time'] = int(results[0])
         total_bytes = int(results[1])
         test['bytes'] = total_bytes
-        medium_rate = float(total_bytes) * 8 / test['time']
-        test['rate_medium'] = medium_rate
+        if test['time'] > 0:
+            medium_rate = float(total_bytes) * 8 / test['time']
+            test['rate_medium'] = medium_rate
+        else:
+            test['rate_medium'] = -1
         partial_bytes = [float(x) for x in results[2:]] 
+        test['rate_secs'] = []
         if partial_bytes:
             bytes_max = max(partial_bytes)
             test['rate_max'] = bytes_max * 8 / 1000 # Bytes in one second
-            test['rate_secs'] = [ b * 8 / test['time'] for b in partial_bytes ]
+            if test['time'] > 0:
+                test['rate_secs'] = [ b * 8 / 1000 for b in partial_bytes ]
         else:
             test['rate_max'] = 0
-            test['rate_secs'] = []
     return test
         
         
@@ -297,11 +291,11 @@ if __name__ == '__main__':
 #    host = "billia.fub.it"
     import sysMonitor
     dev = sysMonitor.getDev()
-    t = HttpTester(dev, rampup_secs=0)
-    print "\n------ DOWNLOAD -------\n"
-    res = t.test_down("http://%s" % host)
-    print res
+    http_tester = HttpTester(dev, rampup_secs=0)
+#     print "\n------ DOWNLOAD -------\n"
+#     res = http_tester.test_down("http://%s" % host)
+#     print res
     print "\n------ UPLOAD ---------\n"
-    res = t.test_up("http://%s/file.rnd" % "193.104.137.133")
+    res = http_tester.test_up("http://%s/file.rnd" % "193.104.137.133")
     print res
-#    res = t.test_up("http://%s/" % host, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 1024)
+#    res = http_tester.test_up("http://%s/" % host, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 1024)
