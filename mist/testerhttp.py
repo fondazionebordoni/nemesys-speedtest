@@ -69,23 +69,21 @@ class HttpTester:
         self._read_measure_threads = []
         self._last_measured_time = time.time()
 
-    def get_measures(self):
-        return self._measures
-        
+#     def get_measures(self):
+#         return self._measures
+#         
     def test_down(self, url, total_test_time_secs = None, callback_update_speed = None):
-        if callback_update_speed:
-            self.callback_update_speed = callback_update_speed
+        self.callback_update_speed = callback_update_speed
         if total_test_time_secs:
             self.total_measure_time = total_test_time_secs
-            file_size = MAX_TRANSFERED_BYTES * total_test_time_secs / TOTAL_MEASURE_TIME
         else:
             self.total_measure_time = TOTAL_MEASURE_TIME
-            file_size = MAX_TRANSFERED_BYTES
+        file_size = MAX_TRANSFERED_BYTES * self.total_measure_time / TOTAL_MEASURE_TIME
         self._init_counters()
         test = _init_test('download_http')
         t_end = None
         try:
-            request = urllib2.Request(url, headers = {"X-requested-file-size" : file_size})
+            request = urllib2.Request(url, headers = {"X-requested-file-size" : file_size, "X-requested-measurement-time" : self.total_measure_time})
             response = urllib2.urlopen(request)
         except Exception as e:
             raise MeasurementException("Impossibile aprire la connessione HTTP: %s" % str(e))
@@ -94,57 +92,49 @@ class HttpTester:
         
         t_start = threading.Timer(self._rampup_secs, self._start_measure)
         t_start.start()
-        has_more = True
-        while not self._go_ahead and has_more and not self._time_to_stop:
+        while not self._go_ahead and not self._time_to_stop:
             my_buffer = response.read(self._num_bytes)
-            if my_buffer: 
+            if my_buffer != None: 
                 self._file_bytes += len(my_buffer)
             else: 
-                has_more = False
+                logger.debug("Got NONE buffer!")
                 
-        if self._go_ahead:
-    
-            self._starttime = time.time()
-            http_tester = threading.Timer(1.0, self._read_down_measure)
-            http_tester.start()
-            self._read_measure_threads.append(http_tester)
-            
-            logger.debug("Starting HTTP measurement....")
-            self.starttotalbytes = self._netstat.get_rx_bytes()
-            self._measurement_starttime = time.time()
-            self.startbytes = 0
-            self._starttime = time.time()
-            t_end = threading.Timer(self.total_measure_time, self._stop_down_measure)
-            t_end.start()
-            while has_more and not self._time_to_stop:
-                my_buffer = response.read(self._num_bytes)
-                if my_buffer: 
-                    self._file_bytes += len(my_buffer)
-                else: 
-                    has_more = False
-                    
-            if self._time_to_stop:
-                end_time = time.time()
-                elapsed_time = float((end_time - self._measurement_starttime) * 1000)
-                measured_bytes = self._file_bytes - self.startbytes
-                total_bytes = self._netstat.get_rx_bytes() - self.starttotalbytes
-                if (total_bytes < 0):
-                    raise MeasurementException("Ottenuto banda negativa, possibile azzeramento dei contatori.")
-                kbit_per_second = (measured_bytes * 8.0) / elapsed_time
-                test['bytes'] = measured_bytes
-                test['time'] = elapsed_time
-                test['rate_medium'] = kbit_per_second
-                test['rate_max'] = self._get_max_rate() 
-                test['rate_secs'] = self._measures
-                test['bytes_total'] = total_bytes
-                spurio = float(test['bytes_total']-test['bytes'])/float(test['bytes_total'])
-                logger.info("Banda (payload): (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
-                logger.info("Banda (totale): (%s*8)/%s = %s Kbps" % (total_bytes, elapsed_time, (total_bytes*8/elapsed_time)))
-                logger.info("Traffico spurio: %f" % spurio)
-            else:
-                raise MeasurementException("File non sufficientemente grande per la misura")
-        else:
-            raise MeasurementException("File non sufficientemente grande per fare partire la misura")
+        http_tester = threading.Timer(1.0, self._read_down_measure)
+        http_tester.start()
+        self._read_measure_threads.append(http_tester)
+        
+        logger.debug("Starting HTTP measurement....")
+        self.starttotalbytes = self._netstat.get_rx_bytes()
+#             self._measurement_starttime = time.time()
+        self.startbytes = 0
+        self._starttime = time.time()
+        t_end = threading.Timer(self.total_measure_time, self._stop_down_measure)
+        t_end.start()
+        while not self._time_to_stop:
+            my_buffer = response.read(self._num_bytes)
+            if my_buffer != None: 
+                self._file_bytes += len(my_buffer)
+            else: 
+                logger.debug("Got NONE buffer!")
+                
+        end_time = time.time()
+#                 elapsed_time = float((end_time - self._measurement_starttime) * 1000)
+        elapsed_time = float((end_time - self._starttime) * 1000)
+        measured_bytes = self._file_bytes - self.startbytes
+        total_bytes = self._netstat.get_rx_bytes() - self.starttotalbytes
+        if (total_bytes < 0):
+            raise MeasurementException("Ottenuto banda negativa, possibile azzeramento dei contatori.")
+        kbit_per_second = (measured_bytes * 8.0) / elapsed_time
+        test['bytes'] = measured_bytes
+        test['time'] = elapsed_time
+        test['rate_medium'] = kbit_per_second
+        test['rate_max'] = self._get_max_rate() 
+        test['rate_secs'] = self._measures
+        test['bytes_total'] = total_bytes
+        spurio = float(test['bytes_total']-test['bytes'])/float(test['bytes_total'])
+        logger.info("Banda (payload): (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
+        logger.info("Banda (totale): (%s*8)/%s = %s Kbps" % (total_bytes, elapsed_time, (total_bytes*8/elapsed_time)))
+        logger.info("Traffico spurio: %f" % spurio)
             
         for http_tester in self._read_measure_threads:
             http_tester.join()
@@ -227,27 +217,27 @@ class HttpTester:
             response = requests.post(url, data=self.gen_chunk())#, hooks = dict(response = self._response_received))
         except Exception as e:
             raise MeasurementException("Errore di connessione: %s" % str(e))
-        if response:
-            if response.status_code == 200:
-                self._test = _test_from_server_response(response.content)
-                if self._test['time'] < 9999:
-                    # Probably slow creation of connection, needs more time
-                    # Double the sending time
-                    self._upload_sending_time_secs = 2 * self._upload_sending_time_secs
-                    raise MeasurementException("Test non sufficientemente lungo, aumento del tempo di misura.")
-            else:
-                raise MeasurementException("Ricevuto risposta %d dal server" % response.status_code)
-        else:
+        if not response:
+            self._time_to_stop = True
             raise MeasurementException("Nessuna risposta") 
+        if response.status_code != 200:
+            self._time_to_stop = True
+            raise MeasurementException("Ricevuto risposta %d dal server" % response.status_code)
+        self._test = _test_from_server_response(response.content)
+        if self._test['time'] < 9999:
+            # Probably slow creation of connection, needs more time
+            # Double the sending time
+            self._upload_sending_time_secs = 2 * self._upload_sending_time_secs
+            raise MeasurementException("Test non sufficientemente lungo, aumento del tempo di misura.")
         tx_diff = self._netstat.get_tx_bytes() - start_tx_bytes
         read_bytes = self._fakefile.get_bytes_read()
         spurious = (float(tx_diff - read_bytes)/float(tx_diff))
         self._test['bytes_total'] = int(self._test['bytes'] * (1 + spurious))
         return self._test
     
-    def __len__(self):
-        return 1
-    
+#     def __len__(self):
+#         return 1
+#     
 def _init_test(testtype):
     test = {}
     test['type'] = testtype
@@ -260,7 +250,7 @@ def _init_test(testtype):
 def _test_from_server_response(response):
     '''
     Server response is a comma separated string containing:
-    <test time>, <total total_bytes received>, <total_bytes received last second>, <total_bytes received 0th second>, ... 
+    <test time>, <total total_bytes received>, <total_bytes received last second>, <total_bytes received 9th second>, ... 
     '''
     logger.info("Ricevuto risposta dal server: %s" % str(response))
     test = {}
@@ -303,9 +293,9 @@ if __name__ == '__main__':
     import sysMonitor
     dev = sysMonitor.getDev()
     http_tester = HttpTester(dev, rampup_secs=0)
-#     print "\n------ DOWNLOAD -------\n"
-#     res = http_tester.test_down("http://%s" % host)
-#     print res
+    print "\n------ DOWNLOAD -------\n"
+    res = http_tester.test_down("http://%s" % host)
+    print res
     print "\n------ UPLOAD ---------\n"
     res = http_tester.test_up("http://%s/file.rnd" % "193.104.137.133")
     print res
