@@ -95,10 +95,11 @@ class HttpTester:
         t_start.start()
         while not self._go_ahead and not self._time_to_stop:
             my_buffer = response.read(self._num_bytes)
-            if my_buffer != None: 
+            if my_buffer: 
                 self._file_bytes += len(my_buffer)
             else: 
-                logger.debug("Got NONE buffer!")
+                self._time_to_stop = True
+                raise MeasurementException("Sistema del client troppo lento, misura fallita")
                 
         http_tester = threading.Timer(1.0, self._read_down_measure)
         http_tester.start()
@@ -113,10 +114,11 @@ class HttpTester:
         t_end.start()
         while not self._time_to_stop:
             my_buffer = response.read(self._num_bytes)
-            if my_buffer != None: 
+            if my_buffer:
                 self._file_bytes += len(my_buffer)
             else: 
-                logger.debug("Got NONE buffer!")
+                self._time_to_stop = True
+                raise MeasurementException("Sistema del client troppo lento, misura fallita")
                 
         end_time = time.time()
 #                 elapsed_time = float((end_time - self._measurement_starttime) * 1000)
