@@ -230,14 +230,19 @@ class SpeedTester(Thread):
       raise Exception("Errore durante la valutazione del test")
   
   def _get_partial_bandwidth(self, secs):     
-    return sum(secs)/10.0
+    logger.info("Medium of %s" % str(secs))
+    logger.info("Sum: %d, Len: %d, medium: %d" % (sum(secs),len(secs), (sum(secs))/len(secs)))
+    return float(sum(secs))/len(secs)
   
   def _get_bandwidth_from_test(self, test):
 
-    if test['time'] > 0:
-      return float( test['bytes_total'] * 8 / test['time'] )
-    else:
-      raise Exception("Errore durante la valutazione del test")
+    try:
+        return self._get_partial_bandwidth(test['rate_tot_secs'])
+    except KeyError:
+        if test['time'] > 0:
+            return float( test['bytes_total'] * 8 )/ test['time'] 
+        else:
+            raise Exception("Errore durante la valutazione del test")
   
   def _get_max_http_bandwidth(self, test):
 
@@ -393,10 +398,14 @@ class SpeedTester(Thread):
     wx.CallAfter(self._gui._update_messages, "Inizio dei test di misura", font=(12, 93, 92, 1))
     wx.CallAfter(self._gui.update_gauge)
 
-    # Profilazione
-    self._profiler.set_check(set([RES_OS, RES_IP, RES_DEV, RES_MAC]))
+    self._profiler.set_check(set([RES_OS, RES_IP, RES_DEV, RES_MAC, RES_HOSTS, RES_TRAFFIC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
     self._profiler.start()
     profiler = self._profiler.get_results()
+    self._profiler.stop()
+    # Profilazione di background
+    #self._profiler.set_check(set([RES_OS, RES_IP, RES_DEV, RES_MAC]))
+    #self._profiler.start()
+    #profiler = self._profiler.get_results()
     sleep(1)
 
     server = None    
@@ -423,8 +432,8 @@ class SpeedTester(Thread):
         measure = Measure(self._client, start_time, task.server, ip, os, mac, self._version)
         # logger.debug("\n\n%s\n\n",str(measure))
         
-        self._profiler.set_check(set([RES_HOSTS, RES_TRAFFIC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
-        profiler = self._profiler.get_results()
+#         self._profiler.set_check(set([RES_HOSTS, RES_TRAFFIC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
+#         profiler = self._profiler.get_results()
         sleep(1)
 
         
@@ -450,12 +459,13 @@ class SpeedTester(Thread):
                     wx.CallAfter(self._gui._update_messages, "Upload (FTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
                     wx.CallAfter(self._gui._update_ftp_up, self._get_bandwidth(test))
                   elif (type == HTTP_DOWN):
-                    wx.CallAfter(self._gui._update_messages, "Download (HTTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
+                    wx.CallAfter(self._gui._update_messages, "Download (HTTP): %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs']), 'green', font=(12, 93, 92, 1))
+#                    wx.CallAfter(self._gui._update_messages, "Download (HTTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
                     wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
                   elif (type == HTTP_DOWN_LONG):
-                    wx.CallAfter(self._gui._update_messages, "Download (HTTP) 1: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_secs'][0:9]), 'green', font=(12, 93, 92, 1))
-                    wx.CallAfter(self._gui._update_messages, "Download (HTTP) 2: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_secs'][10:19]), 'green', font=(12, 93, 92, 1))
-                    wx.CallAfter(self._gui._update_messages, "Download (HTTP) 3: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_secs'][20:29]), 'green', font=(12, 93, 92, 1))
+                    wx.CallAfter(self._gui._update_messages, "Download (HTTP) 1: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'][0:10]), 'green', font=(12, 93, 92, 1))
+                    wx.CallAfter(self._gui._update_messages, "Download (HTTP) 2: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'][10:20]), 'green', font=(12, 93, 92, 1))
+                    wx.CallAfter(self._gui._update_messages, "Download (HTTP) 3: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'][20:30]), 'green', font=(12, 93, 92, 1))
                     wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
                   elif (type == HTTP_UP):
                     wx.CallAfter(self._gui._update_messages, "Upload (HTTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
@@ -478,7 +488,7 @@ class SpeedTester(Thread):
         logger.warning('Misura sospesa per eccezione: %s.' % e)
         wx.CallAfter(self._gui._update_messages, 'Misura sospesa per errore: %s' % e, 'red')
         
-    self._profiler.stop()
+    #self._profiler.stop()
     wx.CallAfter(self._gui.stop)
   
   

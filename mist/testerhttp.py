@@ -64,6 +64,7 @@ class HttpTester:
         self._initial_rx_bytes = self._last_rx_bytes
         self._initial_tx_bytes = self._last_tx_bytes
         self._measures = []
+        self._measures_tot = []
         self._measure_count = 0
         self._test = None
         self._read_measure_threads = []
@@ -130,6 +131,7 @@ class HttpTester:
         test['rate_medium'] = kbit_per_second
         test['rate_max'] = self._get_max_rate() 
         test['rate_secs'] = self._measures
+        test['rate_tot_secs'] = self._measures_tot
         test['bytes_total'] = total_bytes
         spurio = float(test['bytes_total']-test['bytes'])/float(test['bytes_total'])
         logger.info("Banda (payload): (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
@@ -146,7 +148,7 @@ class HttpTester:
 
     def _get_max_rate(self):
         try:
-            return max(self._measures)
+            return max(self._measures_tot)
         except Exception:
             return 0
 
@@ -162,12 +164,14 @@ class HttpTester:
         diff = new_transfered_bytes - self._last_file_bytes
         elapsed = (measuring_time - self._last_measured_time)*1000.0
         rate = float(diff*8)/float(elapsed)
+        rate_tot = float(rx_diff * 8)/float(elapsed) 
         self._measures.append(rate)
+        self._measures_tot.append(rate_tot)
         
         logger.debug("Reading... count = %d, diff = %d, total = %d, rx diff= %d, total = %d, rx - read = %d" 
               % (self._measure_count, diff, new_transfered_bytes, rx_diff, new_rx_bytes, (rx_diff - diff)))
         if self.callback_update_speed:
-            self.callback_update_speed(second=self._measure_count + 1, speed=float(rx_diff * 8/1000))
+            self.callback_update_speed(second=self._measure_count + 1, speed=rate_tot)
         self._measure_count += 1
         self._last_file_bytes = new_transfered_bytes
         self._last_rx_bytes = new_rx_bytes
