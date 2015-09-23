@@ -347,9 +347,12 @@ class SpeedTester(Thread):
             best_testres = testres
             
         else:
-          bandwidth = self._get_bandwidth_from_test(testres)
+          if type == HTTP_DOWN_LONG:
+            bandwidth = self._get_partial_bandwidth(testres['rate_tot_secs'][0:10])
+          else:
+            bandwidth = self._get_bandwidth_from_test(testres)
           
-          if type == FTP_DOWN or type == HTTP_DOWN:
+          if type == FTP_DOWN or type == HTTP_DOWN or type == HTTP_DOWN_LONG:
             self._client.profile.download = min(bandwidth, 40000)
             task.update_ftpdownpath(bandwidth)
           elif type == FTP_UP or type == HTTP_UP:
@@ -437,7 +440,7 @@ class SpeedTester(Thread):
         sleep(1)
 
         
-        test_types = [PING, HTTP_DOWN, FTP_DOWN, HTTP_DOWN_LONG]
+        test_types = [PING, HTTP_DOWN_LONG, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN, FTP_UP, HTTP_UP]
         #test_types = [FTP_DOWN, FTP_UP, PING]
