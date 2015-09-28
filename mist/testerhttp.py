@@ -44,7 +44,7 @@ one measurement at a time!
 
 class HttpTester:
 
-    def __init__(self, dev, timeout_secs = 11, bufsize = 8 * 1024, rampup_secs = 0):
+    def __init__(self, dev, timeout_secs = 11, bufsize = 8 * 1024, rampup_secs = 2):
         self._maxRetry = 8 # Not used
         self._timeout_secs = timeout_secs
         self._num_bytes = bufsize
@@ -56,17 +56,11 @@ class HttpTester:
     
     def _init_counters(self):
         self._time_to_stop = False
-        self._go_ahead = False
-        self._file_bytes = 0
-        self._last_file_bytes = 0
         self._last_tx_bytes = self._netstat.get_tx_bytes()
         self._last_rx_bytes = self._netstat.get_rx_bytes()
-        self._initial_rx_bytes = self._last_rx_bytes
-        self._initial_tx_bytes = self._last_tx_bytes
-        self._measures = []
+        self._bytes_total = 0
         self._measures_tot = []
         self._measure_count = 0
-        self._test = None
         self._read_measure_threads = []
         self._last_measured_time = time.time()
 
@@ -82,7 +76,14 @@ class HttpTester:
         file_size = MAX_TRANSFERED_BYTES * self.total_measure_time / TOTAL_MEASURE_TIME
         self._init_counters()
         test = _init_test('download_http')
-        t_end = None
+        read_thread = threading.Timer(1.0, self._read_down_measure)
+        read_thread.start()
+        self._read_measure_threads.append(read_thread)
+        starttotalbytes = self._netstat.get_rx_bytes()
+        startbytes = 0
+        filebytes = 0
+#         starttime = time.time()
+
         try:
             request = urllib2.Request(url, headers = {"X-requested-file-size" : file_size, "X-requested-measurement-time" : self.total_measure_time})
             response = urllib2.urlopen(request)
@@ -91,60 +92,32 @@ class HttpTester:
         if response.getcode() != 200:
             raise MeasurementException("Impossibile aprire la connessione HTTP, codice di errore ricevuto: %d" % response.getcode())
         
-        t_start = threading.Timer(self._rampup_secs, self._start_measure)
-        t_start.start()
-        while not self._go_ahead and not self._time_to_stop:
-            my_buffer = response.read(self._num_bytes)
-            if my_buffer: 
-                self._file_bytes += len(my_buffer)
-            else: 
-                self._time_to_stop = True
-                raise MeasurementException("Sistema del client troppo lento, misura fallita")
-                
-        http_tester = threading.Timer(1.0, self._read_down_measure)
-        http_tester.start()
-        self._read_measure_threads.append(http_tester)
-        
-        logger.debug("Starting HTTP measurement....")
-        self.starttotalbytes = self._netstat.get_rx_bytes()
-#             self._measurement_starttime = time.time()
-        self.startbytes = 0
-        self._starttime = time.time()
-        t_end = threading.Timer(self.total_measure_time, self._stop_down_measure)
-        t_end.start()
         while not self._time_to_stop:
             my_buffer = response.read(self._num_bytes)
-            if my_buffer:
-                self._file_bytes += len(my_buffer)
+            if my_buffer: 
+                filebytes += len(my_buffer)
             else: 
                 self._time_to_stop = True
-                raise MeasurementException("Sistema del client troppo lento, misura fallita")
+                raise MeasurementException("Non ricevuti dati sufficienti per completare la misura")
                 
-        end_time = time.time()
-#                 elapsed_time = float((end_time - self._measurement_starttime) * 1000)
-        elapsed_time = float((end_time - self._starttime) * 1000)
-        measured_bytes = self._file_bytes - self.startbytes
-        total_bytes = self._netstat.get_rx_bytes() - self.starttotalbytes
+#         elapsed_time = float((time.time() - starttime) * 1000)
+        measured_bytes = filebytes - startbytes
+        total_bytes = self._netstat.get_rx_bytes() - starttotalbytes
+        for read_thread in self._read_measure_threads:
+            read_thread.join()
+
         if (total_bytes < 0):
             raise MeasurementException("Ottenuto banda negativa, possibile azzeramento dei contatori.")
-        kbit_per_second = (measured_bytes * 8.0) / elapsed_time
-        test['bytes'] = measured_bytes
-        test['time'] = elapsed_time
-        test['rate_medium'] = kbit_per_second
-        test['rate_max'] = self._get_max_rate() 
-        test['rate_secs'] = self._measures
-        test['rate_tot_secs'] = self._measures_tot
-        test['bytes_total'] = total_bytes
-        spurio = float(test['bytes_total']-test['bytes'])/float(test['bytes_total'])
-        logger.info("Banda (payload): (%s*8)/%s = %s Kbps" % (measured_bytes, elapsed_time, kbit_per_second))
-        logger.info("Banda (totale): (%s*8)/%s = %s Kbps" % (total_bytes, elapsed_time, (total_bytes*8/elapsed_time)))
+        spurio = float(total_bytes-measured_bytes)/float(total_bytes)
         logger.info("Traffico spurio: %f" % spurio)
-            
-        for http_tester in self._read_measure_threads:
-            http_tester.join()
-        t_start.join()
-        if t_end:
-            t_end.join()
+
+        # "Trucco" per calcolare i bytes corretti da inviare al backend basato sul traffico spurio
+        test['bytes_total'] = self._bytes_total #sum(self._measures_tot)#total_bytes
+        test['bytes'] = int(round(self._bytes_total * (1 - spurio))) #measured_bytes
+        test['time'] = (self._endtime - self._starttime) * 1000.0
+        test['rate_max'] = self._get_max_rate() 
+        test['rate_tot_secs'] = self._measures_tot
+
         response.close()
         return test
 
@@ -154,35 +127,40 @@ class HttpTester:
         except Exception:
             return 0
 
-    def _start_measure(self):
-        logger.info("Starting measure...")
-        self._go_ahead = True
 
     def _read_down_measure(self):
+
+        if self._time_to_stop:
+            logger.warn("Time to stop, not measuring")
+            return
         measuring_time = time.time()
-        new_transfered_bytes = self._file_bytes
+        elapsed = (measuring_time - self._last_measured_time)*1000.0
+        
         new_rx_bytes = self._netstat.get_rx_bytes()
         rx_diff = new_rx_bytes - self._last_rx_bytes
-        diff = new_transfered_bytes - self._last_file_bytes
-        elapsed = (measuring_time - self._last_measured_time)*1000.0
-        rate = float(diff*8)/float(elapsed)
         rate_tot = float(rx_diff * 8)/float(elapsed) 
-        self._measures.append(rate)
-        self._measures_tot.append(rate_tot)
-        
-        logger.debug("Reading... count = %d, diff = %d, total = %d, rx diff= %d, total = %d, rx - read = %d" 
-              % (self._measure_count, diff, new_transfered_bytes, rx_diff, new_rx_bytes, (rx_diff - diff)))
+        if self._measure_count >= self._rampup_secs:
+            self._bytes_total += rx_diff
+            self._measures_tot.append(rate_tot)
         if self.callback_update_speed:
             self.callback_update_speed(second=self._measure_count + 1, speed=rate_tot)
+
+        logger.debug("Reading... count = %d, rx diff= %d, total = %d" 
+              % (self._measure_count, rx_diff, new_rx_bytes))
+        
         self._measure_count += 1
-        self._last_file_bytes = new_transfered_bytes
-        self._last_rx_bytes = new_rx_bytes
-        self._last_measured_time = measuring_time
-          
+        if self._measure_count == self._rampup_secs:
+            self._starttime = self._last_measured_time
+        elif self._measure_count == (10 + self._rampup_secs):
+            self._endtime = measuring_time
+            self._time_to_stop = True
+        
         if not self._time_to_stop:
-            http_tester = threading.Timer(1.0, self._read_down_measure)
-            self._read_measure_threads.append(http_tester)
-            http_tester.start()
+            self._last_rx_bytes = new_rx_bytes
+            self._last_measured_time = measuring_time
+            read_thread = threading.Timer(1.0, self._read_down_measure)
+            self._read_measure_threads.append(read_thread)
+            read_thread.start()
             
     def _stop_down_measure(self):
         self._time_to_stop = True
@@ -298,11 +276,11 @@ if __name__ == '__main__':
 #    host = "billia.fub.it"
     import sysMonitor
     dev = sysMonitor.getDev()
-    http_tester = HttpTester(dev, rampup_secs=0)
+    http_tester = HttpTester(dev)
     print "\n------ DOWNLOAD -------\n"
     res = http_tester.test_down("http://%s" % host)
     print res
-    print "\n------ UPLOAD ---------\n"
-    res = http_tester.test_up("http://%s/file.rnd" % "193.104.137.133")
-    print res
+#     print "\n------ UPLOAD ---------\n"
+#     res = http_tester.test_up("http://%s/file.rnd" % "193.104.137.133")
+#     print res
 #    res = http_tester.test_up("http://%s/" % host, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 1024)

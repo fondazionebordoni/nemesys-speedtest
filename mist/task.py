@@ -110,7 +110,7 @@ class Task:
     Aggiorna il path del file da scaricare in modo da scaricare un file di
     dimensioni le più vicine possibili alla banda specificata.
     '''
-    logger.info('Aggiornamento path per la banda in download')
+    logger.info('Aggiornamento path per la banda in download FTP')
     try:
       BANDS.sort(reverse=True)
       for band in BANDS:

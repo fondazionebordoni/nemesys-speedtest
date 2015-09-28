@@ -230,8 +230,6 @@ class SpeedTester(Thread):
       raise Exception("Errore durante la valutazione del test")
   
   def _get_partial_bandwidth(self, secs):     
-    logger.info("Medium of %s" % str(secs))
-    logger.info("Sum: %d, Len: %d, medium: %d" % (sum(secs),len(secs), (sum(secs))/len(secs)))
     return float(sum(secs))/len(secs)
   
   def _get_bandwidth_from_test(self, test):
@@ -440,7 +438,8 @@ class SpeedTester(Thread):
         sleep(1)
 
         
-        test_types = [PING, HTTP_DOWN_LONG, FTP_DOWN, HTTP_DOWN]
+        test_types = [PING, HTTP_DOWN, PING, FTP_DOWN]
+#        test_types = [PING, HTTP_DOWN_LONG, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN, FTP_UP, HTTP_UP]
         #test_types = [FTP_DOWN, FTP_UP, PING]
@@ -448,6 +447,7 @@ class SpeedTester(Thread):
         for i in range(0,5):
             for type in test_types:
                 try:
+                  sleep(1)
                   test = self._do_test(tester, type, task, profiler=profiler)
                   measure.savetest(test) # Saves test in XML file
                   wx.CallAfter(self._gui._update_messages, "Elaborazione dei dati")
@@ -503,8 +503,7 @@ class SpeedTester(Thread):
     f.write('\n<!-- [finished] %s -->' % datetime.fromtimestamp(timestampNtp()).isoformat())
     f.close()
  
-    # Non inviare adesso
-#    self._upload()
+    self._upload()
     # report = self._upload(f.name)
     
     return f.name
