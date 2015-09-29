@@ -64,18 +64,15 @@ class FtpTester:
   def _ftp_down(self):
     size = 0
     elapsed = 0
-    
-    # Read progress each second
     self._init_counters()
-    read_thread = threading.Timer(1.0, self._read_down_measure)
-    read_thread.start()
-    self._read_measure_threads.append(read_thread)
-
-    
-    # end read thread
 
     self._ftp.voidcmd('TYPE I')
     conn = self._ftp.transfercmd('RETR %s' % self._file, rest=None)
+    
+    # Read progress each second
+    read_thread = threading.Timer(1.0, self._read_down_measure)
+    read_thread.start()
+    self._read_measure_threads.append(read_thread)
     
     start = time.time()
     while True:
