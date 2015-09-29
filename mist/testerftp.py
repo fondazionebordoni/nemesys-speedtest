@@ -23,6 +23,7 @@ from optparse import OptionParser
 import socket
 import sys
 import time
+import threading
 
 from errorcoder import Errorcoder
 from fakefile import Fakefile
@@ -50,10 +51,29 @@ class FtpTester:
     #Ignore any given timeout
     self._timeout_millis = float(timeout_secs * 1000)
     
+    # For the read thread
+    
+  def _init_counters(self):
+    self._time_to_stop = False
+    self._last_rx_bytes = self._netstat.get_rx_bytes()
+    self._measure_count = 0
+    self._read_measure_threads = []
+    self._last_measured_time = time.time()
+
+    
   def _ftp_down(self):
     size = 0
     elapsed = 0
-        
+    
+    # Read progress each second
+    self._init_counters()
+    read_thread = threading.Timer(1.0, self._read_down_measure)
+    read_thread.start()
+    self._read_measure_threads.append(read_thread)
+
+    
+    # end read thread
+
     self._ftp.voidcmd('TYPE I')
     conn = self._ftp.transfercmd('RETR %s' % self._file, rest=None)
     
@@ -77,11 +97,39 @@ class FtpTester:
       if (e.args[0][:3] == '426'):
         pass
       else:
+        self._time_to_stop = True
         raise e
     
     stop = time.time()
     elapsed = float((stop-start)*1000)
+    self._time_to_stop = True
+    for read_thread in self._read_measure_threads:
+        read_thread.join()
+
     return (size, elapsed)
+
+  def _read_down_measure(self):
+
+    if self._time_to_stop:
+        logger.warn("Time to stop, not measuring")
+        return
+    self._measure_count += 1
+    measuring_time = time.time()
+    elapsed = (measuring_time - self._last_measured_time)*1000.0
+    
+    new_rx_bytes = self._netstat.get_rx_bytes()
+    rx_diff = new_rx_bytes - self._last_rx_bytes
+    rate_tot = float(rx_diff * 8)/float(elapsed) 
+    logger.debug("[FTP] Reading... count = %d, speed = %d" 
+          % (self._measure_count, int(rate_tot)))
+    
+    if not self._time_to_stop:
+        self._last_rx_bytes = new_rx_bytes
+        self._last_measured_time = measuring_time
+        read_thread = threading.Timer(1.0, self._read_down_measure)
+        self._read_measure_threads.append(read_thread)
+        read_thread.start()
+
     
   def _ftp_up(self):
     size = 0
