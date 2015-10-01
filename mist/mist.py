@@ -72,8 +72,8 @@ class mistGUI(wx.Frame):
     self.label_traffic = wx.StaticText(self, -1, "%s\n- - - -" % RES_TRAFFIC, style = wx.ALIGN_CENTRE)
     self.gauge = wx.Gauge(self, -1, TOTAL_STEPS, style = wx.GA_HORIZONTAL | wx.GA_SMOOTH)
     
-    self.label_test_message = wx.StaticText(self, -1, "Versione sperimentale di Speedtest\nper il confronto FTP - HTTP", style = wx.ALIGN_CENTRE)
-    self.label_test_message.SetForegroundColour((255,0,0))
+    self.label_test_message = wx.StaticText(self, -1, "Versione sperimentale Multi sessione\nper il confronto FTP - HTTP", style = wx.ALIGN_CENTRE)
+    self.label_test_message.SetForegroundColour((0,0,255))
 #     self.label_ping = wx.StaticText(self, -1, "Ping", style = wx.ALIGN_CENTRE)
 #     self.label_http_down = wx.StaticText(self, -1, "HTTP Down", style = wx.ALIGN_CENTRE)
 #    self.label_http_up = wx.StaticText(self, -1, "HTTP Up", style = wx.ALIGN_CENTRE)
