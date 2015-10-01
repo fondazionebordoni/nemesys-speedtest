@@ -107,9 +107,6 @@ class FtpTester:
 
   def _read_down_measure(self):
 
-    if self._time_to_stop:
-        logger.warn("Time to stop, not measuring")
-        return
     self._measure_count += 1
     measuring_time = time.time()
     elapsed = (measuring_time - self._last_measured_time)*1000.0
@@ -170,6 +167,7 @@ class FtpTester:
     test['errorcode'] = 0
 
     self._file = filename
+    logger.info("Using file %s, server is %s" % (filename, server))
 
     try:
       self._ftp = FTP(server, username, password, timeout=self._timeout_secs)
@@ -288,13 +286,14 @@ if __name__ == '__main__':
     import platform
     platform_name = platform.system().lower()
     dev = None
-    nap = "eagle2.fub.it"
+    #nap = "eagle2.fub.it"
+    nap = "193.104.137.2"
 #     nap = '193.104.137.133'
     import sysMonitor
     dev = sysMonitor.getDev()
     t = FtpTester(dev)
         
-    print t.testftpdown(nap, '/download/40000.rnd', 1000000, 'nemesys', '4gc0m244')
+    print t.testftpdown(nap, '/download/90000.rnd', 1000000, 'nemesys', '4gc0m244')
     print "\n---------------------------\n"
     print t.testftpup(nap, '/upload/r.raw', 100000000, 'nemesys', '4gc0m244')
     

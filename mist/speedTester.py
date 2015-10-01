@@ -38,9 +38,11 @@ logger = logging.getLogger()
 TASK_FILE = '40000'
 
 PING = 'ping'
+PING_WITH_SLEEP = 'ping con 1 secondo di ritardo'
 FTP_DOWN = 'down'
 FTP_UP = 'up'
 HTTP_DOWN = 'http_down'
+HTTP_DOWN_MULTI = 'http down multisessione'
 HTTP_DOWN_LONG = 'http_down_long'
 HTTP_UP = 'http_up'
 
@@ -276,6 +278,9 @@ class SpeedTester(Thread):
     elif type == HTTP_DOWN:
       stringtype = "http download"
       test_todo = task.http_download
+    elif type == HTTP_DOWN_MULTI:
+      stringtype = "http download multisessione"
+      test_todo = task.http_download
     elif type == HTTP_DOWN_LONG:
       stringtype = "http download long"
       test_todo = task.http_download
@@ -326,6 +331,9 @@ class SpeedTester(Thread):
         elif type == HTTP_DOWN:
           logger.info("[HTTP DOWNLOAD] " + message + " [HTTP DOWNLOAD]")
           testres = tester.testhttpdown(self.receive_partial_results)
+        elif type == HTTP_DOWN_MULTI:
+          logger.info("[HTTP DOWNLOAD MULTI] " + message + " [HTTP DOWNLOAD MULTI]")
+          testres = tester.testhttpdown_multisession(self.receive_partial_results)
         elif type == HTTP_DOWN_LONG:
           logger.info("[HTTP DOWNLOAD 30] " + message + " [HTTP DOWNLOAD 30]")
           testres = tester.testhttpdownlong(self.receive_partial_results)
@@ -351,10 +359,10 @@ class SpeedTester(Thread):
             bandwidth = self._get_bandwidth_from_test(testres)
           
           if type == FTP_DOWN or type == HTTP_DOWN or type == HTTP_DOWN_LONG:
-            self._client.profile.download = min(bandwidth, 40000)
+            self._client.profile.download = min(bandwidth, 100000)
             task.update_ftpdownpath(bandwidth)
           elif type == FTP_UP or type == HTTP_UP:
-            self._client.profile.upload = min(bandwidth, 40000)
+            self._client.profile.upload = min(bandwidth, 100000)
           else:
             logger.warn("Tipo di test effettuato non definito!")
           
@@ -437,8 +445,7 @@ class SpeedTester(Thread):
 #         profiler = self._profiler.get_results()
         sleep(1)
 
-        
-        test_types = [PING, HTTP_DOWN, PING, FTP_DOWN]
+        test_types = [PING, PING_WITH_SLEEP, HTTP_DOWN_MULTI, PING, PING_WITH_SLEEP, FTP_DOWN, PING, PING_WITH_SLEEP, HTTP_DOWN]
 #        test_types = [PING, HTTP_DOWN_LONG, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN, FTP_UP, HTTP_UP]
@@ -447,7 +454,9 @@ class SpeedTester(Thread):
         for i in range(0,5):
             for type in test_types:
                 try:
-                  sleep(1)
+                  if type == PING_WITH_SLEEP:
+                      sleep(1)
+                      type = PING
                   test = self._do_test(tester, type, task, profiler=profiler)
                   measure.savetest(test) # Saves test in XML file
                   wx.CallAfter(self._gui._update_messages, "Elaborazione dei dati")
@@ -463,6 +472,10 @@ class SpeedTester(Thread):
                     wx.CallAfter(self._gui._update_ftp_up, self._get_bandwidth(test))
                   elif (type == HTTP_DOWN):
                     wx.CallAfter(self._gui._update_messages, "Download (HTTP): %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs']), 'green', font=(12, 93, 92, 1))
+#                    wx.CallAfter(self._gui._update_messages, "Download (HTTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
+                    wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
+                  elif (type == HTTP_DOWN_MULTI):
+                    wx.CallAfter(self._gui._update_messages, "Download (HTTP MULTI): %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs']), 'green', font=(12, 93, 92, 1))
 #                    wx.CallAfter(self._gui._update_messages, "Download (HTTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
                     wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
                   elif (type == HTTP_DOWN_LONG):
