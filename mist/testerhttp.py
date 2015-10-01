@@ -20,6 +20,7 @@ import requests
 import threading
 import time
 import urllib2
+import Queue
 
 from errorcoder import Errorcoder
 from fakefile import Fakefile
@@ -65,7 +66,102 @@ class HttpTester:
 
 #     def get_measures(self):
 #         return self._measures
-#         
+#     
+
+    def test_down_multisession(self, url, total_test_time_secs = None, callback_update_speed = None, num_sessions = 4):
+        self.callback_update_speed = callback_update_speed
+        if total_test_time_secs:
+            total_measure_time = total_test_time_secs + self._rampup_secs
+        else:
+            total_measure_time = TOTAL_MEASURE_TIME + self._rampup_secs
+        file_size = MAX_TRANSFERED_BYTES * total_measure_time / TOTAL_MEASURE_TIME
+        download_threads = []
+        result_queue = Queue.Queue()
+        error_queue = Queue.Queue()
+
+        self._init_counters()
+        test = _init_test('download_http')
+        read_thread = threading.Timer(1.0, self._read_down_measure)
+        read_thread.start()
+        self._read_measure_threads.append(read_thread)
+        starttotalbytes = self._netstat.get_rx_bytes()
+
+        for _ in range(0, num_sessions):
+            download_thread = threading.Thread(target= self.do_one_download, args = (url, total_measure_time, file_size, result_queue, error_queue))
+            download_thread.start()
+            download_threads.append(download_thread)
+            
+        for download_thread in download_threads:
+            download_thread.join()
+            
+        if not error_queue.empty():
+            raise MeasurementException(error_queue.get())
+        
+        filebytes = 0
+        for _ in download_threads:
+            try:
+                filebytes += int(result_queue.get())
+            except Queue.Empty:
+                raise MeasurementException("Risultati mancanti da uno o piu' sessioni, impossibile calcolare la banda.")
+            
+        total_bytes = self._netstat.get_rx_bytes() - starttotalbytes
+        for read_thread in self._read_measure_threads:
+            read_thread.join()
+
+        if (total_bytes < 0):
+            raise MeasurementException("Ottenuto banda negativa, possibile azzeramento dei contatori.")
+        spurio = float(total_bytes - filebytes) / float(total_bytes)
+        logger.info("Traffico spurio: %f" % spurio)
+
+        # "Trucco" per calcolare i bytes corretti da inviare al backend basato sul traffico spurio
+        test['bytes_total'] = self._bytes_total #sum(self._measures_tot)#total_bytes
+        test['bytes'] = int(round(self._bytes_total * (1 - spurio))) #measured_bytes
+        test['time'] = (self._endtime - self._starttime) * 1000.0
+        test['rate_max'] = self._get_max_rate() 
+        test['rate_tot_secs'] = self._measures_tot
+
+        return test
+
+        
+        
+    def do_one_download(self, url, total_measure_time, file_size, result_queue, error_queue):
+        filebytes = 0
+
+        try:
+            request = urllib2.Request(url, headers = {"X-requested-file-size" : file_size, "X-requested-measurement-time" : total_measure_time})
+            response = urllib2.urlopen(request)
+        except Exception as e:
+            self._time_to_stop = True
+            error_queue.put("Impossibile aprire la connessione HTTP: %s" % str(e))
+            return
+        if response.getcode() != 200:
+            self._time_to_stop = True
+            error_queue.put("Impossibile aprire la connessione HTTP, codice di errore ricevuto: %d" % response.getcode())
+            return
+        
+        # In some cases urlopen blocks until all data has been received
+        if self._time_to_stop:
+            logger.warn("Suspected blocked urlopen")
+            # Try to handle anyway!
+            while True:
+                my_buffer = response.read(self._num_bytes)
+                if my_buffer: 
+                    filebytes += len(my_buffer)
+                else: 
+                    break
+                
+        else:
+            while not self._time_to_stop:
+                my_buffer = response.read(self._num_bytes)
+                if my_buffer: 
+                    filebytes += len(my_buffer)
+                else: 
+                    self._time_to_stop = True
+                    error_queue.put("Non ricevuti dati sufficienti per completare la misura")
+                    return
+        result_queue.put(filebytes)
+                
+    
     def test_down(self, url, total_test_time_secs = None, callback_update_speed = None):
         self.callback_update_speed = callback_update_speed
         if total_test_time_secs:
@@ -275,15 +371,16 @@ if __name__ == '__main__':
 #    host = "193.104.137.133"
 #    host = "regopptest6.fub.it"
     host = "eagle2.fub.it"
+#    host = "regoppwebtest.fub.it"
 #    host = "rocky.fub.it"
 #    host = "billia.fub.it"
     import sysMonitor
     dev = sysMonitor.getDev()
     http_tester = HttpTester(dev)
     print "\n------ DOWNLOAD -------\n"
-    res = http_tester.test_down("http://%s" % host)
+    res = http_tester.test_down_multisession("http://%s:80" % host)
     print res
 #     print "\n------ UPLOAD ---------\n"
-#     res = http_tester.test_up("http://%s/file.rnd" % "193.104.137.133")
+#     res = http_tester.test_up("http://%s:80/file.rnd" % host)
 #     print res
 #    res = http_tester.test_up("http://%s/" % host, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 1024)
