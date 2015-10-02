@@ -1,7 +1,7 @@
 # fakefile.py
 # -*- coding: utf8 -*-
 
-# Copyright (c) 2010 Fondazione Ugo Bordoni.
+# Copyright (c) 2015 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,9 +34,15 @@ class Fakefile:
     if (self._bytes < bufsize):
         bufsize = self._bytes
   
+    if bufsize <= 0:
+        bufsize = 8192
+    
+    if (self._bytes < bufsize):
+        bufsize = self._bytes
+  
     if self._bytes <= 0:
         return None
- 
+
     if not self.data or self.data_len != bufsize:
         # data random between 0 and FFFFF...FF, 
         # e.g. 0-FF  in case of one byte buffer
@@ -48,6 +54,7 @@ class Fakefile:
         self.data_len = len(self.data)
     self._bytes -= self.data_len
     return self.data
+
 
   def get_bytes_read(self):
       return int(self._initial_bytes - self._bytes)

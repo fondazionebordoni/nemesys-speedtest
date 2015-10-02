@@ -3,12 +3,11 @@ Created on 13/nov/2013
 
 @author: ewedlund
 '''
-
+from logger import logging
 import platform
 import re
 import netifaces
 import psutil
-import logging
 
 LINUX_RESOURCE_PATH="/sys/class/net"
 logger = logging.getLogger()
