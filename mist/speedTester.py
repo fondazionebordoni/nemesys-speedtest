@@ -445,7 +445,7 @@ class SpeedTester(Thread):
 #         profiler = self._profiler.get_results()
         sleep(1)
 
-        test_types = [PING, PING_WITH_SLEEP, HTTP_DOWN_MULTI, PING, PING_WITH_SLEEP, FTP_DOWN, PING, PING_WITH_SLEEP, HTTP_DOWN]
+        test_types = [PING_WITH_SLEEP, HTTP_DOWN_MULTI, PING_WITH_SLEEP, FTP_DOWN, PING_WITH_SLEEP, HTTP_DOWN]
 #        test_types = [PING, HTTP_DOWN_LONG, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN, FTP_UP, HTTP_UP]

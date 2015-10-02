@@ -1,7 +1,7 @@
 # httptester.py
 # -*- coding: utf8 -*-
 
-# Copyright (c) 2010 Fondazione Ugo Bordoni.
+# Copyright (c) 2015 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,18 +45,14 @@ one measurement at a time!
 
 class HttpTester:
 
-    def __init__(self, dev, timeout_secs = 11, bufsize = 8 * 1024, rampup_secs = 2):
-        self._maxRetry = 8 # Not used
-        self._timeout_secs = timeout_secs
+    def __init__(self, dev, bufsize = 8 * 1024, rampup_secs = 2):
         self._num_bytes = bufsize
         self._rampup_secs = rampup_secs
         self._netstat = netstat.get_netstat(dev)
         self._fakefile = None
-        self._upload_sending_time_secs = TOTAL_MEASURE_TIME + 1
     
     def _init_counters(self):
         self._time_to_stop = False
-        self._last_tx_bytes = self._netstat.get_tx_bytes()
         self._last_rx_bytes = self._netstat.get_rx_bytes()
         self._bytes_total = 0
         self._measures_tot = []
@@ -64,17 +60,11 @@ class HttpTester:
         self._read_measure_threads = []
         self._last_measured_time = time.time()
 
-#     def get_measures(self):
-#         return self._measures
-#     
 
-    def test_down_multisession(self, url, total_test_time_secs = None, callback_update_speed = None, num_sessions = 4):
+    def test_down(self, url, total_test_time_secs = TOTAL_MEASURE_TIME, callback_update_speed = None, num_sessions = 1):
         self.callback_update_speed = callback_update_speed
-        if total_test_time_secs:
-            total_measure_time = total_test_time_secs + self._rampup_secs
-        else:
-            total_measure_time = TOTAL_MEASURE_TIME + self._rampup_secs
-        file_size = MAX_TRANSFERED_BYTES * total_measure_time / TOTAL_MEASURE_TIME
+        self._total_measure_time = total_test_time_secs + self._rampup_secs
+        file_size = MAX_TRANSFERED_BYTES * self._total_measure_time / TOTAL_MEASURE_TIME
         download_threads = []
         result_queue = Queue.Queue()
         error_queue = Queue.Queue()
@@ -87,7 +77,7 @@ class HttpTester:
         starttotalbytes = self._netstat.get_rx_bytes()
 
         for _ in range(0, num_sessions):
-            download_thread = threading.Thread(target= self.do_one_download, args = (url, total_measure_time, file_size, result_queue, error_queue))
+            download_thread = threading.Thread(target= self.do_one_download, args = (url, self._total_measure_time, file_size, result_queue, error_queue))
             download_thread.start()
             download_threads.append(download_thread)
             
@@ -122,7 +112,6 @@ class HttpTester:
 
         return test
 
-        
         
     def do_one_download(self, url, total_measure_time, file_size, result_queue, error_queue):
         filebytes = 0
@@ -162,70 +151,6 @@ class HttpTester:
         result_queue.put(filebytes)
                 
     
-    def test_down(self, url, total_test_time_secs = None, callback_update_speed = None):
-        self.callback_update_speed = callback_update_speed
-        if total_test_time_secs:
-            total_measure_time = total_test_time_secs + self._rampup_secs
-        else:
-            total_measure_time = TOTAL_MEASURE_TIME + self._rampup_secs
-        file_size = MAX_TRANSFERED_BYTES * total_measure_time / TOTAL_MEASURE_TIME
-        self._init_counters()
-        test = _init_test('download_http')
-        read_thread = threading.Timer(1.0, self._read_down_measure)
-        read_thread.start()
-        self._read_measure_threads.append(read_thread)
-        starttotalbytes = self._netstat.get_rx_bytes()
-        filebytes = 0
-
-        try:
-            request = urllib2.Request(url, headers = {"X-requested-file-size" : file_size, "X-requested-measurement-time" : total_measure_time})
-            response = urllib2.urlopen(request)
-        except Exception as e:
-            self._time_to_stop = True
-            raise MeasurementException("Impossibile aprire la connessione HTTP: %s" % str(e))
-        if response.getcode() != 200:
-            self._time_to_stop = True
-            raise MeasurementException("Impossibile aprire la connessione HTTP, codice di errore ricevuto: %d" % response.getcode())
-        
-        # In some cases urlopen blocks until all data has been received
-        if self._time_to_stop:
-            logger.warn("Suspected blocked urlopen")
-            # Try to handle anyway!
-            while True:
-                my_buffer = response.read(self._num_bytes)
-                if my_buffer: 
-                    filebytes += len(my_buffer)
-                else: 
-                    break
-                
-        else:
-            while not self._time_to_stop:
-                my_buffer = response.read(self._num_bytes)
-                if my_buffer: 
-                    filebytes += len(my_buffer)
-                else: 
-                    self._time_to_stop = True
-                    raise MeasurementException("Non ricevuti dati sufficienti per completare la misura")
-                
-        total_bytes = self._netstat.get_rx_bytes() - starttotalbytes
-        for read_thread in self._read_measure_threads:
-            read_thread.join()
-
-        if (total_bytes < 0):
-            raise MeasurementException("Ottenuto banda negativa, possibile azzeramento dei contatori.")
-        spurio = float(total_bytes - filebytes) / float(total_bytes)
-        logger.info("Traffico spurio: %f" % spurio)
-
-        # "Trucco" per calcolare i bytes corretti da inviare al backend basato sul traffico spurio
-        test['bytes_total'] = self._bytes_total #sum(self._measures_tot)#total_bytes
-        test['bytes'] = int(round(self._bytes_total * (1 - spurio))) #measured_bytes
-        test['time'] = (self._endtime - self._starttime) * 1000.0
-        test['rate_max'] = self._get_max_rate() 
-        test['rate_tot_secs'] = self._measures_tot
-
-        response.close()
-        return test
-
     def _get_max_rate(self):
         try:
             return max(self._measures_tot)
@@ -248,7 +173,7 @@ class HttpTester:
         if self._measure_count > self._rampup_secs:
             self._bytes_total += rx_diff
             self._measures_tot.append(rate_tot)
-            if self._measure_count == (10 + self._rampup_secs):
+            if self._measure_count == (self._total_measure_time):
                 self._endtime = measuring_time
                 self._time_to_stop = True
         elif self._measure_count == self._rampup_secs:
@@ -269,26 +194,30 @@ class HttpTester:
            
     def gen_chunk(self):
         time_to_stop = False
+        has_sent_end_string = False
         while not time_to_stop:
             elapsed = time.time() - self._starttime
             if not self._time_to_stop and (elapsed < self._upload_sending_time_secs) and (self._fakefile.get_bytes_read() < MAX_TRANSFERED_BYTES):
-                yield self._fakefile.read(BUF_SIZE)
-            elif not self._has_stopped:
-                self._has_stopped = True
+                yield self._fakefile.read(self._num_bytes)
+            elif not has_sent_end_string:
+                has_sent_end_string = True
                 yield END_STRING * (self._recv_bufsize / len(END_STRING) + 1)
             else:
                 time_to_stop = True
                 yield ""
 
 
-        
     '''
     Upload test is done server side. We just measure
     the average speed payload/net in order to 
     verify spurious traffic.
     '''
-    def test_up(self, url, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 8 * 1024):
-        self._has_stopped = False
+    def test_up(self, url, total_test_time_secs = TOTAL_MEASURE_TIME, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 8 * 1024, is_first_try = True):
+        if is_first_try:
+            self._upload_sending_time_secs = total_test_time_secs + self._rampup_secs + 1
+        else:
+            self._upload_sending_time_secs = total_test_time_secs * 2 + self._rampup_secs + 1
+        file_size = MAX_TRANSFERED_BYTES * self._upload_sending_time_secs / TOTAL_MEASURE_TIME
         self._init_counters()
         self._recv_bufsize = recv_bufsize
         self._fakefile = Fakefile(file_size)
@@ -307,11 +236,14 @@ class HttpTester:
             self._time_to_stop = True
             raise MeasurementException("Ricevuto risposta %d dal server" % response.status_code)
         test = _test_from_server_response(response.content)
-        if test['time'] < 9999:
+        if test['time'] < (total_test_time_secs * 1000) - 1:
             # Probably slow creation of connection, needs more time
             # Double the sending time
-            self._upload_sending_time_secs = 2 * self._upload_sending_time_secs
-            raise MeasurementException("Test non sufficientemente lungo, aumento del tempo di misura.")
+            if is_first_try:
+                logger.warn("Test non sufficientemente lungo, aumento del tempo di misura.")
+                return self.test_up(url, total_test_time_secs, file_size, recv_bufsize, is_first_try = False)
+            else:
+                raise MeasurementException("Test non risucito - tempo ritornato dal server non corrisponde al tempo richiesto.")
         tx_diff = self._netstat.get_tx_bytes() - start_tx_bytes
         read_bytes = self._fakefile.get_bytes_read()
         spurious = (float(tx_diff - read_bytes)/float(tx_diff))
@@ -377,10 +309,9 @@ if __name__ == '__main__':
     import sysMonitor
     dev = sysMonitor.getDev()
     http_tester = HttpTester(dev)
-    print "\n------ DOWNLOAD -------\n"
-    res = http_tester.test_down_multisession("http://%s:80" % host)
-    print res
-#     print "\n------ UPLOAD ---------\n"
-#     res = http_tester.test_up("http://%s:80/file.rnd" % host)
+#     print "\n------ DOWNLOAD -------\n"
+#     res = http_tester.test_down("http://%s:80" % host, total_test_time_secs=30, num_sessions=4)
 #     print res
-#    res = http_tester.test_up("http://%s/" % host, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 1024)
+    print "\n------ UPLOAD ---------\n"
+    res = http_tester.test_up("http://%s:80/file.rnd" % host)
+    print res

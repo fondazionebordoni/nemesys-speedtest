@@ -50,18 +50,18 @@ class Tester:
     self._password = password
     self._timeout = timeout
     
-    self._testerhttp = HttpTester(dev, timeout, HTTP_BUFF)
+    self._testerhttp = HttpTester(dev, HTTP_BUFF)
     self._testerftp = FtpTester(dev, timeout, HTTP_BUFF)
     
     
 
   def testhttpdown(self, callback_update_speed):
       url = "http://%s/file.rnd" % self._host.ip
-      return self._testerhttp.test_down(url, 10, callback_update_speed)    
+      return self._testerhttp.test_down(url, 10, callback_update_speed, 1)    
  
   def testhttpdown_multisession(self, callback_update_speed):
       url = "http://%s/file.rnd" % self._host.ip
-      return self._testerhttp.test_down_multisession(url, 10, callback_update_speed)    
+      return self._testerhttp.test_down(url, 10, callback_update_speed, 4)    
  
   def testhttpdownlong(self, callback_update_speed):
       url = "http://%s/file.rnd" % self._host.ip
@@ -130,7 +130,9 @@ def main():
   (options, args) = parser.parse_args()
   #TODO inserire controllo host
 
-  t = Tester(getIp(), Host(options.host), options.username, options.password)
+  ip = sysMonitor.getIp()
+
+  t = Tester(ip, Host(options.host), options.username, options.password)
   test = None
   print ('Prova: %s' % options.host)
 
@@ -154,8 +156,10 @@ if __name__ == '__main__':
     nap = '193.104.137.133'
 
     TOT = 5
+    import sysMonitor
+    dev = sysMonitor.getDev()
 
-    t1 = Tester("eth0", ip, Host(ip = nap), 'nemesys', '4gc0m244')
+    t1 = Tester(dev, ip, Host(ip = nap), 'nemesys', '4gc0m244')
 
     for i in range(1, TOT + 1):
       logger.info('Test Download %d/%d' % (i, TOT))
