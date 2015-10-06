@@ -18,6 +18,7 @@ from platform import system
 from time import sleep
 from os import path
 
+import gui_event
 import paths
 import wx
 
@@ -108,6 +109,13 @@ class mistGUI(wx.Frame):
     self.Bind(wx.EVT_CLOSE, self._on_close)
     self.Bind(wx.EVT_BUTTON, self._play, self.bitmap_button_play)
     self.Bind(wx.EVT_BUTTON, self._check, self.bitmap_button_check)
+    
+    self.Bind(gui_event.EVT_UPDATE, self._on_update)
+    self.Bind(gui_event.EVT_PROGRESS, self._on_progress)
+    self.Bind(gui_event.EVT_RESULT, self._on_result)
+    self.Bind(gui_event.EVT_ERROR, self._on_error)
+    self.Bind(gui_event.EVT_RESOURCE, self._on_resource)
+    self.Bind(gui_event.EVT_STOP, self._on_stop)
     # end wxGlade
 
   def __set_properties(self):
@@ -214,7 +222,7 @@ class mistGUI(wx.Frame):
     self._initial_message()
     # end wxGlade
     
-  def _on_size(self, event):
+  def _on_size(self, gui_event):
     
     (W, H) = self.GetSize()
     
@@ -235,7 +243,7 @@ class mistGUI(wx.Frame):
     self.Refresh()
     self.Layout()
   
-  def _on_close(self, event):
+  def _on_close(self, gui_event):
     logger.info("Richiesta di close")
     dlg = wx.MessageDialog(self,"\nVuoi davvero chiudere %s?" % SWN, SWN, wx.OK|wx.CANCEL|wx.ICON_QUESTION)
     res = dlg.ShowModal()
@@ -244,7 +252,7 @@ class mistGUI(wx.Frame):
       self._killTester()    
       self.Destroy()
       
-  def _play(self, event):
+  def _play(self, gui_event):
     self._button_play = True
     self._check(None)
     #self.bitmap_button_play.SetBitmapLabel(wx.Bitmap(path.join(paths.ICONS, u"stop.png")))
@@ -273,7 +281,7 @@ class mistGUI(wx.Frame):
           except:
             logger.error("%s could not be terminated" % str(thread.getName()))
     
-  def _check(self, event):
+  def _check(self, gui_event):
     self._button_check = True
     self.bitmap_button_play.Disable()
     self.bitmap_button_check.Disable()
@@ -350,10 +358,17 @@ class mistGUI(wx.Frame):
     self.update_gauge(0)
     self.Layout()
 
+
+  def _on_progress(self, gui_event):
+    self.update_gauge()
+
   def update_gauge(self, value=None):
     if (value == None):
       value=self.gauge.GetValue()+1
     self.gauge.SetValue(value)
+
+  def _on_resource(self, resource_event):
+    self.set_resource_info(resource_event.getResource(), resource_event.getValue(), resource_event.getMessageFlag())
 
   def set_resource_info(self, resource, info, message_flag = True):
     res_bitmap = None
@@ -409,6 +424,16 @@ class mistGUI(wx.Frame):
 
     self.Layout()
 
+
+  def _on_update(self, update_event):
+      logger.info("Got update gui_event")
+      if update_event.getImportance() == gui_event.UpdateEvent.MAJOR_IMPORTANCE:
+          font = (12, 93, 92, 1)
+      else:
+          font = None
+      self._update_messages(update_event.getMessage(), font = font)
+
+  
   def _update_messages(self, message, colour = 'black', font = None, fill = False):
     logger.info('Messaggio all\'utente: "%s"' % message)
     self._stream.append((str(message), colour, font, fill))
@@ -418,6 +443,18 @@ class mistGUI(wx.Frame):
 #        writer.start()
 #      else:
       self._writer()
+
+
+  def _on_result(self, result_event):
+    font = (12, 93, 92, 1)
+    self._update_messages("%s: %s" % (result_event.getType(), result_event.getValue()), 'green', font)
+
+  def _on_error(self, error_event):
+    logger.info("Got error gui_event")
+    self._update_messages(error_event.getMessage(), 'red')
+
+  def _on_stop(self, stop_event):
+    self.stop()
 
   def _writer(self):
     self._stream_flag.set()

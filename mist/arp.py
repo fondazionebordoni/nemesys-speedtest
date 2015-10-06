@@ -265,7 +265,6 @@ def receive_arp_response(mac_addr, my_socket, timeout):
             if (src_ip not in IPtable):
                 if (not _is_technicolor(src_ip, src_mac)):
                     IPtable[src_ip] = src_mac
-                    logger.info('Trovato Host %s con indirizzo fisico %s' % (src_ip, src_mac))
             else:
                 logger.debug("Found response from Technicolor")
     return IPtable
@@ -312,7 +311,6 @@ def _send_one_mac_arp(IPdst, timeout=0.01):
     if my_match:
         mac_str = _pad_mac_string(my_match.groups()[0])
         if (not _is_technicolor(IPdst, mac_str)):
-            logger.info('Trovato Host %s con indirizzo fisico %s' % (IPdst, mac_str))
             return mac_str
         else :
             logger.debug("Found response from Technicolor")

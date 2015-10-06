@@ -23,15 +23,13 @@ from proof import Proof
 from time import sleep
 from isp import Isp
 
+import gui_event
 import httputils
 import shutil
 import paths
 import ping
 import wx
 import re
-
-# # OPTIONAL ##
-from task import Task  # for Fake Task#
 
 logger = logging.getLogger()
 
@@ -92,7 +90,6 @@ class SpeedTester(Thread):
   def join(self, timeout=None):
     self._running.clear()
     logger.info("Chiusura del tester")
-    # wx.CallAfter(self._gui._update_messages, "Attendere la chiusura del programma...")
 
 
   def _getclient(self, options):
@@ -114,14 +111,14 @@ class SpeedTester(Thread):
     best['server'] = None
     RTT = {}
 
-    wx.CallAfter(self._gui._update_messages, "Scelta del server di misura in corso")
+    wx.PostEvent(self._gui, gui_event.UpdateEvent("Scelta del server di misura in corso"))
 
     for server in servers:
       RTT[server.name] = best['delay']
 
     for repeat in range(maxREP):
       sleep(1)
-      wx.CallAfter(self._gui._update_messages, "Test %d di %d di ping." % (repeat + 1, maxREP), 'blue')
+      wx.PostEvent(self._gui, gui_event.UpdateEvent("Test %d di %d di ping." % (repeat + 1, maxREP)))
       wx.CallAfter(self._gui.update_gauge)
       for server in servers:
         try:
@@ -142,12 +139,12 @@ class SpeedTester(Thread):
     if best['server'] != None:
       for server in servers:
         if (RTT[server.name] != 8000):
-          wx.CallAfter(self._gui._update_messages, "Distanza dal %s: %.1f ms" % (server.name, RTT[server.name]), 'blue')
+          wx.PostEvent(self._gui, gui_event.UpdateEvent("Distanza dal %s: %.1f ms" % (server.name, RTT[server.name])))
         else:
-          wx.CallAfter(self._gui._update_messages, "Distanza dal %s: TimeOut" % (server.name), 'blue')
-      wx.CallAfter(self._gui._update_messages, "Scelto il server di misura %s" % best['server'].name)
+          wx.PostEvent(self._gui, gui_event.UpdateEvent("Distanza dal %s: TimeOut" % (server.name)))
+      wx.PostEvent(self._gui, gui_event.UpdateEvent("Scelto il server di misura %s" % best['server'].name, gui_event.UpdateEvent.MAJOR_IMPORTANCE))
     else:
-      wx.CallAfter(self._gui._update_messages, "Impossibile eseguire i test poiche' i server risultano irragiungibili da questa linea. Contattare l'helpdesk del progetto Misurainternet per avere informazioni sulla risoluzione del problema.", 'red')
+      wx.PostEvent(self._gui, gui_event.ErrorEvent("Impossibile eseguire i test poiche' i server risultano irragiungibili da questa linea. Contattare l'helpdesk del progetto Misurainternet per avere informazioni sulla risoluzione del problema."))
 
     return best
   
@@ -167,10 +164,7 @@ class SpeedTester(Thread):
         connection.request('GET', '%s?clientid=%s&version=%s&confid=%s' % (url.path, self._client.id, self._version, self._md5conf))
       
       data = connection.getresponse().read()
-      # logger.debug(data)
-      
       task = xml2task(data)
-      # task = Task(11, '2011-11-11 11:11:11', Server('fubsrvrmnmx03', '193.104.137.133', 'NAMEX', 'Roma'), '/download/40000.rnd', 'upload/1111.rnd', 4, 4, 10, 4, 4, 0, True)
       
       if (task == None): 
         logger.info('Lo scheduler ha inviato un task vuoto.')
@@ -206,20 +200,15 @@ class SpeedTester(Thread):
       if (0 <= traffic_ratio <= TH_TRAFFIC):
         test_status = True
         info = 'Traffico internet non legato alla misura: percentuale %s' % value1
-        wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': True, 'info': info, 'value': value1}, False)
-        # # test.bytes = byte_all # Dato da salvare sulla misura?? ##
-        return test_status
+        wx.PostEvent(self._gui, gui_event.ResourceEvent(RES_TRAFFIC, {'status': True, 'info': info, 'value': value1}, False))
       elif (traffic_ratio > TH_TRAFFIC):
         info = 'Eccessiva presenza di traffico internet non legato alla misura: percentuale %s' % value1
-        wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': value1})
-        return test_status
+        wx.PostEvent(self._gui, gui_event.ResourceEvent(RES_TRAFFIC, {'status': False, 'info': info, 'value': value1}, True))
       else:
-        wx.CallAfter(self._gui._update_messages, 'Errore durante la verifica del traffico di misura: impossibile salvare i dati.', 'red')
-        return test_status    
+        wx.PostEvent(self._gui, gui_event.ErrorEvent('Errore durante la verifica del traffico di misura: impossibile salvare i dati.'))
     else:
       info = 'Errore durante la misura, impossibile analizzare i dati di test'
-      wx.CallAfter(self._gui.set_resource_info, RES_TRAFFIC, {'status': False, 'info': info, 'value': 'error'})
-      return test_status
+      wx.PostEvent(self._gui, gui_event.ResourceEvent(RES_TRAFFIC, {'status': False, 'info': info, 'value': 'error'}, True))
     
     return test_status
   
@@ -253,8 +242,9 @@ class SpeedTester(Thread):
       return self._get_bandwidth(test)
   
   def receive_partial_results(self, **args):
+      '''Intermediate results from tester'''
       logger.info("Got partial result: %f", args['speed'])
-      wx.CallAfter(self._gui._update_messages, "%d: %f kb/s" % (args['second'], args['speed']))
+      wx.PostEvent(self._gui, gui_event.UpdateEvent("%d: %f kb/s" % (args['second'], args['speed'])))
   
   def _do_test(self, tester, type, task, profiler):
     test_done = 0
@@ -304,7 +294,7 @@ class SpeedTester(Thread):
 #       profiler = self._profiler.get_results()
 #       sleep(1)
       
-      wx.CallAfter(self._gui._update_messages, "Test %d di %d di %s" % (test_good + 1, test_todo, stringtype.upper()), 'blue')
+      wx.PostEvent(self._gui, gui_event.UpdateEvent("Test %d di %d di %s" % (test_good + 1, test_todo, stringtype.upper())))
       
       myProof = Proof()
 #      myProof.update(pre_profiler)
@@ -364,11 +354,11 @@ class SpeedTester(Thread):
           elif type == FTP_UP or type == HTTP_UP:
             self._client.profile.upload = min(bandwidth, 100000)
           else:
-            logger.warn("Tipo di test effettuato non definito!")
+            logger.warn("Tipo di test effettuato non definito: %s" % str(type))
           
-          wx.CallAfter(self._gui._update_messages, "Risultato %s (%s di %s): %s" % (stringtype.upper(), test_good + 1, test_todo, int(bandwidth)), 'blue')
+          wx.PostEvent(self._gui, gui_event.UpdateEvent("Risultato %s (%s di %s): %s" % (stringtype.upper(), test_good + 1, test_todo, int(bandwidth))))
           if type == FTP_DOWN or type == FTP_UP:
-              wx.CallAfter(self._gui._update_messages, "Tempo di trasferimento: %d" % testres['time'])
+              wx.PostEvent(self._gui, gui_event.UpdateEvent("Tempo di trasferimento: %d" % testres['time']))
           if test_good > 0:
             # Analisi da contabit
             if not (self._test_gating(testres, type)):
@@ -387,10 +377,10 @@ class SpeedTester(Thread):
         test_good += 1
               
       except Exception as e:
-        wx.CallAfter(self._gui._update_messages, "Errore durante l'esecuzione di un test: %s" % e, 'red')
+        wx.PostEvent(self._gui, gui_event.ErrorEvent("Errore durante l'esecuzione di un test: %s" % e))
         retry += 1
         if (retry < MAX_TEST_RETRY):
-          wx.CallAfter(self._gui._update_messages, "Ripresa del test tra %d secondi" % TIME_LAG)
+          wx.PostEvent(self._gui, gui_event.UpdateEvent("Ripresa del test tra %d secondi" % TIME_LAG))
           sleep(TIME_LAG)
         else:
           raise Exception("Superato il numero massimo di errori possibili durante una misura.")
@@ -404,8 +394,8 @@ class SpeedTester(Thread):
 
     self._running.set()
     
-    wx.CallAfter(self._gui._update_messages, "Inizio dei test di misura", font=(12, 93, 92, 1))
-    wx.CallAfter(self._gui.update_gauge)
+    wx.PostEvent(self._gui, gui_event.UpdateEvent("Inizio dei test di misura", gui_event.UpdateEvent.MAJOR_IMPORTANCE))
+    wx.PostEvent(self._gui, gui_event.ProgressEvent(1))    
 
     self._profiler.set_check(set([RES_OS, RES_IP, RES_DEV, RES_MAC, RES_HOSTS, RES_TRAFFIC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
     self._profiler.start()
@@ -425,12 +415,12 @@ class SpeedTester(Thread):
     task = self._download_task(server)
     
     if task == None:
-      wx.CallAfter(self._gui._update_messages, "Impossibile eseguire ora i test di misura. Riprovare tra qualche secondo.", 'red')
+      wx.PostEvent(self._gui, gui_event.ErrorEvent("Impossibile eseguire ora i test di misura. Riprovare tra qualche secondo."))
     else:
       try:
         wx.CallAfter(self._gui.update_gauge)
         if (task.server.location != None):
-          wx.CallAfter(self._gui._update_messages, "Selezionato il server di misura di %s" % task.server.location, 'green')
+          wx.PostEvent(self._gui, gui_event.UpdateEvent("Selezionato il server di misura di %s" % task.server.location, gui_event.UpdateEvent.MAJOR_IMPORTANCE))
         
         start_time = datetime.fromtimestamp(timestampNtp())
 
@@ -439,7 +429,6 @@ class SpeedTester(Thread):
                    username=self._client.username, password=self._client.password)
 
         measure = Measure(self._client, start_time, task.server, ip, os, mac, self._version)
-        # logger.debug("\n\n%s\n\n",str(measure))
         
 #         self._profiler.set_check(set([RES_HOSTS, RES_TRAFFIC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
 #         profiler = self._profiler.get_results()
@@ -459,35 +448,34 @@ class SpeedTester(Thread):
                       type = PING
                   test = self._do_test(tester, type, task, profiler=profiler)
                   measure.savetest(test) # Saves test in XML file
-                  wx.CallAfter(self._gui._update_messages, "Elaborazione dei dati")
+                  wx.PostEvent(self._gui, gui_event.UpdateEvent("Elaborazione dei dati"))
                   # if (move_on_key()):
                   if (type == PING):
-                    wx.CallAfter(self._gui._update_messages, "Tempo di risposta del server: %.1f ms" % test.time, 'green', font=(12, 93, 92, 1))
+                    wx.PostEvent(self._gui, gui_event.ResultEvent("Tempo di risposta del server", "%.1f ms" % test.time))
+                    #TODO: use ResultEvent for both!
                     wx.CallAfter(self._gui._update_ping, test.time)
                   elif (type == FTP_DOWN):
-                    wx.CallAfter(self._gui._update_messages, "Download (FTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
+                    wx.PostEvent(self._gui, gui_event.ResultEvent("Download (FTP)", "%.0f kbps" % self._get_bandwidth(test)))
                     wx.CallAfter(self._gui._update_ftp_down, self._get_bandwidth(test))
                   elif (type == FTP_UP):
-                    wx.CallAfter(self._gui._update_messages, "Upload (FTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
+                    wx.PostEvent(self._gui, gui_event.ResultEvent("Upload (FTP)", "%.0f kbps" % self._get_bandwidth(test)))
                     wx.CallAfter(self._gui._update_ftp_up, self._get_bandwidth(test))
                   elif (type == HTTP_DOWN):
-                    wx.CallAfter(self._gui._update_messages, "Download (HTTP): %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs']), 'green', font=(12, 93, 92, 1))
-#                    wx.CallAfter(self._gui._update_messages, "Download (HTTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
+                    wx.PostEvent(self._gui, gui_event.ResultEvent("Download (HTTP)", "%.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'])))
                     wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
                   elif (type == HTTP_DOWN_MULTI):
-                    wx.CallAfter(self._gui._update_messages, "Download (HTTP MULTI): %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs']), 'green', font=(12, 93, 92, 1))
-#                    wx.CallAfter(self._gui._update_messages, "Download (HTTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
+                    wx.PostEvent(self._gui, gui_event.ResultEvent("Download (HTTP MULTI)", "%.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'])))
                     wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
-                  elif (type == HTTP_DOWN_LONG):
-                    wx.CallAfter(self._gui._update_messages, "Download (HTTP) 1: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'][0:10]), 'green', font=(12, 93, 92, 1))
-                    wx.CallAfter(self._gui._update_messages, "Download (HTTP) 2: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'][10:20]), 'green', font=(12, 93, 92, 1))
-                    wx.CallAfter(self._gui._update_messages, "Download (HTTP) 3: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'][20:30]), 'green', font=(12, 93, 92, 1))
-                    wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
+#                   elif (type == HTTP_DOWN_LONG):
+#                     wx.CallAfter(self._gui._update_messages, "Download (HTTP) 1: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'][0:10]), 'green', font=(12, 93, 92, 1))
+#                     wx.CallAfter(self._gui._update_messages, "Download (HTTP) 2: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'][10:20]), 'green', font=(12, 93, 92, 1))
+#                     wx.CallAfter(self._gui._update_messages, "Download (HTTP) 3: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'][20:30]), 'green', font=(12, 93, 92, 1))
+#                     wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
                   elif (type == HTTP_UP):
-                    wx.CallAfter(self._gui._update_messages, "Upload (HTTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
+                    wx.PostEvent(self._gui, gui_event.ResultEvent("Upload (HTTP)%.0f kbps" % self._get_bandwidth(test)))
                     wx.CallAfter(self._gui._update_http_up, self._get_bandwidth(test))
                 except MeasurementException as e:
-                    wx.CallAfter(self._gui._update_messages, "Errore durante il test: %s" % e.message)
+                    wx.PostEvent(self._gui, gui_event.ErrorEvent("Errore durante il test: %s" % e.message))
     
         
         stop_time = datetime.fromtimestamp(timestampNtp())
@@ -502,10 +490,10 @@ class SpeedTester(Thread):
         
       except Exception as e:
         logger.warning('Misura sospesa per eccezione: %s.' % e)
-        wx.CallAfter(self._gui._update_messages, 'Misura sospesa per errore: %s' % e, 'red')
+        wx.PostEvent(self._gui, gui_event.ErrorEvent('Misura sospesa per errore: %s' % e))
         
     #self._profiler.stop()
-    wx.CallAfter(self._gui.stop)
+    wx.PostEvent(self._gui, gui_event.StopEvent())
   
   
   def _save_measure(self, measure):
@@ -544,7 +532,7 @@ class SpeedTester(Thread):
       if (len_filenames > 0):
         logger.info('Trovati %s file di misura ancora da spedire.' % len_filenames)
         if retry == 0:
-          wx.CallAfter(self._gui._update_messages, "Salvataggio delle misure in corso....")
+          wx.PostEvent(self._gui, gui_event.UpdateEvent("Salvataggio delle misure in corso...."))
         
         for filename in filenames:
           uploadOK = False
@@ -580,15 +568,15 @@ class SpeedTester(Thread):
             allOK = False
             
         if allOK:
-          wx.CallAfter(self._gui._update_messages, "Salvataggio completato con successo.", 'green')
+          wx.PostEvent(self._gui, gui_event.UpdateEvent("Salvataggio completato con successo.", gui_event.UpdateEvent.MAJOR_IMPORTANCE))
           break
         else:
-          wx.CallAfter(self._gui._update_messages, "Tentativo di salvataggio numero %s di %s fallito." % (retry + 1, MAX_SEND_RETRY), 'red')
+          wx.PostEvent(self._gui, gui_event.ErrorEvent("Tentativo di salvataggio numero %s di %s fallito." % (retry + 1, MAX_SEND_RETRY)))
           if (retry + 1) < MAX_SEND_RETRY:
-            wx.CallAfter(self._gui._update_messages, "Nuovo tentativo fra %s secondi." % sleep_time, 'red')
+            wx.PostEvent(self._gui, gui_event.ErrorEvent("Nuovo tentativo fra %s secondi." % sleep_time))
             sleep(sleep_time)
           else:
-            wx.CallAfter(self._gui._update_messages, "Impossibile salvare le misure.", 'red')
+            wx.PostEvent(self._gui, gui_event.ErrorEvent("Impossibile salvare le misure."))
             if delete:
               for filename in filenames:
                 if path.exists(filename):
