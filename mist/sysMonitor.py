@@ -36,16 +36,6 @@ import time
 import re
 
 
-if (system().lower().startswith('win')):
-  from SysProf.windows import profiler
-elif (system().lower().startswith('lin')):
-  from SysProf.linux import profiler
-elif (system().lower().startswith('dar')):
-  from SysProf.darwin import profiler
-
-
-
-
 CHECK_ALL = "ALL"
 CHECK_MEDIUM = "MEDIUM"
 
@@ -464,80 +454,6 @@ class SysMonitor():
       
       self._store(res, status, value, info)
   
-  
-#   def _check_hspa(self, res = RES_HSPA):
-#   
-#     try:
-#       
-#       value = -1
-#       info = 'Dispositivi HSPA non presenti.'
-#       
-#       if (system().lower().startswith('lin')):
-#         info = 'Dispositivi HSPA non presenti o non attivi.'
-#       
-#       devices = self._get_NetIF(True)
-#       
-#       for device in devices.findall('rete/NetworkDevice'):
-#         #logger.debug(ET.tostring(device))
-#         type = device.find('Type').text
-#         
-#         if (type == 'External Modem'):
-#           dev_id = device.find('ID').text
-#           if (re.search('USB',dev_id)):
-#             value = 0
-#             info = 'Dispositivi HSPA non attivi.'
-#             dev_info = self._getDevInfo()
-#             if (dev_info != None):
-#               dev_type = dev_info['type']
-#               dev_mask = dev_info['mask']
-#               if (dev_type == type or dev_type == 'WWAN' or dev_mask == '255.255.255.255'):
-#                 value = 1
-#                 info = 'Dispositivi HSPA attivi.'
-#                 raise sysmonitorexception.WARNHSPA
-#         
-#         elif (type == 'WWAN'):
-#           if (system().lower().startswith('win')):
-#             guid = device.find('GUID').text
-#             dev_info = self._getDevInfo(guid)
-#             if (dev_info != None):
-#               dev_type = dev_info['type']
-#               if (dev_type == type) or (dev_type == 'Unknown'):
-#                 status = int(device.find('Status').text)
-#                 if (status == 7 and value != 1):
-#                   value = 0
-#                   info = 'Dispositivi HSPA non attivi.'
-#                 elif (status == 2):
-#                   value = 1
-#                   raise sysmonitorexception.WARNHSPA
-#                 
-#           elif (system().lower().startswith('lin')):
-#             value = 1
-#             info = 'Dispositivi HSPA attivi.'
-#             raise sysmonitorexception.WARNHSPA
-#           
-#           elif (system().lower().startswith('dar')):
-#             status = device.find('Status').text
-#             active = device.find('isActive').text
-#             if (status == 'Enabled' and active == 'True'):
-#               value = 1
-#               info = 'Dispositivi HSPA attivi.'
-#               raise sysmonitorexception.WARNHSPA
-#             elif (value != 1):  
-#               value = 0
-#               info = 'Dispositivi HSPA non attivi.'
-#     
-#       status = True
-#       
-#     except Exception as e:
-#       
-#       info = e
-#       status = False
-#       #raise e
-#       
-#     finally:
-#       
-#       self._store(res, status, value, info)
-#   
   
   def _check_hosts(self, up = 2048, down = 2048, ispid = 'tlc003', arping = 1, res = RES_HOSTS):
     try:

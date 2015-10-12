@@ -7,7 +7,8 @@ from collections import OrderedDict
 from threading import Thread, Event
 from time import sleep
 from logger import logging
-import wx
+from gui_event import ResourceEvent, AfterCheckEvent, ErrorEvent,\
+    UpdateEvent, StopEvent
 
 
 logger = logging.getLogger()
@@ -19,10 +20,11 @@ MESSAGE = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_IP, RES_HOSTS, RES_T
 
 class sysProfiler(Thread):
 
-  def __init__(self, gui, mode = 'check', checkable_set = set(ALL_RES)):
+  def __init__(self, event_dispatcher, mode = 'check', checkable_set = set(ALL_RES)):
     Thread.__init__(self)
     
-    self._gui = gui
+#     self._gui = gui
+    self._event_dispatcher = event_dispatcher
     self._mode = mode
     self._settings = [False,False,False,False]
     
@@ -88,7 +90,7 @@ class sysProfiler(Thread):
           del self._events[res]
           message_flag = self._settings[0]
           if (res in MESSAGE):
-            wx.CallAfter(self._gui.set_resource_info, res, self._results[res], message_flag)
+            self._event_dispatcher.postEvent(ResourceEvent(res, self._results[res], message_flag))
         
       self._results_flag.set()
       
@@ -100,7 +102,7 @@ class sysProfiler(Thread):
     if self._settings[2]:
 #      self._tester = _Tester(self._gui)
 #      self._tester._uploadall()
-      wx.CallAfter(self._gui._after_check)
+      self._event_dispatcher.postEvent(AfterCheckEvent())
   
   def _check_resource(self, resource):
     val = self._checker.checkres(resource)
@@ -113,10 +115,10 @@ class sysProfiler(Thread):
       dev = self._checker.checkres(RES_DEV, ip)['value']
     except Exception as e:
       info = {'status':False, 'value':-1, 'info':e}
-      wx.CallAfter(self._gui.set_resource_info, RES_ETH, info, False)
-      wx.CallAfter(self._gui.set_resource_info, RES_WIFI, info, False)
+      self._event_dispatcher.postEvent(ResourceEvent(RES_ETH, info, False))
+      self._event_dispatcher.postEvent(ResourceEvent(RES_WIFI, info, False))
 #       wx.CallAfter(self._gui.set_resource_info, RES_HSPA, info, False)
-      wx.CallAfter(self._gui._update_messages, e, 'red')
+      self._event_dispatcher.postEvent(ErrorEvent(e))
       return
       
     if (self._device == None):
@@ -133,18 +135,16 @@ class sysProfiler(Thread):
 #         elif (dev_type == 'WWAN') or (dev_type == 'External Modem'):
 #           dev_descr = "rete mobile su dispositivo hspa"
           
-#        wx.CallAfter(self._gui._update_interface, "Interfaccia di test: %s\nIndirizzo IP di rete: %s" % (dev_descr,ip))
-        wx.CallAfter(self._gui._update_interface, "Interfaccia di test: %s\nIndirizzo IP di rete: %s" % (dev,ip))
+        self._event_dispatcher.postEvent(UpdateEvent("Interfaccia di test: %s\nIndirizzo IP di rete: %s" % (dev,ip)))
         
 #        dev_descr = dev_info['descr'] 
         
-#        wx.CallAfter(self._gui._update_messages, "Interfaccia di rete in esame: %s" % dev_descr, 'green')
-        wx.CallAfter(self._gui._update_messages, "Interfaccia di rete in esame: %s" % dev, 'green')
+        self._event_dispatcher.postEvent(UpdateEvent("Interfaccia di rete in esame: %s" % dev))
         
     elif (dev != self._device):
       self._cycle_flag.clear()
-      wx.CallAfter(self._gui._update_messages, "Test interrotto per variazione interfaccia di rete di riferimento.", 'red')
-      wx.CallAfter(self._gui.stop)
+      self._event_dispatcher.postEvent(ErrorEvent("Test interrotto per variazione interfaccia di rete di riferimento."))     
+      self._event_dispatcher.postEvent(StopEvent()) 
   
   def get_results(self):
     self._results_flag.wait()

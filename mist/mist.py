@@ -20,6 +20,7 @@ from os import path
 
 import gui_event
 import paths
+import test_type
 import wx
 
 __version__ = '1.2.0-httptest'
@@ -110,12 +111,14 @@ class mistGUI(wx.Frame):
     self.Bind(wx.EVT_BUTTON, self._play, self.bitmap_button_play)
     self.Bind(wx.EVT_BUTTON, self._check, self.bitmap_button_check)
     
+    self._event_dispatcher = gui_event.WxGuiEventDispatcher(self)
     self.Bind(gui_event.EVT_UPDATE, self._on_update)
     self.Bind(gui_event.EVT_PROGRESS, self._on_progress)
     self.Bind(gui_event.EVT_RESULT, self._on_result)
     self.Bind(gui_event.EVT_ERROR, self._on_error)
     self.Bind(gui_event.EVT_RESOURCE, self._on_resource)
     self.Bind(gui_event.EVT_STOP, self._on_stop)
+    self.Bind(gui_event.EVT_AFTER_CHECK, self._on_after_check)
     # end wxGlade
 
   def __set_properties(self):
@@ -287,15 +290,15 @@ class mistGUI(wx.Frame):
     self.bitmap_button_check.Disable()
     self._reset_info()
     self._update_messages("Profilazione dello stato del sistema di misura", 'black', font = (12, 93, 92, 1))
-    self._profiler = sysProfiler(self)
+    self._profiler = sysProfiler(self._event_dispatcher)
     self._profiler.start()
 
-  def _after_check(self):
+  def _on_after_check(self, gui_event):
     self._update_messages("Profilazione terminata\n", 'medium forest green', font = (12, 93, 92, 1), fill = True)
     if (self._button_play):
       self._button_play = False
       self._button_check = False
-      self._tester = SpeedTester(self, self._version)
+      self._tester = SpeedTester(self._version, self._event_dispatcher)
       self._tester.start()
     else:
       # move_on_key()
@@ -426,7 +429,6 @@ class mistGUI(wx.Frame):
 
 
   def _on_update(self, update_event):
-      logger.info("Got update gui_event")
       if update_event.getImportance() == gui_event.UpdateEvent.MAJOR_IMPORTANCE:
           font = (12, 93, 92, 1)
       else:
@@ -446,8 +448,35 @@ class mistGUI(wx.Frame):
 
 
   def _on_result(self, result_event):
+    result_test_type = result_event.getType()
+    result_value = result_event.getValue()
     font = (12, 93, 92, 1)
-    self._update_messages("%s: %s" % (result_event.getType(), result_event.getValue()), 'green', font)
+    color = 'green'
+    if result_test_type == test_type.PING or result_test_type == test_type.PING_WITH_SLEEP:
+      message = "Tempo di risposta del server: %.1f ms" % result_value
+      update_method = self._update_ping
+    elif result_test_type == test_type.FTP_DOWN:
+      message = "Download (FTP): %.0f kbps" % result_value
+      update_method = self._update_ftp_down
+    elif result_test_type == test_type.FTP_UP:
+      message = "Upload (FTP): %.0f kbps" % result_value
+      update_method = self._update_ftp_up
+    elif result_test_type == test_type.HTTP_DOWN:
+      message = "Download (HTTP): %.0f kbps" % result_value
+      update_method = self._update_http_down
+    elif result_test_type == test_type.HTTP_UP:
+      message = "Upload (HTTP): %.0f kbps" % result_value
+      update_method = self._update_http_up
+    elif result_test_type == test_type.HTTP_DOWN_MULTI:
+      message = "Download (HTTP MULTI): %.0f kbps" % result_value
+      update_method = self._update_http_down
+    elif result_test_type == test_type.HTTP_UP_MULTI:
+      message = "Upload (HTTP MULTI): %.0f kbps" % result_value
+      update_method = self._update_http_up
+    else: 
+      logger.error("Unknown result %s: %s" % (result_test_type, result_value))
+    self._update_messages(message, color, font)
+    update_method(result_value)
 
   def _on_error(self, error_event):
     logger.info("Got error gui_event")
