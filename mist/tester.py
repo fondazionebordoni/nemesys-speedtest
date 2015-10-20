@@ -59,9 +59,9 @@ class Tester:
       url = "http://%s/file.rnd" % self._host.ip
       return self._testerhttp.test_down(url, 10, callback_update_speed, 1)    
  
-  def testhttpdown_multisession(self, callback_update_speed):
+  def testhttpdown_multisession(self, callback_update_speed, num_sessions = 4):
       url = "http://%s/file.rnd" % self._host.ip
-      return self._testerhttp.test_down(url, 10, callback_update_speed, 4)    
+      return self._testerhttp.test_down(url, 10, callback_update_speed, num_sessions=num_sessions)    
  
   def testhttpdownlong(self, callback_update_speed):
       url = "http://%s/file.rnd" % self._host.ip

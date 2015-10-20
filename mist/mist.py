@@ -23,7 +23,6 @@ import wx
 
 from _generated_version import __version__, FULL_VERSION, __updated__
 
-
 import mist_gui
 logger = logging.getLogger()
 

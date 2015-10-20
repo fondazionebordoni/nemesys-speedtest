@@ -326,14 +326,6 @@ class SpeedTester(Thread):
 #           else:
           bandwidth = self._get_bandwidth_from_test(testres)
           
-          if t_type == test_type.FTP_DOWN or t_type == test_type.HTTP_DOWN: # or t_type == test_type.HTTP_DOWN_LONG:
-            self._client.profile.download = min(bandwidth, 100000)
-            task.update_ftpdownpath(bandwidth)
-          elif t_type == test_type.FTP_UP or t_type == test_type.HTTP_UP:
-            self._client.profile.upload = min(bandwidth, 100000)
-          else:
-            logger.warn("Tipo di test effettuato non definito: %s" % str(t_type ))
-          
           self._event_dispatcher.postEvent(gui_event.UpdateEvent("Risultato %s (%s di %s): %s" % (test_type.get_string_type(t_type ).upper(), test_good + 1, test_todo, int(bandwidth))))
           if t_type == test_type.FTP_DOWN or t_type == test_type.FTP_UP:
               self._event_dispatcher.postEvent(gui_event.UpdateEvent("Tempo di trasferimento: %d" % testres['time']))
@@ -423,6 +415,7 @@ class SpeedTester(Thread):
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN, FTP_UP, HTTP_UP]
         #test_types = [FTP_DOWN, FTP_UP, PING]
+        best_bandwidth = 0
         
         for _ in range(0,5):
             for t_type in test_types:
@@ -433,6 +426,13 @@ class SpeedTester(Thread):
                   test = self._do_test(tester, t_type, task, profiler=profiler)
                   measure.savetest(test) # Saves test in XML file
                   self._event_dispatcher.postEvent(gui_event.UpdateEvent("Elaborazione dei dati"))
+                  if type != test_type.PING:
+                      bandwidth = self._get_bandwidth_from_test(test._test)
+                      if (bandwidth > best_bandwidth):
+                        self._client.profile.download = min(bandwidth, 100000)
+                        task.update_ftpdownpath(bandwidth)
+                        best_bandwidth = bandwidth
+
                   if t_type == test_type.PING:
                     self._event_dispatcher.postEvent(gui_event.ResultEvent(test_type.PING, test.time))
                   elif t_type == test_type.FTP_DOWN or t_type == test_type.FTP_UP:

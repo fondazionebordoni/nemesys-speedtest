@@ -9,6 +9,10 @@ STRICT_VERSION="2.2.2"
 '''
 import os
 import subprocess
+<<<<<<< HEAD
+=======
+import time
+>>>>>>> http-operator-test
 
 TAG_PREFIX = "release-"
 GENERATED_VERSION_PY = """
@@ -17,6 +21,7 @@ GENERATED_VERSION_PY = """
 
 __version__ = '%s'
 FULL_VERSION = '%s'
+__updated__ = '%s'
 """
 VERSION_FILE="_generated_version.py"
 def update_version_py():
@@ -42,7 +47,7 @@ def update_version_py():
     else:
         strict_version = full_version
     f = open(VERSION_FILE, "w")
-    f.write(GENERATED_VERSION_PY % (strict_version, full_version))
+    f.write(GENERATED_VERSION_PY % (strict_version, full_version, time.strftime("%c")))
     f.close()
     print "updated _generated_version.py to '%s'" % strict_version
 
