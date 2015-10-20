@@ -9,10 +9,7 @@ STRICT_VERSION="2.2.2"
 '''
 import os
 import subprocess
-<<<<<<< HEAD
-=======
 import time
->>>>>>> http-operator-test
 
 TAG_PREFIX = "release-"
 GENERATED_VERSION_PY = """

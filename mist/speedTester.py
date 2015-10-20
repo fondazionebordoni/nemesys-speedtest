@@ -427,6 +427,7 @@ class SpeedTester(Thread):
                   measure.savetest(test) # Saves test in XML file
                   self._event_dispatcher.postEvent(gui_event.UpdateEvent("Elaborazione dei dati"))
                   if type != test_type.PING:
+                      "TODO: should differentiate between up and down"
                       bandwidth = self._get_bandwidth_from_test(test._test)
                       if (bandwidth > best_bandwidth):
                         self._client.profile.download = min(bandwidth, 100000)
