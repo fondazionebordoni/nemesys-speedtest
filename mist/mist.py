@@ -21,7 +21,7 @@ from os import path
 import paths
 import wx
 
-__version__ = '1.2.0-httptest'
+from _generated_version import __version__, FULL_VERSION, __updated__
 
 SWN = 'MisuraInternet Speed Test'
 
@@ -507,7 +507,7 @@ if __name__ == "__main__":
 
   version = __version__
 
-  logger.info('Starting %s v.%s' % (SWN, version)) 
+  logger.info('Starting %s v.%s' % (SWN, FULL_VERSION)) 
   
   app = wx.App(False)
   
