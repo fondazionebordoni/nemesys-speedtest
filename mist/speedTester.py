@@ -45,6 +45,7 @@ HTTP_DOWN = 'http_down'
 HTTP_DOWN_MULTI = 'http down multisessione'
 HTTP_DOWN_MULTI_4 = 'http down 4 sessioni'
 HTTP_DOWN_MULTI_6 = 'http down 6 sessioni'
+HTTP_DOWN_MULTI_7 = 'http down 7 sessioni'
 HTTP_DOWN_MULTI_8 = 'http down 8 sessioni'
 HTTP_DOWN_LONG = 'http_down_long'
 HTTP_UP = 'http_up'
@@ -287,6 +288,9 @@ class SpeedTester(Thread):
     elif type == HTTP_DOWN_MULTI_6:
       stringtype = "http download 6 sessioni"
       test_todo = task.http_download
+    elif type == HTTP_DOWN_MULTI_7:
+      stringtype = "http download 6 sessioni"
+      test_todo = task.http_download
     elif type == HTTP_DOWN_MULTI_8:
       stringtype = "http download 8 sessioni"
       test_todo = task.http_download
@@ -346,6 +350,9 @@ class SpeedTester(Thread):
         elif type == HTTP_DOWN_MULTI_6:
           logger.info("[HTTP DOWNLOAD 6 SESS] " + message + " [HTTP DOWNLOAD 6 SESS]")
           testres = tester.testhttpdown_multisession(self.receive_partial_results, num_sessions = 6)
+        elif type == HTTP_DOWN_MULTI_7:
+          logger.info("[HTTP DOWNLOAD 7 SESS] " + message + " [HTTP DOWNLOAD 7 SESS]")
+          testres = tester.testhttpdown_multisession(self.receive_partial_results, num_sessions = 7)
         elif type == HTTP_DOWN_MULTI_8:
           logger.info("[HTTP DOWNLOAD 8 SESS] " + message + " [HTTP DOWNLOAD 8 SESS]")
           testres = tester.testhttpdown_multisession(self.receive_partial_results, num_sessions = 8)
@@ -461,7 +468,7 @@ class SpeedTester(Thread):
 #         profiler = self._profiler.get_results()
         sleep(1)
 
-        test_types = [PING, HTTP_DOWN_MULTI_4, HTTP_DOWN_MULTI_6, HTTP_DOWN_MULTI_8, FTP_DOWN]
+        test_types = [PING, HTTP_DOWN_MULTI_4, PING, HTTP_DOWN_MULTI_6, PING, HTTP_DOWN_MULTI_7, PING, HTTP_DOWN_MULTI_8, FTP_DOWN]
 #        test_types = [PING_WITH_SLEEP, HTTP_DOWN_MULTI, PING_WITH_SLEEP, FTP_DOWN, PING_WITH_SLEEP, HTTP_DOWN]
 #        test_types = [PING, HTTP_DOWN_LONG, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN]
@@ -504,6 +511,10 @@ class SpeedTester(Thread):
                     wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
                   elif (type == HTTP_DOWN_MULTI_6):
                     wx.CallAfter(self._gui._update_messages, "Download (HTTP MULTI 6): %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs']), 'green', font=(12, 93, 92, 1))
+#                    wx.CallAfter(self._gui._update_messages, "Download (HTTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
+                    wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
+                  elif (type == HTTP_DOWN_MULTI_7):
+                    wx.CallAfter(self._gui._update_messages, "Download (HTTP MULTI 7): %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs']), 'green', font=(12, 93, 92, 1))
 #                    wx.CallAfter(self._gui._update_messages, "Download (HTTP): %.0f kbps" % self._get_bandwidth(test), 'green', font=(12, 93, 92, 1))
                     wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
                   elif (type == HTTP_DOWN_MULTI_8):
