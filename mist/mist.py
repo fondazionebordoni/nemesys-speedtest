@@ -9,6 +9,7 @@ except IOError as e:
 # from sysMonitor import interfaces, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
 #from sysMonitor import interfaces#, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_TRAFFIC, RES_HOSTS
 from checkSoftware import CheckSoftware
+from mist_controller import MistController
 from optparse import OptionParser
 from platform import system
 from speedTester import SpeedTester
@@ -94,7 +95,11 @@ def mist():
         wx.CallLater(200, sleeper)
     GUI = mist_gui.mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE) #& ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
     event_dispatcher = gui_event.WxGuiEventDispatcher(GUI)
+    profiler = sysProfiler(event_dispatcher)
+    speed_tester = SpeedTester(version, event_dispatcher)
+    controller = MistController(GUI, profiler, speed_tester, event_dispatcher)
     GUI.init_frame(version, event_dispatcher)
+    GUI.set_listener(controller)
     app.SetTopWindow(GUI)
     GUI.Show()
     app.MainLoop()

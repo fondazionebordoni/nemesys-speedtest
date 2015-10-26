@@ -165,9 +165,13 @@ class ResourceEvent(GuiEvent):
 class StopEvent(GuiEvent):
     '''Tell GUI that speed tester has finished'''
 
-    def __init__(self):
+    def __init__(self, is_oneshot = False):
         '''Creates the event object'''
         GuiEvent.__init__(self, myEVT_STOP)
+        self._is_oneshot = is_oneshot
+    
+    def isOneShot(self):
+        return self._is_oneshot
 
 class AfterCheckEvent(GuiEvent):
     '''Tell GUI that speed tester has finished'''

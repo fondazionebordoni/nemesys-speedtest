@@ -237,7 +237,7 @@ class SpeedTester(Thread):
       logger.info("Got partial result: %f", args['speed'])
       self._event_dispatcher.postEvent(gui_event.UpdateEvent("%d: %f kb/s" % (args['second'], args['speed'])))
   
-  def _do_test(self, tester, t_type, task, profiler):
+  def _do_test(self, tester, t_type, task):
     test_done = 0
     test_good = 0
     test_todo = 0
@@ -264,7 +264,7 @@ class SpeedTester(Thread):
 #     Check before
 #     self._profiler.set_check(set([RES_HOSTS, RES_TRAFFIC]))
 #     pre_profiler = self._profiler.get_results()
-    
+    pre_profiler_result = self._profiler.profile_once(set([RES_HOSTS, RES_TRAFFIC]))
     # Override task and always do just one
     test_todo = 1
 
@@ -275,13 +275,14 @@ class SpeedTester(Thread):
 #     check before
 #       self._profiler.set_check(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
 #       profiler = self._profiler.get_results()
-#       sleep(1)
+      profiler_result = self._profiler.profile_once(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
+      sleep(1)
       
       self._event_dispatcher.postEvent(gui_event.UpdateEvent("Test %d di %d di %s" % (test_good + 1, test_todo, test_type.get_string_type(t_type ).upper())))
       
       myProof = Proof()
-#      myProof.update(pre_profiler)
-      myProof.update(profiler)
+      myProof.update(pre_profiler_result)
+      myProof.update(profiler_result)
       
       try:
         test_done += 1
@@ -367,10 +368,11 @@ class SpeedTester(Thread):
     self._event_dispatcher.postEvent(gui_event.UpdateEvent("Inizio dei test di misura", gui_event.UpdateEvent.MAJOR_IMPORTANCE))
     self._event_dispatcher.postEvent(gui_event.ProgressEvent(1))    
 
-    self._profiler.set_check(set([RES_OS, RES_IP, RES_DEV, RES_MAC, RES_HOSTS, RES_TRAFFIC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
-    self._profiler.start()
-    profiler = self._profiler.get_results()
-    self._profiler.stop()
+#     self._profiler.set_check(set([RES_OS, RES_IP, RES_DEV, RES_MAC, RES_HOSTS, RES_TRAFFIC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
+#     self._profiler.start()
+    profiler_result = self._profiler.profile_once(set([RES_OS, RES_IP, RES_DEV, RES_MAC, RES_HOSTS, RES_TRAFFIC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
+#    profiler = self._profiler.get_results()
+#     self._profiler.stop()
     # Profilazione di background
     #self._profiler.set_check(set([RES_OS, RES_IP, RES_DEV, RES_MAC]))
     #self._profiler.start()
@@ -394,7 +396,7 @@ class SpeedTester(Thread):
         
         start_time = datetime.fromtimestamp(timestampNtp())
 
-        (ip, dev, os, mac) = (profiler[RES_IP], profiler[RES_DEV], profiler[RES_OS], profiler[RES_MAC])
+        (ip, dev, os, mac) = (profiler_result[RES_IP], profiler_result[RES_DEV], profiler_result[RES_OS], profiler_result[RES_MAC])
         tester = Tester(dev=dev, ip=ip, host=task.server, timeout=self._testtimeout,
                    username=self._client.username, password=self._client.password)
 
@@ -405,11 +407,11 @@ class SpeedTester(Thread):
         sleep(1)
 
         test_types = [test_type.PING_WITH_SLEEP, 
-                      test_type.HTTP_DOWN_MULTI, 
-                      test_type.PING_WITH_SLEEP, 
-                      test_type.FTP_DOWN, 
-                      test_type.PING_WITH_SLEEP, 
-                      test_type.HTTP_DOWN]
+                    test_type.HTTP_DOWN_MULTI, 
+                    test_type.PING_WITH_SLEEP, 
+                    test_type.FTP_DOWN, 
+                    test_type.PING_WITH_SLEEP, 
+                    test_type.HTTP_DOWN]
 #         test_types = [PING_WITH_SLEEP, HTTP_DOWN_MULTI, PING_WITH_SLEEP, FTP_DOWN, PING_WITH_SLEEP, HTTP_DOWN]
 #        test_types = [PING, HTTP_DOWN_LONG, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN]
@@ -423,10 +425,10 @@ class SpeedTester(Thread):
                   if t_type == test_type.PING_WITH_SLEEP:
                       sleep(1)
                       t_type = test_type.PING
-                  test = self._do_test(tester, t_type, task, profiler=profiler)
+                  test = self._do_test(tester, t_type, task)
                   measure.savetest(test) # Saves test in XML file
                   self._event_dispatcher.postEvent(gui_event.UpdateEvent("Elaborazione dei dati"))
-                  if type != test_type.PING:
+                  if t_type != test_type.PING:
                       "TODO: should differentiate between up and down"
                       bandwidth = self._get_bandwidth_from_test(test._test)
                       if (bandwidth > best_bandwidth):
@@ -466,7 +468,7 @@ class SpeedTester(Thread):
         self._event_dispatcher.postEvent(gui_event.ErrorEvent('Misura sospesa per errore: %s' % e))
         
     #self._profiler.stop()
-    self._event_dispatcher.postEvent(gui_event.StopEvent())
+    self._event_dispatcher.postEvent(gui_event.StopEvent(is_oneshot=self.is_oneshot()))
   
   
   def _save_measure(self, measure):

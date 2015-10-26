@@ -924,57 +924,57 @@ def getDev(host = 'finaluser.agcom244.fub.it', port = 443, ip = None):
 
 
 if __name__ == "__main__":
-  monitor = SysMonitor()
+    monitor = SysMonitor()
   #monitor.interfaces()
   
 #  monitor.checkall()
  
-  print monitor.checkres(RES_ETH) 
-#  result = monitor.checkres(RES_IP)
-#  for key, val in result.items(): 
-#    logger.info("| %s\t: %s" % (key, val))
-#  logger.info("--------")
-#  
-#  result = monitor.checkres(RES_DEV, "172.16.181.129")
-#  for key, val in result.items(): 
-#    logger.info("| %s\t: %s" % (key, val))
-#  logger.info("--------")
-#  
-#  result = monitor.checkres(RES_MAC, "172.16.181.129")
-#  for key, val in result.items(): 
-#    logger.info("| %s\t: %s" % (key, val))
-#  logger.info("--------")
-#  
-#  result = monitor.checkres(RES_MASK, "172.16.181.129")
-#  for key, val in result.items(): 
-#    logger.info("| %s\t: %s" % (key, val))
-#  logger.info("--------")
-#  
-#  result = monitor.checkres(RES_ETH)
-#  for key, val in result.items(): 
-#    logger.info("| %s\t: %s" % (key, val))
-#  logger.info("--------")
-#  
-#  result = monitor.checkres(RES_WIFI)
-#  for key, val in result.items(): 
-#    logger.info("| %s\t: %s" % (key, val))
-#  logger.info("--------")
-#  
-#  result = monitor.checkres(RES_HSPA)
-#  for key, val in result.items(): 
-#    logger.info("| %s\t: %s" % (key, val))
-#  logger.info("--------")
-#  
-#  #for i in range(8):
-#  result = monitor.checkres(RES_RAM)
-#  for key, val in result.items(): 
-#    logger.info("| %s\t: %s" % (key, val))
-#  logger.info("--------")
-#  #time.sleep(0.2)
-#  
-#  result = monitor.checkres(RES_HOSTS)
-#  for key, val in result.items(): 
-#    logger.info("| %s\t: %s" % (key, val))
-#  logger.info("--------")
+    print monitor.checkres(RES_ETH) 
+    result = monitor.checkres(RES_IP)
+    for key, val in result.items(): 
+      logger.info("| %s\t: %s" % (key, val))
+    logger.info("--------")
+      
+    result = monitor.checkres(RES_DEV, "172.16.181.129")
+    for key, val in result.items(): 
+      logger.info("| %s\t: %s" % (key, val))
+    logger.info("--------")
+      
+    result = monitor.checkres(RES_MAC, "172.16.181.129")
+    for key, val in result.items(): 
+      logger.info("| %s\t: %s" % (key, val))
+    logger.info("--------")
+      
+    result = monitor.checkres(RES_MASK, "172.16.181.129")
+    for key, val in result.items(): 
+      logger.info("| %s\t: %s" % (key, val))
+    logger.info("--------")
+      
+    result = monitor.checkres(RES_ETH)
+    for key, val in result.items(): 
+      logger.info("| %s\t: %s" % (key, val))
+    logger.info("--------")
+      
+    result = monitor.checkres(RES_WIFI)
+    for key, val in result.items(): 
+      logger.info("| %s\t: %s" % (key, val))
+    logger.info("--------")
+      
+#     result = monitor.checkres(RES_HSPA)
+#     for key, val in result.items(): 
+#       logger.info("| %s\t: %s" % (key, val))
+#     logger.info("--------")
+#       
+    #for i in range(8):
+    result = monitor.checkres(RES_RAM)
+    for key, val in result.items(): 
+      logger.info("| %s\t: %s" % (key, val))
+    logger.info("--------")
+    #time.sleep(0.2)
+      
+    result = monitor.checkres(RES_HOSTS)
+    for key, val in result.items(): 
+      logger.info("| %s\t: %s" % (key, val))
+    logger.info("--------")
   
   

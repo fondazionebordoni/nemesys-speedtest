@@ -5,16 +5,14 @@
 from sysMonitor import SysMonitor, RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC
 from collections import OrderedDict
 from threading import Thread, Event
-from time import sleep
 from logger import logging
 from gui_event import ResourceEvent, AfterCheckEvent, ErrorEvent,\
     UpdateEvent, StopEvent
 
+import Queue
 
 logger = logging.getLogger()
 
-# ALL_RES = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC]
-# MESSAGE = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_IP, RES_HOSTS, RES_TRAFFIC]
 ALL_RES = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC]
 MESSAGE = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_IP, RES_HOSTS, RES_TRAFFIC]
 
@@ -23,10 +21,13 @@ class sysProfiler(Thread):
   def __init__(self, event_dispatcher, mode = 'check', checkable_set = set(ALL_RES)):
     Thread.__init__(self)
     
-#     self._gui = gui
     self._event_dispatcher = event_dispatcher
     self._mode = mode
-    self._settings = [False,False,False,False]
+    if (self._mode == 'check'):
+      self._settings = [True,False,True,True]
+    elif (self._mode == 'tester'):
+      self._settings = [False,True,False,False]
+      
     
     self._checkable_set = checkable_set
     self._available_check = OrderedDict \
@@ -45,123 +46,85 @@ class sysProfiler(Thread):
     (RES_TRAFFIC, None) \
     ])
     
-    self._events = OrderedDict([])
-    self._results = OrderedDict([])
-    
-    self._cycle_flag = Event()
-    self._results_flag = Event()
-    self._checkres_flag = Event()
-    
     self._device = None
     
-    self._checker = SysMonitor()
+    self._sys_monitor = SysMonitor()
+    self._result_queue = Queue.Queue()
+    self._error_queue = Queue.Queue()
+    self._profiler_idle = Event()
+    self._profiler_idle.set()
+
+
+  def profile_once_and_call_back(self, callback, resources = set(ALL_RES)):
+    profiling_thread = Thread(target = self._do_profile, args = (True, resources, callback))
+    profiling_thread.daemon = True
+    profiling_thread.start()
+
+
+  def profile_once(self, resources = set(ALL_RES)):
+    return self._do_profile(do_once = True, resources = resources)
+
+
+  def _do_profile(self, do_once = True, resources = set(ALL_RES), callback = None):
+    self._profiler_idle.wait(10.0)
+    if not self._profiler_idle.is_set():
+      self._error_queue.put("Timed out waiting for profiler")
+      "TODO: raise exception, or callback"
+      return None
+    self._profiler_idle.clear()
+    self._check_device()
+    sysmon_results = OrderedDict([])
+    for res in resources:
+      if res in self._available_check:
+        result = self._sys_monitor.checkres(res)
+        print "****************** GOT RESULT: %s" % str(result)
+        sysmon_results[res] = result#self._sys_monitor.checkres(res).get('value', None)
+        message_flag = self._settings[0]
+        if (res in MESSAGE):
+          "TODO: call back!"
+          self._event_dispatcher.postEvent(ResourceEvent(res, sysmon_results[res], message_flag))
     
-  def run(self):
-    
-    self._cycle_flag.set()
-    
-    while (self._cycle_flag.isSet()):
-      
-      ## settings = [message, cycle, return, device] ##
-      if (self._mode == 'check'):
-        self._settings = [True,False,True,True]
-      elif (self._mode == 'tester'):
-        self._settings = [False,True,False,False]
-      
-      self._results_flag.clear()
-      self._checkres_flag.clear()
-      
-      self._check_device()
-        
-      self._events.clear()
-      self._results.clear()
-      
-      for res in self._available_check:
-        if self._checkres_flag.isSet():
-          self._events.clear()
-          self._results.clear()
-          break
-        if res in self._checkable_set:
-          res_flag = Event()
-          self._events[res] = res_flag
-          self._events[res].clear()
-          self._check_resource(res)
-          self._events[res].wait()
-          del self._events[res]
-          message_flag = self._settings[0]
-          if (res in MESSAGE):
-            self._event_dispatcher.postEvent(ResourceEvent(res, self._results[res], message_flag))
-        
-      self._results_flag.set()
-      
-      if self._settings[1]:
-        sleep(0.8)
-      else:
-        self._cycle_flag.clear()
+    results = {}
+    for key in sysmon_results:
+      results[key] = sysmon_results[key].get('value', None)
 
     if self._settings[2]:
-#      self._tester = _Tester(self._gui)
-#      self._tester._uploadall()
+      "TODO: call back!"
       self._event_dispatcher.postEvent(AfterCheckEvent())
-  
-  def _check_resource(self, resource):
-    val = self._checker.checkres(resource)
-    self._results[resource] = val
-    self._events[resource].set()
+
+    self._profiler_idle.set()
+
+    if callback != None:
+      callback(results)
+    else:
+      return results
+
+#   def _check_resource(self, resource):
+#     val = self._sys_monitor.checkres(resource)
+#     self._results[resource] = val
+#   
   
   def _check_device(self):
     try:
-      ip = self._checker.checkres(RES_IP)['value']
-      dev = self._checker.checkres(RES_DEV, ip)['value']
+      ip = self._sys_monitor.checkres(RES_IP)['value']
+      dev = self._sys_monitor.checkres(RES_DEV, ip)['value']
     except Exception as e:
       info = {'status':False, 'value':-1, 'info':e}
       self._event_dispatcher.postEvent(ResourceEvent(RES_ETH, info, False))
       self._event_dispatcher.postEvent(ResourceEvent(RES_WIFI, info, False))
-#       wx.CallAfter(self._gui.set_resource_info, RES_HSPA, info, False)
       self._event_dispatcher.postEvent(ErrorEvent(e))
       return
       
     if (self._device == None):
       self._device = dev
       if self._settings[3]:
-#         dev_info = self._checker._getDevInfo(dev)
-#         dev_type = dev_info['type']
-#         dev_descr = dev_info['descr']
-#         
-#         if (dev_type == 'Ethernet 802.3'):
-#           dev_descr = "rete locale via cavo ethernet"
-#         elif (dev_type == 'Wireless'):
-#           dev_descr = "rete locale wireless"
-#         elif (dev_type == 'WWAN') or (dev_type == 'External Modem'):
-#           dev_descr = "rete mobile su dispositivo hspa"
-          
-        self._event_dispatcher.postEvent(UpdateEvent("Interfaccia di test: %s\nIndirizzo IP di rete: %s" % (dev,ip)))
-        
-#        dev_descr = dev_info['descr'] 
-        
+        self._event_dispatcher.postEvent(UpdateEvent("Interfaccia di test: %s" % dev))
+        self._event_dispatcher.postEvent(UpdateEvent("Indirizzo IP di rete: %s" % ip))
         self._event_dispatcher.postEvent(UpdateEvent("Interfaccia di rete in esame: %s" % dev))
         
     elif (dev != self._device):
-      self._cycle_flag.clear()
+      "TODO: handle at higher level"
       self._event_dispatcher.postEvent(ErrorEvent("Test interrotto per variazione interfaccia di rete di riferimento."))     
       self._event_dispatcher.postEvent(StopEvent()) 
-  
-  def get_results(self):
-    self._results_flag.wait()
-    self._results_flag.clear()
-    if self._checkres_flag.isSet():
-      self._results_flag.wait()
-      self._results_flag.clear()
-    results = {}
-    for key in self._results:
-      results[key] = self._results[key].get('value',None)
-    return results
-  
-  def set_check(self, checkable_set = set(ALL_RES)):
-    self._checkable_set = checkable_set
-    self._checkres_flag.set()
-  
-  def stop(self):
-    self._cycle_flag.clear()
   
   
