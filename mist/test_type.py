@@ -14,6 +14,12 @@ HTTP_UP = 4
 HTTP_DOWN = 5
 HTTP_UP_MULTI = 6
 HTTP_DOWN_MULTI = 7
+HTTP_DOWN_MULTI_4 = 8
+HTTP_DOWN_MULTI_6 = 9
+HTTP_DOWN_MULTI_7 = 10
+HTTP_DOWN_MULTI_8 = 11
+HTTP_DOWN_LONG = 12
+
 
 STRING_TYPES = {PING: "ping", 
                 FTP_UP: "ftp upload", 
@@ -21,34 +27,36 @@ STRING_TYPES = {PING: "ping",
                 HTTP_UP: "http upload",
                 HTTP_DOWN: "http download",
                 HTTP_UP_MULTI: "http upload multisession",
-                HTTP_DOWN_MULTI: "http download multisession"}
+                HTTP_DOWN_MULTI: "http download multisession",
+                HTTP_DOWN_MULTI_4:'http down 4 sessioni',
+                HTTP_DOWN_MULTI_6: 'http down 6 sessioni',
+                HTTP_DOWN_MULTI_7: 'http down 7 sessioni',
+                HTTP_DOWN_MULTI_8: 'http down 8 sessioni',
+                HTTP_DOWN_LONG: 'http_down_long'
+                }
 STRING_TYPES_SHORT = {PING: "ping", 
                 FTP_UP: "ftp up", 
                 FTP_DOWN: "ftp down",
                 HTTP_UP: "http up",
                 HTTP_DOWN: "http down",
                 HTTP_UP_MULTI: "http up multi",
-                HTTP_DOWN_MULTI: "http down multi"}
+                HTTP_DOWN_MULTI: "http down multi",
+                HTTP_DOWN_MULTI_4:'http down 4',
+                HTTP_DOWN_MULTI_6: 'http down 6',
+                HTTP_DOWN_MULTI_7: 'http down 7',
+                HTTP_DOWN_MULTI_8: 'http down 8',
+                HTTP_DOWN_LONG: 'http_down_long'
+}
 
 
 def get_string_type(from_type):
     if from_type in STRING_TYPES:
         return STRING_TYPES[from_type]
     else:
-        return ""
+        return "Tipo di misura sconosciuta"
 
 def get_string_type_short(from_type):
     if from_type in STRING_TYPES_SHORT:
         return STRING_TYPES_SHORT[from_type]
     else:
-        return ""
-
-# TODO add string type
-
-# TEST_PING = TestType(TestType.PING, "ping", "ping")
-# TEST_HTTP_UP = TestType(TestType.HTTP_UP, "HTTP upload", "HTTP up")
-# TEST_HTTP_DOWN = TestType(TestType.HTTP_DOWN, "HTTP download", "HTTP down")
-# TEST_HTTP_MULTI_UP = TestType(TestType.HTTP_UP, "HTTP upload multisessione", "HTTP up multi")
-# TEST_HTTP_MULTI_DOWN = TestType(TestType.HTTP_DOWN, "HTTP download multisessione", "HTTP down multi")
-# TEST_FTP_UP = TestType(TestType.HTTP_UP, "FTP upload", "FTP up")
-# TEST_FTP_DOWN = TestType(TestType.HTTP_DOWN, "FTP download", "FTP down")
+        return "sconosciuta"
