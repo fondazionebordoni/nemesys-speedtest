@@ -246,6 +246,7 @@ class SpeedTester(Thread):
 
     best_value = None
     
+    "TODO: "
     if t_type == test_type.PING:
       test_todo = task.ping
     elif t_type == test_type.FTP_DOWN:
@@ -253,6 +254,14 @@ class SpeedTester(Thread):
     elif t_type == test_type.FTP_UP:
       test_todo = task.upload
     elif t_type == test_type.HTTP_DOWN:
+      test_todo = task.http_download
+    elif t_type == test_type.HTTP_DOWN_MULTI_4:
+      test_todo = task.http_download
+    elif t_type == test_type.HTTP_DOWN_MULTI_6:
+      test_todo = task.http_download
+    elif t_type == test_type.HTTP_DOWN_MULTI_7:
+      test_todo = task.http_download
+    elif t_type == test_type.HTTP_DOWN_MULTI_8:
       test_todo = task.http_download
     elif t_type == test_type.HTTP_DOWN_MULTI:
       test_todo = task.http_download
@@ -303,10 +312,16 @@ class SpeedTester(Thread):
           testres = tester.testftpup(self._client.profile.upload * task.multiplier * 1000 / 8, task.ftpuppath)
         elif t_type == test_type.HTTP_DOWN:
           testres = tester.testhttpdown(self.receive_partial_results)
-        elif t_type == test_type.HTTP_DOWN_MULTI:
-          testres = tester.testhttpdown_multisession(self.receive_partial_results)
-#         elif t_type == HTTP_DOWN_LONG:
-#           testres = tester.testhttpdownlong(self.receive_partial_results)
+        elif t_type == test_type.HTTP_DOWN_MULTI_4:
+          testres = tester.testhttpdown_multisession(self.receive_partial_results, num_sessions = 4)
+        elif t_type == test_type.HTTP_DOWN_MULTI_6:
+          testres = tester.testhttpdown_multisession(self.receive_partial_results, num_sessions = 6)
+        elif t_type == test_type.HTTP_DOWN_MULTI_7:
+          testres = tester.testhttpdown_multisession(self.receive_partial_results, num_sessions = 7)
+        elif t_type == test_type.HTTP_DOWN_MULTI_8:
+          testres = tester.testhttpdown_multisession(self.receive_partial_results, num_sessions = 8)
+        elif t_type == test_type.HTTP_DOWN_LONG:
+          testres = tester.testhttpdownlong(self.receive_partial_results)
         elif t_type == test_type.HTTP_UP:
           testres = tester.testhttpup()
         else:
@@ -406,12 +421,16 @@ class SpeedTester(Thread):
 #         profiler = self._profiler.get_results()
         sleep(1)
 
-        test_types = [test_type.PING_WITH_SLEEP, 
-                    test_type.HTTP_DOWN_MULTI, 
-                    test_type.PING_WITH_SLEEP, 
-                    test_type.FTP_DOWN, 
-                    test_type.PING_WITH_SLEEP, 
-                    test_type.HTTP_DOWN]
+        test_types = [test_type.PING, 
+                    test_type.HTTP_DOWN_MULTI_4, 
+                    test_type.PING, 
+                    test_type.HTTP_DOWN_MULTI_6, 
+                    test_type.PING, 
+                    test_type.HTTP_DOWN_MULTI_7, 
+                    test_type.PING, 
+                    test_type.HTTP_DOWN_MULTI_8, 
+                    test_type.PING, 
+                    test_type.FTP_DOWN]
 #         test_types = [PING_WITH_SLEEP, HTTP_DOWN_MULTI, PING_WITH_SLEEP, FTP_DOWN, PING_WITH_SLEEP, HTTP_DOWN]
 #        test_types = [PING, HTTP_DOWN_LONG, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN]
@@ -419,12 +438,10 @@ class SpeedTester(Thread):
         #test_types = [FTP_DOWN, FTP_UP, PING]
         best_bandwidth = 0
         
-        for _ in range(0,5):
+        for _ in range(0,3):
             for t_type in test_types:
                 try:
-                  if t_type == test_type.PING_WITH_SLEEP:
-                      sleep(1)
-                      t_type = test_type.PING
+                  sleep(1)
                   test = self._do_test(tester, t_type, task)
                   measure.savetest(test) # Saves test in XML file
                   self._event_dispatcher.postEvent(gui_event.UpdateEvent("Elaborazione dei dati"))
@@ -436,6 +453,7 @@ class SpeedTester(Thread):
                         task.update_ftpdownpath(bandwidth)
                         best_bandwidth = bandwidth
 
+                  "TODO: clean up"
                   if t_type == test_type.PING:
                     self._event_dispatcher.postEvent(gui_event.ResultEvent(test_type.PING, test.time))
                   elif t_type == test_type.FTP_DOWN or t_type == test_type.FTP_UP:
@@ -444,11 +462,14 @@ class SpeedTester(Thread):
                     self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , self._get_partial_bandwidth(test._test['rate_tot_secs'])))
                   elif t_type == test_type.HTTP_DOWN_MULTI:
                     self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , self._get_partial_bandwidth(test._test['rate_tot_secs'])))
-#                   elif (t_type == HTTP_DOWN_LONG):
-#                     wx.CallAfter(self._gui._update_messages, "Download (HTTP) 1: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'][0:10]), 'green', font=(12, 93, 92, 1))
-#                     wx.CallAfter(self._gui._update_messages, "Download (HTTP) 2: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'][10:20]), 'green', font=(12, 93, 92, 1))
-#                     wx.CallAfter(self._gui._update_messages, "Download (HTTP) 3: %.0f kbps" % self._get_partial_bandwidth(test._test['rate_tot_secs'][20:30]), 'green', font=(12, 93, 92, 1))
-#                     wx.CallAfter(self._gui._update_http_down, self._get_bandwidth(test))
+                  elif (t_type == test_type.HTTP_DOWN_MULTI_4):
+                    self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , self._get_partial_bandwidth(test._test['rate_tot_secs'])))
+                  elif (t_type == test_type.HTTP_DOWN_MULTI_6):
+                    self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , self._get_partial_bandwidth(test._test['rate_tot_secs'])))
+                  elif (t_type == test_type.HTTP_DOWN_MULTI_7):
+                    self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , self._get_partial_bandwidth(test._test['rate_tot_secs'])))
+                  elif (t_type == test_type.HTTP_DOWN_MULTI_8):
+                    self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , self._get_partial_bandwidth(test._test['rate_tot_secs'])))
                 except MeasurementException as e:
                     self._event_dispatcher.postEvent(gui_event.ErrorEvent("Errore durante il test: %s" % e.message))
     
