@@ -368,7 +368,6 @@ class mistGUI(wx.Frame):
     def _set_resource_info(self, resource, info, message_flag=True):
         res_bitmap = None
         res_label = None
-        print info
         if info['status'] == None:
             colour = 'gray'
         elif info['status'] == True:

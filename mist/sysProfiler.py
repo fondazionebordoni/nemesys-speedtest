@@ -77,7 +77,6 @@ class sysProfiler(Thread):
     for res in resources:
       if res in self._available_check:
         result = self._sys_monitor.checkres(res)
-        print "****************** GOT RESULT: %s" % str(result)
         sysmon_results[res] = result#self._sys_monitor.checkres(res).get('value', None)
         message_flag = self._settings[0]
         if (res in MESSAGE):
