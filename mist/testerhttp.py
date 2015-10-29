@@ -38,7 +38,7 @@ END_STRING = '_ThisIsTheEnd_'
 logger = logging.getLogger()
 errors = Errorcoder(paths.CONF_ERRORS)
 
-''' 
+'''
 NOTE: not thread-safe, make sure to only call 
 one measurement at a time!
 '''
@@ -54,6 +54,7 @@ class HttpTester:
     def _init_counters(self):
         self._time_to_stop = False
         self._last_rx_bytes = self._netstat.get_rx_bytes()
+        self._last_tx_bytes = self._netstat.get_tx_bytes()
         self._bytes_total = 0
         self._measures_tot = []
         self._measure_count = 0
@@ -193,9 +194,8 @@ class HttpTester:
             
            
     def gen_chunk(self):
-        time_to_stop = False
         has_sent_end_string = False
-        while not time_to_stop:
+        while not self._time_to_stop:
             elapsed = time.time() - self._starttime
             if not self._time_to_stop and (elapsed < self._upload_sending_time_secs) and (self._fakefile.get_bytes_read() < MAX_TRANSFERED_BYTES):
                 yield self._fakefile.read(self._num_bytes)
@@ -203,16 +203,44 @@ class HttpTester:
                 has_sent_end_string = True
                 yield END_STRING * (self._recv_bufsize / len(END_STRING) + 1)
             else:
-                time_to_stop = True
+                self._time_to_stop = True
                 yield ""
 
+    def _read_up_measure(self):
 
+        self._measure_count += 1
+        measuring_time = time.time()
+        elapsed = (measuring_time - self._last_measured_time)*1000.0
+        
+        new_tx_bytes = self._netstat.get_tx_bytes()
+        tx_diff = new_tx_bytes - self._last_tx_bytes
+        rate_tot = float(tx_diff * 8)/float(elapsed) 
+        logger.debug("[HTTP] Reading... count = %d, speed = %d" 
+              % (self._measure_count, int(rate_tot)))
+        if self.callback_update_speed:
+            self.callback_update_speed(second=self._measure_count, speed=rate_tot)
+        
+        if not self._time_to_stop:
+            self._last_tx_bytes = new_tx_bytes
+            self._last_measured_time = measuring_time
+            read_thread = threading.Timer(1.0, self._read_up_measure)
+            self._read_measure_threads.append(read_thread)
+            read_thread.start()
+
+
+    def _stop_up_measurement(self):
+        self._time_to_stop = True
+        for t in self._read_measure_threads:
+            t.join()
+
+   
     '''
     Upload test is done server side. We just measure
     the average speed payload/net in order to 
     verify spurious traffic.
     '''
-    def test_up(self, url, total_test_time_secs = TOTAL_MEASURE_TIME, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 8 * 1024, is_first_try = True):
+    def test_up(self, url, callback_update_speed = None, total_test_time_secs = TOTAL_MEASURE_TIME, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 8 * 1024, is_first_try = True):
+        self.callback_update_speed = callback_update_speed
         if is_first_try:
             self._upload_sending_time_secs = total_test_time_secs + self._rampup_secs + 1
         else:
@@ -222,18 +250,23 @@ class HttpTester:
         self._recv_bufsize = recv_bufsize
         self._fakefile = Fakefile(file_size)
         response = None
+        # Read progress each second
+        read_thread = threading.Timer(1.0, self._read_up_measure)
+        read_thread.start()
+        self._read_measure_threads.append(read_thread)
         self._starttime = time.time()
         start_tx_bytes = self._netstat.get_tx_bytes()
         try:
             logger.info("Connecting to server, sending time is %d" % self._upload_sending_time_secs)
             response = requests.post(url, data=self.gen_chunk())#, hooks = dict(response = self._response_received))
         except Exception as e:
+            self._stop_up_measurement()
             raise MeasurementException("Errore di connessione: %s" % str(e))
         if not response:
-            self._time_to_stop = True
+            self._stop_up_measurement()
             raise MeasurementException("Nessuna risposta") 
         if response.status_code != 200:
-            self._time_to_stop = True
+            self._stop_up_measurement()
             raise MeasurementException("Ricevuto risposta %d dal server" % response.status_code)
         test = _test_from_server_response(response.content)
         if test['time'] < (total_test_time_secs * 1000) - 1:
@@ -241,18 +274,17 @@ class HttpTester:
             # Double the sending time
             if is_first_try:
                 logger.warn("Test non sufficientemente lungo, aumento del tempo di misura.")
-                return self.test_up(url, total_test_time_secs, file_size, recv_bufsize, is_first_try = False)
+                return self.test_up(url, callback_update_speed, total_test_time_secs, file_size, recv_bufsize, is_first_try = False)
             else:
                 raise MeasurementException("Test non risucito - tempo ritornato dal server non corrisponde al tempo richiesto.")
         tx_diff = self._netstat.get_tx_bytes() - start_tx_bytes
         read_bytes = self._fakefile.get_bytes_read()
         spurious = (float(tx_diff - read_bytes)/float(tx_diff))
         test['bytes_total'] = int(test['bytes'] * (1 + spurious))
+        test['rate_tot_secs'] = [x * (1 + spurious) for x in test['rate_secs']]
         return test
     
-#     def __len__(self):
-#         return 1
-#     
+
 def _init_test(testtype):
     test = {}
     test['type'] = testtype
