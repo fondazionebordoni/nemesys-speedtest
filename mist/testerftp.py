@@ -19,8 +19,6 @@
 import errno
 from ftplib import FTP
 import ftplib
-from optparse import OptionParser
-import socket
 import sys
 import time
 import threading
@@ -53,9 +51,12 @@ class FtpTester:
     
     # For the read thread
     
-  def _init_counters(self):
+  def _init_counters(self, is_down_measure = True):
     self._time_to_stop = False
-    self._last_rx_bytes = self._netstat.get_rx_bytes()
+    if is_down_measure:
+        self._last_bytes = self._netstat.get_rx_bytes()
+    else:
+        self._last_bytes = self._netstat.get_tx_bytes()
     self._measure_count = 0
     self._read_measure_threads = []
     self._last_measured_time = time.time()
@@ -111,16 +112,36 @@ class FtpTester:
     measuring_time = time.time()
     elapsed = (measuring_time - self._last_measured_time)*1000.0
     
-    new_rx_bytes = self._netstat.get_rx_bytes()
-    rx_diff = new_rx_bytes - self._last_rx_bytes
-    rate_tot = float(rx_diff * 8)/float(elapsed) 
+    new_bytes = self._netstat.get_rx_bytes()
+    diff = new_bytes - self._last_bytes
+    rate_tot = float(diff * 8)/float(elapsed) 
     logger.debug("[FTP] Reading... count = %d, speed = %d" 
           % (self._measure_count, int(rate_tot)))
     
     if not self._time_to_stop:
-        self._last_rx_bytes = new_rx_bytes
+        self._last_bytes = new_bytes
         self._last_measured_time = measuring_time
         read_thread = threading.Timer(1.0, self._read_down_measure)
+        self._read_measure_threads.append(read_thread)
+        read_thread.start()
+
+  "TODO: should be one method for both up and down measure"
+  def _read_up_measure(self):
+
+    self._measure_count += 1
+    measuring_time = time.time()
+    elapsed = (measuring_time - self._last_measured_time)*1000.0
+    
+    new_bytes = self._netstat.get_tx_bytes()
+    diff = new_bytes - self._last_bytes
+    rate_tot = float(diff * 8)/float(elapsed) 
+    logger.debug("[FTP] Reading... count = %d, speed = %d" 
+          % (self._measure_count, int(rate_tot)))
+    
+    if not self._time_to_stop:
+        self._last_bytes = new_bytes
+        self._last_measured_time = measuring_time
+        read_thread = threading.Timer(1.0, self._read_up_measure)
         self._read_measure_threads.append(read_thread)
         read_thread.start()
 
@@ -132,6 +153,11 @@ class FtpTester:
     self._ftp.voidcmd('TYPE I')
     conn = self._ftp.transfercmd('STOR %s' % self._filepath, rest=None)
     
+    # Read progress each second
+    self._init_counters(is_down_measure=False)
+    read_thread = threading.Timer(1.0, self._read_up_measure)
+    read_thread.start()
+    self._read_measure_threads.append(read_thread)
     start = time.time()
     while True:
       data = self._file.read(self._bufsize)
@@ -152,10 +178,16 @@ class FtpTester:
       if (e.args[0][:3] == '426'):
         pass
       else:
+        "TODO: stop read threads"
         raise e
     
     stop = time.time()
     elapsed = float((stop-start)*1000)
+
+    self._time_to_stop = True
+    for read_thread in self._read_measure_threads:
+        read_thread.join()
+
     return (size, elapsed)
 
   def testftpdown(self, server, filename, bytes, username='anonymous', password='anonymous@'):
@@ -287,13 +319,13 @@ if __name__ == '__main__':
     platform_name = platform.system().lower()
     dev = None
     #nap = "eagle2.fub.it"
-    nap = "193.104.137.2"
-#     nap = '193.104.137.133'
+#     nap = "193.104.137.2"
+    nap = '193.104.137.133'
     import sysMonitor
     dev = sysMonitor.getDev()
     t = FtpTester(dev)
         
-    print t.testftpdown(nap, '/download/90000.rnd', 1000000, 'nemesys', '4gc0m244')
+#     print t.testftpdown(nap, '/download/90000.rnd', 1000000, 'nemesys', '4gc0m244')
     print "\n---------------------------\n"
     print t.testftpup(nap, '/upload/r.raw', 100000000, 'nemesys', '4gc0m244')
     
