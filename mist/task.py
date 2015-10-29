@@ -34,6 +34,7 @@ class Task:
     self._server = server
     self._ftpdownpath = ftpdownpath
     self._ftpuppath = ftpuppath
+    self._ftpup_bytes = 0
     self._upload = upload
     self._download = download
     self._http_upload = http_upload
@@ -104,6 +105,13 @@ class Task:
   @property
   def message(self):
     return self._message
+
+  @property
+  def ftpup_bytes(self):
+      return self._ftpup_bytes
+
+  def set_ftpup_bytes(self, num_bytes):
+    self._ftpup_bytes = num_bytes
 
   def update_ftpdownpath(self, bandwidth):
     '''

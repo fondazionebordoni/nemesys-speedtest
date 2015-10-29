@@ -67,9 +67,9 @@ class Tester:
       url = "http://%s/file.rnd" % self._host.ip
       return self._testerhttp.test_down(url, 30, callback_update_speed)    
  
-  def testhttpup(self):
+  def testhttpup(self, callback_update_speed):
       url = "http://%s/file.rnd" % self._host.ip
-      return self._testerhttp.test_up(url)    
+      return self._testerhttp.test_up(url, callback_update_speed)    
      
   def testftpdown(self, bytes, filename):
     return self._testerftp.testftpdown(self._host.ip, filename, bytes, self._username, self._password)

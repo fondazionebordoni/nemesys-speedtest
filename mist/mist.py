@@ -46,20 +46,31 @@ def main(argv=None):
         # setup option parser
         parser = OptionParser(version=program_version_string, epilog=program_longdesc)#, description=program_license)
 #         parser.add_option("-i", "--in", dest="infile", help="set input path [default: %default]", metavar="FILE")
-        parser.add_option("-c", "--check", dest="check", action="count", help="Fare solo la verifica del sistema, senza misura [default: %default]")
-        parser.add_option("-m", "--measure", dest="measure", action="count", help="Fare una misura [default: %default]")
-        parser.add_option("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %default]")
+#         parser.add_option("-c", "--check", dest="check", action="store_true", help="Fare solo la verifica del sistema, senza misura [default: %default]")
+#         parser.add_option("-m", "--measure", dest="measure", action="store_true", help="Fare solo una misura [default: %default]")
+        parser.add_option("-t", "--text", dest="text_based", action="store_true", help="Senza interfaccia grafica [default: %default]")
+#         parser.add_option("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %default]")
 
         # set defaults
-        parser.set_defaults(check=False, measure=True)
+        parser.set_defaults(check = False, measure = False, text_based = False)
 
         # process options
         (opts, args) = parser.parse_args(argv)
         
-        if opts.verbose > 0:
-            print("verbosity level = %d" % opts.verbose)
+#         if opts.check == True:
+#             print "check is true"
+#         
+#         if opts.measure == True:
+#             print "measure is true"
+#         
+        if opts.text_based == True:
+            print "text based"
+        
+        SWN = 'MisuraInternet Speed Test'
+        logger.info('Starting %s v.%s' % (SWN, FULL_VERSION)) 
+    
 
-        mist()
+        mist(text_based = opts.text_based)
         # MAIN BODY #
 #        mist_cli = MistCli()
         # Register for events
@@ -76,33 +87,34 @@ def main(argv=None):
         return 2
 
 
-def mist():
-    version = __version__
-    SWN = 'MisuraInternet Speed Test'
-    logger.info('Starting %s v.%s' % (SWN, FULL_VERSION)) 
+def mist(text_based = False):
+    if not text_based:
+        app = wx.App(False)
     
-    app = wx.App(False)
-    
-    # Check if this is the last version
-    version_ok = CheckSoftware(version).checkIT()
-    #check = checker.checkIT()
-    
-    if not version_ok:
-        return
+        # Check if this is the last version
+        version = __version__
+        version_ok = CheckSoftware(version).checkIT()
+        #check = checker.checkIT()
+        
+        if not version_ok:
+            return
     # Logs all network interfaces
     sysMonitor.interfaces()
-    if (system().lower().startswith('win')):
-        wx.CallLater(200, sleeper)
-    GUI = mist_gui.mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE) #& ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
-    event_dispatcher = gui_event.WxGuiEventDispatcher(GUI)
-    profiler = sysProfiler(event_dispatcher)
-    speed_tester = SpeedTester(version, event_dispatcher)
-    controller = MistController(GUI, profiler, speed_tester, event_dispatcher)
-    GUI.init_frame(version, event_dispatcher)
-    GUI.set_listener(controller)
-    app.SetTopWindow(GUI)
-    GUI.Show()
-    app.MainLoop()
+    if text_based:
+        pass
+    else:
+        if (system().lower().startswith('win')):
+            wx.CallLater(200, sleeper)
+        GUI = mist_gui.mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE) #& ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
+        event_dispatcher = gui_event.WxGuiEventDispatcher(GUI)
+        profiler = sysProfiler(event_dispatcher)
+        speed_tester = SpeedTester(version, event_dispatcher)
+        controller = MistController(GUI, profiler, speed_tester, event_dispatcher)
+        GUI.init_frame(version, event_dispatcher)
+        GUI.set_listener(controller)
+        app.SetTopWindow(GUI)
+        GUI.Show()
+        app.MainLoop()
  
 def sleeper():
     sleep(.001)

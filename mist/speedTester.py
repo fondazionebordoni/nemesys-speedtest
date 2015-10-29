@@ -309,7 +309,7 @@ class SpeedTester(Thread):
         elif t_type == test_type.FTP_DOWN:
           testres = tester.testftpdown(self._client.profile.download * task.multiplier * 1000 / 8, task.ftpdownpath)
         elif t_type == test_type.FTP_UP:
-          testres = tester.testftpup(self._client.profile.upload * task.multiplier * 1000 / 8, task.ftpuppath)
+          testres = tester.testftpup(task.ftpup_bytes, task.ftpuppath)
         elif t_type == test_type.HTTP_DOWN:
           testres = tester.testhttpdown(self.receive_partial_results)
         elif t_type == test_type.HTTP_DOWN_MULTI_4:
@@ -323,7 +323,7 @@ class SpeedTester(Thread):
         elif t_type == test_type.HTTP_DOWN_LONG:
           testres = tester.testhttpdownlong(self.receive_partial_results)
         elif t_type == test_type.HTTP_UP:
-          testres = tester.testhttpup()
+          testres = tester.testhttpup(self.receive_partial_results)
         else:
           logger.warn("Tipo di test da effettuare non definito: %s" % test_type.get_string_type(t_type))
 
@@ -421,36 +421,38 @@ class SpeedTester(Thread):
 #         profiler = self._profiler.get_results()
         sleep(1)
 
-        test_types = [test_type.PING, 
-                    test_type.HTTP_DOWN_MULTI_4, 
-                    test_type.PING, 
-                    test_type.HTTP_DOWN_MULTI_6, 
-                    test_type.PING, 
-                    test_type.HTTP_DOWN_MULTI_7, 
-                    test_type.PING, 
-                    test_type.HTTP_DOWN_MULTI_8, 
-                    test_type.PING, 
-                    test_type.FTP_DOWN]
+#         test_types = [test_type.PING, 
+#                     test_type.HTTP_DOWN_MULTI_4, 
+#                     test_type.PING, 
+#                     test_type.HTTP_DOWN_MULTI_6, 
+#                     test_type.PING, 
+#                     test_type.HTTP_DOWN_MULTI_7, 
+#                     test_type.PING, 
+#                     test_type.HTTP_DOWN_MULTI_8, 
+#                     test_type.PING, 
+#                     test_type.FTP_DOWN]
 #         test_types = [PING_WITH_SLEEP, HTTP_DOWN_MULTI, PING_WITH_SLEEP, FTP_DOWN, PING_WITH_SLEEP, HTTP_DOWN]
 #        test_types = [PING, HTTP_DOWN_LONG, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN]
-#        test_types = [PING, FTP_DOWN, HTTP_DOWN, FTP_UP, HTTP_UP]
+        test_types = [test_type.PING, test_type.HTTP_UP, test_type.FTP_UP, test_type.HTTP_DOWN, test_type.FTP_DOWN]
         #test_types = [FTP_DOWN, FTP_UP, PING]
-        best_bandwidth = 0
-        
+        task.set_ftpup_bytes(self._client.profile.upload * task.multiplier * 1000 / 8)
         for _ in range(0,3):
             for t_type in test_types:
+                best_bandwidth = 0
                 try:
                   sleep(1)
                   test = self._do_test(tester, t_type, task)
                   measure.savetest(test) # Saves test in XML file
                   self._event_dispatcher.postEvent(gui_event.UpdateEvent("Elaborazione dei dati"))
                   if t_type != test_type.PING:
-                      "TODO: should differentiate between up and down"
                       bandwidth = self._get_bandwidth_from_test(test._test)
                       if (bandwidth > best_bandwidth):
                         self._client.profile.download = min(bandwidth, 100000)
-                        task.update_ftpdownpath(bandwidth)
+                        if test_type.is_http_down(t_type):
+                            task.update_ftpdownpath(bandwidth)
+                        else:
+                            task.set_ftpup_bytes(bandwidth / 8 * 10000)
                         best_bandwidth = bandwidth
 
                   "TODO: clean up"

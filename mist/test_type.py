@@ -60,3 +60,13 @@ def get_string_type_short(from_type):
         return STRING_TYPES_SHORT[from_type]
     else:
         return "sconosciuta"
+
+def is_http_up(from_type):
+    if "http up" in get_string_type_short(from_type):
+        return True
+    return False
+
+def is_http_down(from_type):
+    if "http down" in get_string_type_short(from_type):
+        return True
+    return False
