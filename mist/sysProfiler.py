@@ -24,9 +24,13 @@ class sysProfiler(Thread):
     self._event_dispatcher = event_dispatcher
     self._mode = mode
     if (self._mode == 'check'):
-      self._settings = [True,False,True,True]
+      self._message_flag = True
+      self._post_end_event = True
+      self._report_device = True 
     elif (self._mode == 'tester'):
-      self._settings = [False,True,False,False]
+      self._message_flag = False
+      self._post_end_event = False
+      self._report_device = False 
       
     
     self._checkable_set = checkable_set
@@ -49,7 +53,6 @@ class sysProfiler(Thread):
     self._device = None
     
     self._sys_monitor = SysMonitor()
-    self._result_queue = Queue.Queue()
     self._error_queue = Queue.Queue()
     self._profiler_idle = Event()
     self._profiler_idle.set()
@@ -78,18 +81,13 @@ class sysProfiler(Thread):
       if res in self._available_check:
         result = self._sys_monitor.checkres(res)
         sysmon_results[res] = result#self._sys_monitor.checkres(res).get('value', None)
-        message_flag = self._settings[0]
         if (res in MESSAGE):
           "TODO: call back!"
-          self._event_dispatcher.postEvent(ResourceEvent(res, sysmon_results[res], message_flag))
+          self._event_dispatcher.postEvent(ResourceEvent(res, sysmon_results[res], self._message_flag))
     
     results = {}
     for key in sysmon_results:
       results[key] = sysmon_results[key].get('value', None)
-
-    if self._settings[2]:
-      "TODO: call back!"
-      self._event_dispatcher.postEvent(AfterCheckEvent())
 
     self._profiler_idle.set()
 
@@ -116,7 +114,7 @@ class sysProfiler(Thread):
       
     if (self._device == None):
       self._device = dev
-      if self._settings[3]:
+      if self._report_device:
         self._event_dispatcher.postEvent(UpdateEvent("Interfaccia di test: %s" % dev))
         self._event_dispatcher.postEvent(UpdateEvent("Indirizzo IP di rete: %s" % ip))
         self._event_dispatcher.postEvent(UpdateEvent("Interfaccia di rete in esame: %s" % dev))
