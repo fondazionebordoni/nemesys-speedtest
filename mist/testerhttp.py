@@ -273,6 +273,7 @@ class HttpTester:
             # Probably slow creation of connection, needs more time
             # Double the sending time
             if is_first_try:
+                self._stop_up_measurement()
                 logger.warn("Test non sufficientemente lungo, aumento del tempo di misura.")
                 return self.test_up(url, callback_update_speed, total_test_time_secs, file_size, recv_bufsize, is_first_try = False)
             else:
