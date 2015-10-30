@@ -47,7 +47,7 @@ MAX_SEND_RETRY = 3
 
 class SpeedTester(Thread):
 
-  def __init__(self, version, event_dispatcher):
+  def __init__(self, version, event_dispatcher, do_profile = True):
     Thread.__init__(self)
     
     paths_check = paths.check_paths()
@@ -59,6 +59,7 @@ class SpeedTester(Thread):
 
     self._version = version
     self._event_dispatcher = event_dispatcher
+    self._do_profile = do_profile
     self._profiler = sysProfiler(event_dispatcher, 'tester')
 
     parser = OptionParser(version=self._version, description='')
@@ -237,7 +238,7 @@ class SpeedTester(Thread):
       logger.info("Got partial result: %f", args['speed'])
       self._event_dispatcher.postEvent(gui_event.UpdateEvent("%d: %f kb/s" % (args['second'], args['speed'])))
   
-  def _do_test(self, tester, t_type, task):
+  def _do_test(self, tester, t_type, task, previous_profiler_result):
     test_done = 0
     test_good = 0
     test_todo = 0
@@ -273,7 +274,8 @@ class SpeedTester(Thread):
 #     Check before
 #     self._profiler.set_check(set([RES_HOSTS, RES_TRAFFIC]))
 #     pre_profiler = self._profiler.get_results()
-    pre_profiler_result = self._profiler.profile_once(set([RES_HOSTS, RES_TRAFFIC]))
+    if self._do_profile:
+        pre_profiler_result = self._profiler.profile_once(set([RES_HOSTS, RES_TRAFFIC]))
     # Override task and always do just one
     test_todo = 1
 
@@ -284,14 +286,18 @@ class SpeedTester(Thread):
 #     check before
 #       self._profiler.set_check(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
 #       profiler = self._profiler.get_results()
-      profiler_result = self._profiler.profile_once(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
+      if self._do_profile:
+          profiler_result = self._profiler.profile_once(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
       sleep(1)
       
       self._event_dispatcher.postEvent(gui_event.UpdateEvent("Test %d di %d di %s" % (test_good + 1, test_todo, test_type.get_string_type(t_type ).upper())))
       
       myProof = Proof()
-      myProof.update(pre_profiler_result)
-      myProof.update(profiler_result)
+      if self._do_profile:
+        myProof.update(pre_profiler_result)
+        myProof.update(profiler_result)
+      else:
+        myProof.update(previous_profiler_result)
       
       try:
         test_done += 1
@@ -434,15 +440,15 @@ class SpeedTester(Thread):
 #         test_types = [PING_WITH_SLEEP, HTTP_DOWN_MULTI, PING_WITH_SLEEP, FTP_DOWN, PING_WITH_SLEEP, HTTP_DOWN]
 #        test_types = [PING, HTTP_DOWN_LONG, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN]
-        test_types = [test_type.PING, test_type.HTTP_UP, test_type.FTP_UP, test_type.HTTP_DOWN, test_type.FTP_DOWN]
+        test_types = [test_type.PING, test_type.HTTP_UP, test_type.FTP_UP]
         #test_types = [FTP_DOWN, FTP_UP, PING]
         task.set_ftpup_bytes(self._client.profile.upload * task.multiplier * 1000 / 8)
-        for _ in range(0,3):
+        for _ in range(0,5):
             for t_type in test_types:
                 best_bandwidth = 0
                 try:
                   sleep(1)
-                  test = self._do_test(tester, t_type, task)
+                  test = self._do_test(tester, t_type, task, profiler_result)
                   measure.savetest(test) # Saves test in XML file
                   self._event_dispatcher.postEvent(gui_event.UpdateEvent("Elaborazione dei dati"))
                   if t_type != test_type.PING:

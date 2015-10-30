@@ -208,19 +208,19 @@ class HttpTester:
 
     def _read_up_measure(self):
 
-        self._measure_count += 1
-        measuring_time = time.time()
-        elapsed = (measuring_time - self._last_measured_time)*1000.0
-        
-        new_tx_bytes = self._netstat.get_tx_bytes()
-        tx_diff = new_tx_bytes - self._last_tx_bytes
-        rate_tot = float(tx_diff * 8)/float(elapsed) 
-        logger.debug("[HTTP] Reading... count = %d, speed = %d" 
-              % (self._measure_count, int(rate_tot)))
-        if self.callback_update_speed:
-            self.callback_update_speed(second=self._measure_count, speed=rate_tot)
-        
         if not self._time_to_stop:
+            self._measure_count += 1
+            measuring_time = time.time()
+            elapsed = (measuring_time - self._last_measured_time)*1000.0
+            
+            new_tx_bytes = self._netstat.get_tx_bytes()
+            tx_diff = new_tx_bytes - self._last_tx_bytes
+            rate_tot = float(tx_diff * 8)/float(elapsed) 
+            logger.debug("[HTTP] Reading... count = %d, speed = %d" 
+                  % (self._measure_count, int(rate_tot)))
+            if self.callback_update_speed:
+                self.callback_update_speed(second=self._measure_count, speed=rate_tot)
+        
             self._last_tx_bytes = new_tx_bytes
             self._last_measured_time = measuring_time
             read_thread = threading.Timer(1.0, self._read_up_measure)
