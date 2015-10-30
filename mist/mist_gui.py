@@ -4,7 +4,7 @@ Created on 12/ott/2015
 @author: ewedlund
 '''
 import gui_event
-import messages
+import mist_messages
 import paths
 import test_type
 import wx
@@ -118,7 +118,7 @@ class mistGUI(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: Frame.__set_properties
-        self.SetTitle("%s - versione %s" % (messages.SWN, self._version))
+        self.SetTitle("%s - versione %s" % (mist_messages.SWN, self._version))
         self.SetSize((800, 460))
         
         self.messages_area_style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP | wx.BORDER_NONE
@@ -243,7 +243,7 @@ class mistGUI(wx.Frame):
     
     def _on_close(self, gui_event):
         logger.info("Richiesta di close")
-        dlg = wx.MessageDialog(self, "\nVuoi davvero chiudere %s?" % messages.SWN, messages.SWN, wx.OK | wx.CANCEL | wx.ICON_QUESTION)
+        dlg = wx.MessageDialog(self, "\nVuoi davvero chiudere %s?" % mist_messages.SWN, mist_messages.SWN, wx.OK | wx.CANCEL | wx.ICON_QUESTION)
         res = dlg.ShowModal()
         dlg.Destroy()
         if res == wx.ID_OK:
@@ -272,7 +272,7 @@ class mistGUI(wx.Frame):
         
     def _on_check(self, gui_event):
         self._reset_info()
-        self._update_messages(messages.PROFILING, 'black', font=(12, 93, 92, 1))
+        self._update_messages(mist_messages.PROFILING, 'black', font=(12, 93, 92, 1))
         try:
             self._listener.check()
         except AttributeError:
@@ -296,7 +296,7 @@ class mistGUI(wx.Frame):
 #         else:
 #             # move_on_key()
 #             self._button_check = False
-        self._update_interface("%s\nPremere PLAY per effettuare la misura" % messages.PROFILING_FINISHED, font=(12, 93, 92, 0))
+        self._update_interface("%s\nPremere PLAY per effettuare la misura" % mist_messages.PROFILING_FINISHED, font=(12, 93, 92, 0))
 #             self._enable_button()
 
     def _enable_button(self):
@@ -445,13 +445,13 @@ class mistGUI(wx.Frame):
         font = (12, 93, 92, 1)
         color = 'green'
         if result_test_type == test_type.PING or result_test_type == test_type.PING_WITH_SLEEP:
-            message = messages.PING_RESULT % result_value
+            message = mist_messages.PING_RESULT % result_value
             update_method = self._update_ping
         elif result_test_type == test_type.FTP_DOWN:
-            message = messages.FTP_DOWN_RESULT % result_value
+            message = mist_messages.FTP_DOWN_RESULT % result_value
             update_method = self._update_ftp_down
         elif result_test_type == test_type.FTP_UP:
-            message = messages.FTP_UP_RESULT % result_value
+            message = mist_messages.FTP_UP_RESULT % result_value
             update_method = self._update_ftp_up
         elif test_type.is_http_down(result_test_type):
             message = "Download (HTTP): %.0f kbps" % result_value
@@ -534,7 +534,7 @@ class mistGUI(wx.Frame):
 
 Premendo il tasto CHECK avvierai la profilazione della macchina per la misura.
 
-Premendo il tasto PLAY avvierai una profilazione e il test di misura completo.''' % (messages.SWN, self._version)
+Premendo il tasto PLAY avvierai una profilazione e il test di misura completo.''' % (mist_messages.SWN, self._version)
 
         self.messages_area.SetWindowStyleFlag(self.messages_area_style + wx.TE_CENTER)
 
@@ -545,7 +545,7 @@ Premendo il tasto PLAY avvierai una profilazione e il test di misura completo.''
         
         font1 = wx.Font(12, wx.ROMAN, wx.ITALIC, wx.BOLD, 0, "")
         font2 = wx.Font(10, wx.ROMAN, wx.ITALIC, wx.BOLD, 1, "")
-        word1 = "Benvenuto in %s versione %s" % (messages.SWN, self._version) 
+        word1 = "Benvenuto in %s versione %s" % (mist_messages.SWN, self._version) 
         words = {word1:(wx.NullColour, wx.NullColour, font1), 'CHECK':('blue', wx.NullColour, font2), 'PLAY':('green', wx.NullColour, font2)}
         
         self._set_style(message, words)
