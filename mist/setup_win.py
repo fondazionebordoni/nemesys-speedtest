@@ -55,8 +55,9 @@ setup(
 	options = {
 		'py2exe': {
 			'packages': 'encodings',
-      'optimize': 2,
-		}
+            'optimize': 2,
+            'includes': ['SysProf.windows.profiler']
+ 		}
 	},
 	name = 'mist',
 	version = get_version(),
