@@ -48,7 +48,6 @@ class FtpTester:
     self._timeout_secs = timeout_secs
     #Ignore any given timeout
     self._timeout_millis = float(timeout_secs * 1000)
-    
     # For the read thread
     
   def _init_counters(self, is_down_measure = True):
@@ -318,7 +317,7 @@ if __name__ == '__main__':
     import platform
     platform_name = platform.system().lower()
     dev = None
-    #nap = "eagle2.fub.it"
+#     nap = "eagle2.fub.it"
 #     nap = "193.104.137.2"
     nap = '193.104.137.133'
     import sysMonitor
@@ -327,5 +326,5 @@ if __name__ == '__main__':
         
 #     print t.testftpdown(nap, '/download/90000.rnd', 1000000, 'nemesys', '4gc0m244')
     print "\n---------------------------\n"
-    print t.testftpup(nap, '/upload/r.raw', 100000000, 'nemesys', '4gc0m244')
+    print t.testftpup(nap, '/upload/r.raw', 76856169, 'nemesys', '4gc0m244')
     

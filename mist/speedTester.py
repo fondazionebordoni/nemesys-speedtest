@@ -254,21 +254,9 @@ class SpeedTester(Thread):
       test_todo = task.download
     elif t_type == test_type.FTP_UP:
       test_todo = task.upload
-    elif t_type == test_type.HTTP_DOWN:
+    elif test_type.is_http_down(t_type):
       test_todo = task.http_download
-    elif t_type == test_type.HTTP_DOWN_MULTI_4:
-      test_todo = task.http_download
-    elif t_type == test_type.HTTP_DOWN_MULTI_6:
-      test_todo = task.http_download
-    elif t_type == test_type.HTTP_DOWN_MULTI_7:
-      test_todo = task.http_download
-    elif t_type == test_type.HTTP_DOWN_MULTI_8:
-      test_todo = task.http_download
-    elif t_type == test_type.HTTP_DOWN_MULTI:
-      test_todo = task.http_download
-#     elif t_type == HTTP_DOWN_LONG:
-#       test_todo = task.http_download
-    elif t_type == test_type.HTTP_UP:
+    elif test_type.is_http_up(t_type):
       test_todo = task.http_upload
 
 #     Check before
@@ -329,7 +317,11 @@ class SpeedTester(Thread):
         elif t_type == test_type.HTTP_DOWN_LONG:
           testres = tester.testhttpdownlong(self.receive_partial_results)
         elif t_type == test_type.HTTP_UP:
-          testres = tester.testhttpup(self.receive_partial_results)
+          testres = tester.testhttpup(self.receive_partial_results, num_sessions=1)
+        elif t_type == test_type.HTTP_UP_MULTI_4:
+          testres = tester.testhttpup(self.receive_partial_results, num_sessions = 4)
+        elif t_type == test_type.HTTP_UP_MULTI_6:
+          testres = tester.testhttpup(self.receive_partial_results, num_sessions = 6)
         else:
           logger.warn("Tipo di test da effettuare non definito: %s" % test_type.get_string_type(t_type))
 
@@ -351,7 +343,7 @@ class SpeedTester(Thread):
           self._event_dispatcher.postEvent(gui_event.UpdateEvent("Risultato %s (%s di %s): %s" % (test_type.get_string_type(t_type ).upper(), test_good + 1, test_todo, int(bandwidth))))
           if t_type == test_type.FTP_DOWN or t_type == test_type.FTP_UP:
               self._event_dispatcher.postEvent(gui_event.UpdateEvent("Tempo di trasferimento: %d" % testres['time']))
-          if test_good > 0:
+          if test_good >= 0:
             # Analisi da contabit
             if not (self._test_gating(testres, t_type )):
               raise Exception("superata la soglia di traffico spurio.")
@@ -440,9 +432,9 @@ class SpeedTester(Thread):
 #         test_types = [PING_WITH_SLEEP, HTTP_DOWN_MULTI, PING_WITH_SLEEP, FTP_DOWN, PING_WITH_SLEEP, HTTP_DOWN]
 #        test_types = [PING, HTTP_DOWN_LONG, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN]
-        test_types = [test_type.PING, test_type.HTTP_UP, test_type.FTP_UP]
+        test_types = [test_type.PING, test_type.HTTP_UP, test_type.PING, test_type.FTP_UP, test_type.PING, test_type.HTTP_UP_MULTI_4, test_type.PING, test_type.HTTP_UP_MULTI_6, test_type.PING, test_type.FTP_UP]
         #test_types = [FTP_DOWN, FTP_UP, PING]
-        task.set_ftpup_bytes(self._client.profile.upload * task.multiplier * 1000 / 8)
+        task.set_ftpup_bytes(int(self._client.profile.upload * task.multiplier * 1000 / 8))
         for _ in range(0,5):
             for t_type in test_types:
                 best_bandwidth = 0
@@ -458,7 +450,7 @@ class SpeedTester(Thread):
                         if test_type.is_http_down(t_type):
                             task.update_ftpdownpath(bandwidth)
                         else:
-                            task.set_ftpup_bytes(bandwidth / 8 * 10000)
+                            task.set_ftpup_bytes(int(bandwidth / 8 * 10000))
                         best_bandwidth = bandwidth
 
                   "TODO: clean up"
@@ -466,17 +458,7 @@ class SpeedTester(Thread):
                     self._event_dispatcher.postEvent(gui_event.ResultEvent(test_type.PING, test.time))
                   elif t_type == test_type.FTP_DOWN or t_type == test_type.FTP_UP:
                     self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type, self._get_bandwidth(test)))
-                  elif t_type == test_type.HTTP_DOWN or t_type == test_type.HTTP_UP:
-                    self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , self._get_partial_bandwidth(test._test['rate_tot_secs'])))
-                  elif t_type == test_type.HTTP_DOWN_MULTI:
-                    self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , self._get_partial_bandwidth(test._test['rate_tot_secs'])))
-                  elif (t_type == test_type.HTTP_DOWN_MULTI_4):
-                    self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , self._get_partial_bandwidth(test._test['rate_tot_secs'])))
-                  elif (t_type == test_type.HTTP_DOWN_MULTI_6):
-                    self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , self._get_partial_bandwidth(test._test['rate_tot_secs'])))
-                  elif (t_type == test_type.HTTP_DOWN_MULTI_7):
-                    self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , self._get_partial_bandwidth(test._test['rate_tot_secs'])))
-                  elif (t_type == test_type.HTTP_DOWN_MULTI_8):
+                  elif test_type.is_http(t_type):
                     self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , self._get_partial_bandwidth(test._test['rate_tot_secs'])))
                 except MeasurementException as e:
                     self._event_dispatcher.postEvent(gui_event.ErrorEvent("Errore durante il test: %s" % e.message))

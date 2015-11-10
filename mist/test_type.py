@@ -19,6 +19,8 @@ HTTP_DOWN_MULTI_6 = 9
 HTTP_DOWN_MULTI_7 = 10
 HTTP_DOWN_MULTI_8 = 11
 HTTP_DOWN_LONG = 12
+HTTP_UP_MULTI_4 = 13
+HTTP_UP_MULTI_6 = 14
 
 
 STRING_TYPES = {PING: "ping", 
@@ -27,6 +29,8 @@ STRING_TYPES = {PING: "ping",
                 HTTP_UP: "http upload",
                 HTTP_DOWN: "http download",
                 HTTP_UP_MULTI: "http upload multisession",
+                HTTP_UP_MULTI_4: "http upload 4 sessioni",
+                HTTP_UP_MULTI_6: "http upload 6 sessioni",
                 HTTP_DOWN_MULTI: "http download multisession",
                 HTTP_DOWN_MULTI_4:'http down 4 sessioni',
                 HTTP_DOWN_MULTI_6: 'http down 6 sessioni',
@@ -40,6 +44,8 @@ STRING_TYPES_SHORT = {PING: "ping",
                 HTTP_UP: "http up",
                 HTTP_DOWN: "http down",
                 HTTP_UP_MULTI: "http up multi",
+                HTTP_UP_MULTI_4: "http up multi 4",
+                HTTP_UP_MULTI_6: "http up multi 6",
                 HTTP_DOWN_MULTI: "http down multi",
                 HTTP_DOWN_MULTI_4:'http down 4',
                 HTTP_DOWN_MULTI_6: 'http down 6',
@@ -60,6 +66,11 @@ def get_string_type_short(from_type):
         return STRING_TYPES_SHORT[from_type]
     else:
         return "sconosciuta"
+
+def is_http(from_type):
+    if "http" in get_string_type_short(from_type):
+        return True
+    return False
 
 def is_http_up(from_type):
     if "http up" in get_string_type_short(from_type):
