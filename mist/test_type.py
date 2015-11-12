@@ -67,6 +67,20 @@ def get_string_type_short(from_type):
     else:
         return "sconosciuta"
 
+def get_xml_string(from_type):
+    if is_http_up(from_type):
+        return "upload_http"
+    elif is_http_down(from_type):
+        return "download_http"
+    elif is_ftp_up(from_type):
+        return "upload"
+    elif is_ftp_down(from_type):
+        return "download"
+    elif is_ping(from_type):
+        return "ping"
+    else:
+        return "unknown"
+
 def is_http(from_type):
     if "http" in get_string_type_short(from_type):
         return True
@@ -81,3 +95,19 @@ def is_http_down(from_type):
     if "http down" in get_string_type_short(from_type):
         return True
     return False
+
+def is_ftp_up(from_type):
+    if "ftp up" in get_string_type_short(from_type):
+        return True
+    return False
+
+def is_ftp_down(from_type):
+    if "ftp down" in get_string_type_short(from_type):
+        return True
+    return False
+
+def is_ping(from_type):
+    if "ping" in get_string_type_short(from_type):
+        return True
+    return False
+
