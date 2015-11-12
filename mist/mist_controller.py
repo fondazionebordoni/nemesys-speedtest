@@ -4,13 +4,14 @@ Created on 13/ott/2015
 @author: ewedlund
 '''
 import gui_event
+from speedTester import SpeedTester
 
 class MistController():
     
-    def __init__(self, gui, profiler, speed_tester, event_dispatcher):
+    def __init__(self, gui, version, profiler, event_dispatcher):
         self._gui = gui
+        self._version = version
         self._profiler = profiler
-        self._speed_tester = speed_tester
         self._event_dispatcher = event_dispatcher
 
  
@@ -35,4 +36,5 @@ class MistController():
     def measure(self, profiler_result = None):
         '''Callback to continue with measurement after profiling'''
         "TODO: Start background profiler here?"
-        self._speed_tester.start()
+        speed_tester = SpeedTester(self._version, self._event_dispatcher, do_profile=False)
+        speed_tester.start()

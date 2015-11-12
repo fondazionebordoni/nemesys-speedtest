@@ -12,7 +12,6 @@ from checkSoftware import CheckSoftware
 from mist_controller import MistController
 from optparse import OptionParser
 from platform import system
-from speedTester import SpeedTester
 from sysProfiler import sysProfiler
 from time import sleep
 
@@ -108,8 +107,7 @@ def mist(text_based = False):
         GUI = mist_gui.mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE) #& ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
         event_dispatcher = gui_event.WxGuiEventDispatcher(GUI)
         profiler = sysProfiler(event_dispatcher)
-        speed_tester = SpeedTester(version, event_dispatcher, do_profile=False)
-        controller = MistController(GUI, profiler, speed_tester, event_dispatcher)
+        controller = MistController(GUI, version, profiler, event_dispatcher)
         GUI.init_frame(version, event_dispatcher)
         GUI.set_listener(controller)
         app.SetTopWindow(GUI)

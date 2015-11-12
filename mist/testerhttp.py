@@ -236,9 +236,7 @@ class HttpTester:
             self._upload_sending_time_secs = total_test_time_secs * 2 + self._rampup_secs + 1
         file_size = MAX_TRANSFERED_BYTES * self._upload_sending_time_secs / TOTAL_MEASURE_TIME
         self._init_counters()
-        self._recv_bufsize = recv_bufsize
-#         self._fakefile = Fakefile(file_size)
-        # Read progress each second
+        # Read progress each second, just for display
         read_thread = threading.Timer(1.0, self._read_up_measure)
         read_thread.start()
         self._read_measure_threads.append(read_thread)
@@ -270,38 +268,14 @@ class HttpTester:
                 raise MeasurementException("Test non risucito - tempo ritornato dal server non corrisponde al tempo richiesto.")
 
         tx_diff = self._netstat.get_tx_bytes() - start_tx_bytes
-#         read_bytes = self._fakefile.get_bytes_read()
+        if (tx_diff < 0):
+            raise MeasurementException("Ottenuto banda negativa, possibile azzeramento dei contatori.")
         spurious = (float(tx_diff - bytes_read)/float(tx_diff))
         logger.info("Traffico spurio: %0.4f" % spurious)
         test['bytes_total'] = int(test['bytes'] * (1 + spurious))
         test['rate_tot_secs'] = [x * (1 + spurious) for x in test['rate_secs']]
         return test
     
-#     def _do_one_upload(self, fakefile, url, upload_sending_time_secs):
-#         chunk_generator = ChunkGenerator(fakefile, upload_sending_time_secs)
-#         response = None
-#         try:
-#             logger.info("Connecting to server, sending time is %d" % upload_sending_time_secs)
-#             response = requests.post(url, data=chunk_generator.gen_chunk())#, hooks = dict(response = self._response_received))
-#         except Exception as e:
-#             self._stop_up_measurement()
-#             raise MeasurementException("Errore di connessione: %s" % str(e))
-#         if not response:
-#             self._stop_up_measurement()
-#             raise MeasurementException("Nessuna risposta") 
-#         if response.status_code != 200:
-#             self._stop_up_measurement()
-#             raise MeasurementException("Ricevuto risposta %d dal server" % response.status_code)
-#         test = _test_from_server_response(response.content)
-#         if test['time'] < (total_test_time_secs * 1000) - 1:
-#             # Probably slow creation of connection, needs more time
-#             # Double the sending time
-#             if is_first_try:
-#                 self._stop_up_measurement()
-#                 logger.warn("Test non sufficientemente lungo, aumento del tempo di misura.")
-#                 return self.test_up(url, callback_update_speed, total_test_time_secs, file_size, recv_bufsize, is_first_try = False)
-#             else:
-#                 raise MeasurementException("Test non risucito - tempo ritornato dal server non corrisponde al tempo richiesto.")
 
 def _init_test(testtype):
     test = {}
@@ -329,15 +303,6 @@ def _test_from_server_response(response):
     else:
         results = str(response).split(',')
         test['time'] = len(results) * 1000
-#         test['time'] = int(results[0])
-#         total_bytes = int(results[1])
-#         test['bytes'] = total_bytes
-#         if test['time'] > 0:
-#             medium_rate = float(total_bytes) * 8 / test['time']
-#             test['rate_medium'] = medium_rate
-#         else:
-#             test['rate_medium'] = -1
-#         partial_bytes = [float(x) for x in results[2:]] 
         partial_bytes = [float(x) for x in results] 
         test['rate_secs'] = []
         if partial_bytes:
@@ -442,5 +407,17 @@ if __name__ == '__main__':
 #     res = http_tester.test_down("http://%s:80" % host, total_test_time_secs=30, num_sessions=4)
 #     print res
     print "\n------ UPLOAD ---------\n"
+    res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=1)
+    print res
+    print "\n------ UPLOAD ---------\n"
+    res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=2)
+    print res
+    print "\n------ UPLOAD ---------\n"
+    res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=3)
+    print res
+    print "\n------ UPLOAD ---------\n"
     res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=4)
+    print res
+    print "\n------ UPLOAD ---------\n"
+    res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=5)
     print res

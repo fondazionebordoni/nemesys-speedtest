@@ -19,6 +19,7 @@
 import errno
 from ftplib import FTP
 import ftplib
+import socket
 import sys
 import time
 import threading
@@ -46,9 +47,9 @@ class FtpTester:
     self._bufsize = bufsize
     self._netstat = netstat.get_netstat(dev)
     self._timeout_secs = timeout_secs
-    #Ignore any given timeout
     self._timeout_millis = float(timeout_secs * 1000)
-    # For the read thread
+    socket.setdefaulttimeout(self._timeout_secs)
+
     
   def _init_counters(self, is_down_measure = True):
     self._time_to_stop = False
@@ -265,7 +266,6 @@ class FtpTester:
     self._filepath = filename
 
     try:
-      # TODO Il timeout non viene onorato in Python 2.6: http://bugs.python.org/issue8493
       self._ftp = FTP(server, username, password, self._timeout_secs)
     except ftplib.all_errors as e:
       test['errorcode'] = errors.geterrorcode(e)
@@ -325,6 +325,7 @@ if __name__ == '__main__':
     t = FtpTester(dev)
         
 #     print t.testftpdown(nap, '/download/90000.rnd', 1000000, 'nemesys', '4gc0m244')
-    print "\n---------------------------\n"
-    print t.testftpup(nap, '/upload/r.raw', 76856169, 'nemesys', '4gc0m244')
+    for _ in range(0,100):
+        print "\n---------------------------\n"
+        print t.testftpup(nap, '/upload/r.raw', 76856169, 'nemesys', '4gc0m244')
     
