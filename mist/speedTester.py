@@ -322,6 +322,10 @@ class SpeedTester(Thread):
           testres = tester.testhttpup(self.receive_partial_results, num_sessions = 4)
         elif t_type == test_type.HTTP_UP_MULTI_6:
           testres = tester.testhttpup(self.receive_partial_results, num_sessions = 6)
+        elif t_type == test_type.HTTP_UP_MULTI_7:
+          testres = tester.testhttpup(self.receive_partial_results, num_sessions = 7)
+        elif t_type == test_type.HTTP_UP_MULTI_10:
+          testres = tester.testhttpup(self.receive_partial_results, num_sessions = 10)
         else:
           logger.warn("Tipo di test da effettuare non definito: %s" % test_type.get_string_type(t_type))
 
@@ -432,7 +436,20 @@ class SpeedTester(Thread):
 #         test_types = [PING_WITH_SLEEP, HTTP_DOWN_MULTI, PING_WITH_SLEEP, FTP_DOWN, PING_WITH_SLEEP, HTTP_DOWN]
 #        test_types = [PING, HTTP_DOWN_LONG, FTP_DOWN, HTTP_DOWN]
 #        test_types = [PING, FTP_DOWN, HTTP_DOWN]
-        test_types = [test_type.PING, test_type.HTTP_UP, test_type.PING, test_type.FTP_UP, test_type.PING, test_type.HTTP_UP_MULTI_4, test_type.PING, test_type.HTTP_UP_MULTI_6, test_type.PING, test_type.FTP_UP]
+        test_types = [test_type.PING, 
+                      test_type.HTTP_UP, 
+                      test_type.PING, 
+                      test_type.FTP_UP, 
+                      test_type.PING, 
+                      test_type.HTTP_UP_MULTI_4, 
+                      test_type.PING, 
+                      test_type.HTTP_UP_MULTI_6, 
+                      test_type.PING, 
+                      test_type.HTTP_UP_MULTI_7, 
+                      test_type.PING, 
+                      test_type.HTTP_UP_MULTI_10, 
+                      test_type.PING, 
+                      test_type.FTP_UP]
         #test_types = [FTP_DOWN, FTP_UP, PING]
         task.set_ftpup_bytes(int(self._client.profile.upload * task.multiplier * 1000 / 8))
         for _ in range(0,5):

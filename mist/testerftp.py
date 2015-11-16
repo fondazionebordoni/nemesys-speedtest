@@ -181,7 +181,7 @@ class FtpTester:
       if (e.args[0][:3] == '426'):
         pass
       else:
-        "TODO: stop read threads"
+        self._time_to_stop = True
         raise e
     
     stop = time.time()
