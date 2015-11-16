@@ -108,6 +108,8 @@ class FtpTester:
 
   def _read_down_measure(self):
 
+    if self._time_to_stop:
+        return
     self._measure_count += 1
     measuring_time = time.time()
     elapsed = (measuring_time - self._last_measured_time)*1000.0
@@ -118,16 +120,17 @@ class FtpTester:
     logger.debug("[FTP] Reading... count = %d, speed = %d" 
           % (self._measure_count, int(rate_tot)))
     
-    if not self._time_to_stop:
-        self._last_bytes = new_bytes
-        self._last_measured_time = measuring_time
-        read_thread = threading.Timer(1.0, self._read_down_measure)
-        self._read_measure_threads.append(read_thread)
-        read_thread.start()
+    self._last_bytes = new_bytes
+    self._last_measured_time = measuring_time
+    read_thread = threading.Timer(1.0, self._read_down_measure)
+    self._read_measure_threads.append(read_thread)
+    read_thread.start()
 
   "TODO: should be one method for both up and down measure"
   def _read_up_measure(self):
 
+    if self._time_to_stop:
+        return
     self._measure_count += 1
     measuring_time = time.time()
     elapsed = (measuring_time - self._last_measured_time)*1000.0
@@ -138,12 +141,11 @@ class FtpTester:
     logger.debug("[FTP] Reading... count = %d, speed = %d" 
           % (self._measure_count, int(rate_tot)))
     
-    if not self._time_to_stop:
-        self._last_bytes = new_bytes
-        self._last_measured_time = measuring_time
-        read_thread = threading.Timer(1.0, self._read_up_measure)
-        self._read_measure_threads.append(read_thread)
-        read_thread.start()
+    self._last_bytes = new_bytes
+    self._last_measured_time = measuring_time
+    read_thread = threading.Timer(1.0, self._read_up_measure)
+    self._read_measure_threads.append(read_thread)
+    read_thread.start()
 
     
   def _ftp_up(self):
@@ -168,6 +170,7 @@ class FtpTester:
       stop = time.time()
       elapsed = float((stop-start)*1000)
       if (elapsed > self._timeout_millis):
+        self._time_to_stop = True
         break
 
     try:

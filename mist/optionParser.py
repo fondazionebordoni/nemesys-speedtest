@@ -28,6 +28,8 @@ class OptionParser(OptionParser):
   
     config = ConfigParser()
   
+    self.add_option("-t", "--text", dest="text_based", action="store_true", help="Senza interfaccia grafica [default: %default]")
+
     if (path.exists(paths.CONF_MAIN)):
       config.read(paths.CONF_MAIN)
       logger.info('Caricata configurazione da %s' % paths.CONF_MAIN)

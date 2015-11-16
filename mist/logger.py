@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from os import path
 import logging.config
 import paths
 #import re
@@ -87,7 +86,8 @@ datefmt=%b %d %H:%M:%S
 '''
 
 with open(configfile, 'w') as file:
-  s = str(default)
+  'TODO: choose which one to use'
+  s = str(default_no_stdout)
   file.write(s) 
 
 logging.config.fileConfig(configfile)

@@ -10,12 +10,14 @@ except IOError as e:
 #from sysMonitor import interfaces#, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_TRAFFIC, RES_HOSTS
 from checkSoftware import CheckSoftware
 from mist_controller import MistController
-from optparse import OptionParser
+# from optparse import OptionParser
+from optionParser import OptionParser
 from platform import system
 from sysProfiler import sysProfiler
 from time import sleep
 
 import gui_event
+import mist_cli
 import os
 import sys
 import sysMonitor
@@ -42,7 +44,7 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
     try:
-        # setup option parser
+        'TODO: Needs fixing, mixup with optionParser.OptionParser'
         parser = OptionParser(version=program_version_string, epilog=program_longdesc)#, description=program_license)
 #         parser.add_option("-i", "--in", dest="infile", help="set input path [default: %default]", metavar="FILE")
 #         parser.add_option("-c", "--check", dest="check", action="store_true", help="Fare solo la verifica del sistema, senza misura [default: %default]")
@@ -62,8 +64,6 @@ def main(argv=None):
 #         if opts.measure == True:
 #             print "measure is true"
 #         
-        if opts.text_based == True:
-            print "text based"
         
         SWN = 'MisuraInternet Speed Test'
         logger.info('Starting %s v.%s' % (SWN, FULL_VERSION)) 
@@ -87,11 +87,11 @@ def main(argv=None):
 
 
 def mist(text_based = False):
+    version = __version__
     if not text_based:
         app = wx.App(False)
     
         # Check if this is the last version
-        version = __version__
         version_ok = CheckSoftware(version).checkIT()
         #check = checker.checkIT()
         
@@ -100,7 +100,12 @@ def mist(text_based = False):
     # Logs all network interfaces
     sysMonitor.interfaces()
     if text_based:
-        pass
+        event_dispatcher = gui_event.CliEventDispatcher()
+        GUI = mist_cli.MistCli(event_dispatcher)
+        profiler = sysProfiler(event_dispatcher)
+        controller = MistController(GUI, version, profiler, event_dispatcher)
+        GUI.set_listener(controller)
+        GUI.start()
     else:
         if (system().lower().startswith('win')):
             wx.CallLater(200, sleeper)
