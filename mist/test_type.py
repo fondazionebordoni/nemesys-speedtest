@@ -23,6 +23,8 @@ HTTP_UP_MULTI_4 = 13
 HTTP_UP_MULTI_6 = 14
 HTTP_UP_MULTI_7 = 15
 HTTP_UP_MULTI_10 = 16
+HTTP_UP_MULTI_20 = 17
+HTTP_UP_MULTI_25 = 18
 
 
 STRING_TYPES = {PING: "ping", 
@@ -35,6 +37,8 @@ STRING_TYPES = {PING: "ping",
                 HTTP_UP_MULTI_6: "http upload 6 sessioni",
                 HTTP_UP_MULTI_7: "http upload 7 sessioni",
                 HTTP_UP_MULTI_10: "http upload 10 sessioni",
+                HTTP_UP_MULTI_20: "http upload 20 sessioni",
+                HTTP_UP_MULTI_25: "http upload 25 sessioni",
                 HTTP_DOWN_MULTI: "http download multisession",
                 HTTP_DOWN_MULTI_4:'http down 4 sessioni',
                 HTTP_DOWN_MULTI_6: 'http down 6 sessioni',
@@ -52,6 +56,8 @@ STRING_TYPES_SHORT = {PING: "ping",
                 HTTP_UP_MULTI_6: "http up multi 6",
                 HTTP_UP_MULTI_7: "http up multi 7",
                 HTTP_UP_MULTI_10: "http up multi 10",
+                HTTP_UP_MULTI_20: "http up multi 20",
+                HTTP_UP_MULTI_25: "http up multi 25",
                 HTTP_DOWN_MULTI: "http down multi",
                 HTTP_DOWN_MULTI_4:'http down 4',
                 HTTP_DOWN_MULTI_6: 'http down 6',
