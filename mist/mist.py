@@ -21,7 +21,7 @@ from os import path
 import paths
 import wx
 
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 SWN = 'MisuraInternet Speed Test'
 
