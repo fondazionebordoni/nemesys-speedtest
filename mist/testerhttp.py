@@ -253,10 +253,13 @@ class HttpTester:
             thread_error = upload_thread.get_error()
             thread_response = upload_thread.get_response()
             bytes_read += upload_thread.get_bytes_read()
+            response_content = thread_response.content
+            thread_response.close()
         self._time_to_stop = True
         if thread_error:
             raise MeasurementException(thread_error)
-        test = _test_from_server_response(thread_response.content)
+        test = _test_from_server_response(response_content)
+        
         if test['time'] < (total_test_time_secs * 1000) - 1:
             # Probably slow creation of connection, needs more time
             # Double the sending time
