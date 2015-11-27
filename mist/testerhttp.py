@@ -247,12 +247,10 @@ class HttpTester:
             upload_thread = UploadThread(httptester=self, fakefile=fakefile, url=url, upload_sending_time_secs=self._upload_sending_time_secs, measurement_id=measurement_id, recv_bufsize=recv_bufsize, num_bytes=self._num_bytes)#threading.Thread(target = self._do_one_upload, args = (fakefile, url, self._upload_sending_time_secs))
             upload_thread.start()
             upload_threads.append(upload_thread)
-        bytes_read = 0
         for upload_thread in upload_threads:
             upload_thread.join()
             thread_error = upload_thread.get_error()
             thread_response = upload_thread.get_response()
-            bytes_read += upload_thread.get_bytes_read()
             response_content = thread_response.content
             thread_response.close()
         self._time_to_stop = True
@@ -269,7 +267,9 @@ class HttpTester:
                 return self.test_up(url, callback_update_speed, total_test_time_secs, file_size, recv_bufsize, is_first_try = False)
             else:
                 raise MeasurementException("Test non risucito - tempo ritornato dal server non corrisponde al tempo richiesto.")
-
+        bytes_read = 0
+        for upload_thread in upload_threads:
+            bytes_read += upload_thread.get_bytes_read()
         tx_diff = self._netstat.get_tx_bytes() - start_tx_bytes
         if (tx_diff < 0):
             raise MeasurementException("Ottenuto banda negativa, possibile azzeramento dei contatori.")
