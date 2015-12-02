@@ -13,12 +13,13 @@ import time
 
 TAG_PREFIX = "release-"
 GENERATED_VERSION_PY = """
-# This file is originally generated from Git information by running 'setup.py
-# version'. Distribution tarballs contain a pre-generated copy of this file.
+# This file is originally generated from Git information by running 'python version.py
 
 __version__ = '%s'
 FULL_VERSION = '%s'
 __updated__ = '%s'
+if __name__ == '__main__':
+    print __version__
 """
 VERSION_FILE="_generated_version.py"
 def update_version_py():
