@@ -14,7 +14,6 @@ from ..NemesysException import RisorsaException
 import xml.etree.ElementTree as ET
 import psutil, os
 import platform
-import dmidecode
 import netifaces
 import socket
 
@@ -23,16 +22,8 @@ class CPU(Risorsa):
     def __init__(self):
         Risorsa.__init__(self)
         self._chisono = "sono una CPU"
-        self._params = ['processor', 'cores', 'cpuLoad']
+        self._params = ['cpuLoad']
         #print psutil.__version__
-
-    def processor(self):
-        val = dmidecode.processor().values()
-        return self.xmlFormat('processor', val[0]['data']['Version'])
-
-    def cores(self):
-        val = dmidecode.processor().values()
-        return self.xmlFormat('cores', val[0]['data']['Core Enabled'])
 
     def cpuLoad(self):
         val = psutil.cpu_percent(0.5)
