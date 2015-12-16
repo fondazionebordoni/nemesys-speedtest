@@ -22,10 +22,9 @@ from logger import logging
 from optparse import OptionParser
 import paths
 import ping
-import socket
-import sys
 from testerhttp import HttpTester
 from testerftp import FtpTester
+from measurementexception import MeasurementException
 
 HTTP_BUFF = 8*1024
 
@@ -55,11 +54,11 @@ class Tester:
     
     
 
-  def testhttpdown(self, callback_update_speed):
-      url = "http://%s/file.rnd" % self._host.ip
-      return self._testerhttp.test_down(url, 10, callback_update_speed, 1)    
+#   def testhttpdown(self, callback_update_speed):
+#       url = "http://%s/file.rnd" % self._host.ip
+#       return self._testerhttp.test_down(url, 10, callback_update_speed, 1)    
  
-  def testhttpdown_multisession(self, callback_update_speed, num_sessions = 4):
+  def testhttpdown(self, callback_update_speed, num_sessions = 4):
       url = "http://%s/file.rnd" % self._host.ip
       return self._testerhttp.test_down(url, 10, callback_update_speed, num_sessions=num_sessions)    
  
@@ -85,7 +84,7 @@ class Tester:
     test['time'] = 0
     test['errorcode'] = 0
     
-    self._timeout = float(22)
+#     self._timeout = float(22)
     
     try:
       # Il risultato deve essere espresso in millisecondi
@@ -105,80 +104,116 @@ class Tester:
 
 
 def main():
-  #Aggancio opzioni da linea di comando
+    import time
+    #Aggancio opzioni da linea di comando
+    
+    parser = OptionParser(version = "0.10.1.$Rev$",
+                          description = "A simple bandwidth tester able to perform HTTP upload/download and PING tests.")
+    parser.add_option("-t", "--type", choices = ('httpdown', 'httpup', 'ping'),
+                      dest = "testtype", default = "httpdown", type = "choice",
+                      help = "Choose the type of test to perform: httpdown (default), httpdown, ping")
+    parser.add_option("--ping-timeout", dest = "ping_timeout", default = "5.0", type = "float",
+                    help = "Ping timeout")
+    parser.add_option("--sessions-up", dest = "sessions_up", default = "1", type = "int",
+                    help = "Number of sessions in upload")
+    parser.add_option("--sessions-down", dest = "sessions_down", default = "7", type = "int",
+                    help = "Number of sessions in download")
+    parser.add_option("-n", "--num-tests", dest = "num_tests", default = "4", type = "int",
+                    help = "Number of tests to perform")
+    parser.add_option("-H", "--host", dest = "host", default = "eagle2.fub.it",
+                    help = "An ipaddress or FQDN of server host")
+    
+    (options, args) = parser.parse_args()
+    #TODO inserire controllo host
+    import sysMonitor
+    errors = Errorcoder(paths.CONF_ERRORS)
+    ip = sysMonitor.getIp(host=options.host, port=80)
+    dev = sysMonitor.getDev(host=options.host, port=80)
+    t = Tester(dev, ip, Host(options.host), timeout = float(options.ping_timeout))
+    
+    #   test = None
+    print "==============================================="
+    print ('Testing: %s' % options.host)
+    for i in range(1, options.num_tests + 1):
+        print "-----------------------------------------------"
+        if i != 1:
+            print "Sleeping...."
+            print "-----------------------------------------------"
+            time.sleep(5)
+        if options.testtype == 'httpup':
+            print('test %d %s' % (i, options.testtype))
+            try:
+                res = t.testhttpup(None, int(options.sessions_up))
+            except MeasurementException as e:
+                res = {'errorcode': errors.geterrorcode(e), 'error': str(e)}
+            printout_http(res)
+        elif options.testtype == 'ping':
+            print('test %d %s' % (i, options.testtype))
+            try:
+                res = t.testping()
+                print("Ping: %.2f milliseconds" % res['time'])
+            except Exception as e:
+#                 res = {'errorcode': errors.geterrorcode(e), 'error': str(e)}
+                print("Error: %s" % str(e))
+        else:
+            print('test %d %s' % (i, options.testtype))
+            try:
+                res = t.testhttpdown(None, int(options.sessions_down))
+            except MeasurementException as e:
+                res = {'errorcode': errors.geterrorcode(e), 'error': str(e)}
+            printout_http(res)
+    print "==============================================="
 
-  parser = OptionParser(version = "0.10.1.$Rev$",
-                        description = "A simple bandwidth tester able to perform FTP upload/download and PING tests.")
-  parser.add_option("-t", "--type", choices = ('ftpdown', 'ftpup', 'ping'),
-                    dest = "testtype", default = "ftpdown", type = "choice",
-                    help = "Choose the type of test to perform: ftpdown (default), ftpup, ping")
-  parser.add_option("-f", "--file", dest = "filename",
-                    help = "For FTP download, the name of the file for RETR operation")
-  parser.add_option("-b", "--byte", dest = "bytes", type = "int",
-                    help = "For FTP upload, the size of the file for STOR operation")
-  parser.add_option("-H", "--host", dest = "host",
-                    help = "An ipaddress or FQDN of testing host")
-  parser.add_option("-u", "--username", dest = "username", default = "anonymous",
-                    help = "An optional username to use when connecting to the FTP server")
-  parser.add_option("-p", "--password", dest = "password", default = "anonymous@",
-                    help = "The password to use when connecting to the FTP server")
-  parser.add_option("-P", "--path", dest = "path", default = "",
-                    help = "The path where put uploaded file")
-  parser.add_option("--timeout", dest = "timeout", default = "30", type = "int",
-                    help = "Timeout in seconds for FTP blocking operations like the connection attempt")
 
-  (options, args) = parser.parse_args()
-  #TODO inserire controllo host
-
-  ip = sysMonitor.getIp()
-
-  t = Tester(ip, Host(options.host), options.username, options.password)
-  test = None
-  print ('Prova: %s' % options.host)
-
-  tests = {
-    'ftpdown': t.testftpdown(options.filename),
-    'ftpup': t.testftpup(options.bytes, options.path),
-    'ping': t.testping(),
-  }
-  test = tests.get(options.testtype)
-
-  print test
-  return None
+def printout_http(res):
+    if res['errorcode'] == 0:
+        print("Medium speed: %d" % (int(sum(res['rate_tot_secs']))/len(res['rate_tot_secs'])))
+#         print("Spurious traffic: %.2f%%" % float(res['spurious'] * 100))
+    else:
+        print("Error: %s" % res['error'])
+#   tests = {
+#     'httpdown': t.testhttpdown(None, options.sessions_down),
+#     'httpup': t.testhttpup(None, options.sessions_up),
+#     'ping': t.testping(),
+#   }
+#   test = tests.get(options.testtype)
+# 
+#   print test
+#   return None
 
 
 if __name__ == '__main__':
-  if len(sys.argv) < 2:
-    s = socket.socket(socket.AF_INET)
-    s.connect(('www.fub.it', 80))
-    ip = s.getsockname()[0]
-    s.close()
-    nap = '193.104.137.133'
-
-    TOT = 5
-    import sysMonitor
-    dev = sysMonitor.getDev()
-
-    t1 = Tester(dev, ip, Host(ip = nap), 'nemesys', '4gc0m244')
-
-    for i in range(1, TOT + 1):
-      logger.info('Test Download %d/%d' % (i, TOT))
-      test = t1.testftpdown(10000000, '/download/40000.rnd')
-      logger.info(test)
-      logger.info("Risultato di banda in download: %d" % (test['bytes_total'] * 8 / test['time']))
-
-    for i in range(1, TOT + 1):
-      logger.info('Test Upload %d/%d' % (i, TOT))
-      test = t1.testftpup(10000000, '/upload/r.raw')
-      logger.info(test)
-      logger.info("Risultato di banda in upload: %d" % (test['bytes_total'] * 8 / test['time']))
-
-    for i in range(1, TOT + 1):
-      logger.info('\nTest Ping %d/%d' % (i, TOT))
-      test = t1.testping()
-      logger.info(test)
-      logger.info("Risultato ping: %d" % test['time'])
-
-  else:
+#   if len(sys.argv) < 2:
+#     s = socket.socket(socket.AF_INET)
+#     s.connect(('www.fub.it', 80))
+#     ip = s.getsockname()[0]
+#     s.close()
+#     nap = '193.104.137.133'
+# 
+#     TOT = 5
+#     import sysMonitor
+#     dev = sysMonitor.getDev()
+# 
+#     t1 = Tester(dev, ip, Host(ip = nap), 'nemesys', '4gc0m244')
+# 
+#     for i in range(1, TOT + 1):
+#       logger.info('Test Download %d/%d' % (i, TOT))
+#       test = t1.testhttpdown(10000000, '/download/40000.rnd')
+#       logger.info(test)
+#       logger.info("Risultato di banda in download: %d" % (test['bytes_total'] * 8 / test['time']))
+# 
+#     for i in range(1, TOT + 1):
+#       logger.info('Test Upload %d/%d' % (i, TOT))
+#       test = t1.testftpup(10000000, '/upload/r.raw')
+#       logger.info(test)
+#       logger.info("Risultato di banda in upload: %d" % (test['bytes_total'] * 8 / test['time']))
+# 
+#     for i in range(1, TOT + 1):
+#       logger.info('\nTest Ping %d/%d' % (i, TOT))
+#       test = t1.testping()
+#       logger.info(test)
+#       logger.info("Risultato ping: %d" % test['time'])
+# 
+#   else:
     main()
 
