@@ -73,6 +73,7 @@ class HttpTester:
         error_queue = Queue.Queue()
 
         self._init_counters()
+        self._received_end = False
         test = _init_test('download_http')
         read_thread = threading.Timer(1.0, self._read_down_measure)
         read_thread.start()
@@ -91,6 +92,8 @@ class HttpTester:
             
         if not error_queue.empty():
             raise MeasurementException(error_queue.get())
+        if not self._received_end:
+            raise MeasurementException("Connessione interrotta")
         
         filebytes = 0
         for _ in download_threads:
@@ -152,14 +155,14 @@ class HttpTester:
                     break
                 
         else:
-            received_end = False
-            while ((not self._time_to_stop) or (not received_end)) and not self._timeout:
+#             received_end = False
+            while ((not self._time_to_stop) or (not self._received_end)) and not self._timeout:
                 try:
                     my_buffer = response.read(self._num_bytes)
                     if my_buffer != None: 
                         filebytes += len(my_buffer)
                         if "_ThisIsTheEnd_" in my_buffer:
-                            received_end = True
+                            self._received_end = True
                     else: 
                         self._time_to_stop = True
                         error_queue.put("Non ricevuti dati sufficienti per completare la misura")
@@ -167,11 +170,7 @@ class HttpTester:
                 except socket.timeout:
                     print "socket timeout"
                     pass
-#                     error_queue.put("Timeout sul socket")
-        if received_end == True:
-            result_queue.put(filebytes)
-        else:
-            error_queue.put("Connessione interrotta")
+        result_queue.put(filebytes)
                 
     
     def _get_max_rate(self):
