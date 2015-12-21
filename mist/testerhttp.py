@@ -65,6 +65,7 @@ class HttpTester:
 
     def test_down(self, url, total_test_time_secs = TOTAL_MEASURE_TIME, callback_update_speed = None, num_sessions = 1):
         self._timeout = False
+        self._received_end = False
         self.callback_update_speed = callback_update_speed
         self._total_measure_time = total_test_time_secs + self._rampup_secs
         file_size = MAX_TRANSFERED_BYTES * self._total_measure_time / TOTAL_MEASURE_TIME
@@ -72,14 +73,14 @@ class HttpTester:
         result_queue = Queue.Queue()
         error_queue = Queue.Queue()
 
+        logger.debug("Starting download test...")
         self._init_counters()
-        self._received_end = False
         test = _init_test('download_http')
         read_thread = threading.Timer(1.0, self._read_down_measure)
         read_thread.start()
-        timeout_thread = threading.Timer(self._total_measure_time + 2, self._set_timeout)
-        timeout_thread.start()
         self._read_measure_threads.append(read_thread)
+        timeout_thread = threading.Timer(self._total_measure_time + 3, self._set_timeout)
+        timeout_thread.start()
         starttotalbytes = self._netstat.get_rx_bytes()
 
         for _ in range(0, num_sessions):
@@ -89,23 +90,30 @@ class HttpTester:
             
         for download_thread in download_threads:
             download_thread.join()
-            
-        if not error_queue.empty():
-            raise MeasurementException(error_queue.get())
-        if not self._received_end:
-            raise MeasurementException("Connessione interrotta")
-        
+        logger.debug("Download threads done, stopping...")
+        self._time_to_stop = True
         filebytes = 0
+        missing_results = False
         for _ in download_threads:
             try:
-                filebytes += int(result_queue.get())
+                filebytes += int(result_queue.get(block = False))
             except Queue.Empty:
-                raise MeasurementException("Risultati mancanti da uno o piu' sessioni, impossibile calcolare la banda.")
+                missing_results = True
+                break
             
         total_bytes = self._netstat.get_rx_bytes() - starttotalbytes
+        
         for read_thread in self._read_measure_threads:
             read_thread.join()
+            
+        timeout_thread.join()
 
+        if not error_queue.empty():
+            raise MeasurementException(error_queue.get())
+        if missing_results:
+            raise MeasurementException("Risultati mancanti da uno o piu' sessioni, impossibile calcolare la banda.")
+        if not self._received_end:
+            raise MeasurementException("Connessione interrotta")
         if (total_bytes < 0):
             raise MeasurementException("Ottenuto banda negativa, possibile azzeramento dei contatori.")
         if (total_bytes == 0) or (filebytes == 0):
@@ -135,6 +143,7 @@ class HttpTester:
             request = urllib2.Request(url, headers = {"X-requested-file-size" : file_size, "X-requested-measurement-time" : total_measure_time})
             response = urllib2.urlopen(request)
         except Exception as e:
+            logger.error("Impossibile creare connessione: %s" % str(e))
             self._time_to_stop = True
             error_queue.put("Impossibile aprire la connessione HTTP: %s" % str(e))
             return
@@ -168,7 +177,6 @@ class HttpTester:
                         error_queue.put("Non ricevuti dati sufficienti per completare la misura")
                         return
                 except socket.timeout:
-                    print "socket timeout"
                     pass
         result_queue.put(filebytes)
                 
