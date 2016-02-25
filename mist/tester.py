@@ -129,8 +129,11 @@ def main():
     #TODO inserire controllo host
     import sysMonitor
     errors = Errorcoder(paths.CONF_ERRORS)
-    ip = sysMonitor.getIp(host=options.host, port=80)
-    dev = sysMonitor.getDev(host=options.host, port=80)
+#    This is for lab environment
+#     ip = sysMonitor.getIp(host=options.host, port=80)
+#     dev = sysMonitor.getDev(host=options.host, port=80)
+    ip = sysMonitor.getIp()
+    dev = sysMonitor.getDev()
     t = Tester(dev, ip, Host(options.host), timeout = float(options.ping_timeout), username = 'nemesys', password = '4gc0m244')
     #   test = None
     print "==============================================="
