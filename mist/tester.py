@@ -135,6 +135,14 @@ def main():
     ip = sysMonitor.getIp()
     dev = sysMonitor.getDev()
     t = Tester(dev, ip, Host(options.host), timeout = float(options.ping_timeout), username = 'nemesys', password = '4gc0m244')
+    if options.bandwidth.endswith("M"):
+        bw = int(options.bandwidth[:-1]) * 1000000
+    elif options.bandwidth.endswith("k"):
+        bw = int(options.bandwidth[:-1]) * 1000
+    else:
+        print "Please specify bandwith in the form of 2M or 512k"
+        return
+    
     #   test = None
     print "==============================================="
     print ('Testing: %s' % options.host)
@@ -152,12 +160,6 @@ def main():
                 res = {'errorcode': errors.geterrorcode(e), 'error': str(e)}
             printout_http(res)
         elif options.testtype == 'ftpup':
-            if options.bandwidth.endswith("M"):
-                bw = int(options.bandwidth[:-1]) * 1000000
-            elif options.bandwidth.endswith("k"):
-                bw = int(options.bandwidth[:-1]) * 1000
-            else:
-                print "Please specify bandwith in the form of 2M or 512k"
             file_size = bw * 10 / 8
             try:
                 res = t.testftpup(file_size, '/upload/r.raw')
