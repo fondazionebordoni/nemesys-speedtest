@@ -114,7 +114,7 @@ def main():
                       help = "Choose the type of test to perform: httpdown (default), httpup, ftpup, ping")
     parser.add_option("-b", "--bandwidth", dest = "bandwidth", default = "2M", type = "string",
                       help = "The expected bandwith to measure, used for file size in FTP upload, e.g. 512k, 2M")
-    parser.add_option("--ping-timeout", dest = "ping_timeout", default = "5.0", type = "float",
+    parser.add_option("--ping-timeout", dest = "ping_timeout", default = "20.0", type = "float",
                     help = "Ping timeout")
     parser.add_option("--sessions-up", dest = "sessions_up", default = "1", type = "int",
                     help = "Number of sessions in upload (only HTTP)")
