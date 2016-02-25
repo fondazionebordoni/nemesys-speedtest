@@ -33,9 +33,10 @@ from measurementexception import MeasurementException
 
 
 TOTAL_MEASURE_TIME = 10
+DOWNLOAD_TIMEOUT_DELAY = 5 #Wait another 5 secs in case end of file has not arrived  
 MAX_TRANSFERED_BYTES = 100 * 1000000 * 11 / 8 # 100 Mbps for 11 seconds
 BUF_SIZE = 8*1024
-
+HTTP_TIMEOUT = 10.0 # 10 seconds timeout on open and read operations
 logger = logging.getLogger()
 errors = Errorcoder(paths.CONF_ERRORS)
 
@@ -72,6 +73,7 @@ class HttpTester:
         download_threads = []
         result_queue = Queue.Queue()
         error_queue = Queue.Queue()
+        measurement_id = "sess-%d" % random.randint(0, 100000)
 
         logger.debug("Starting download test...")
         self._init_counters()
@@ -79,12 +81,11 @@ class HttpTester:
         read_thread = threading.Timer(1.0, self._read_down_measure)
         read_thread.start()
         self._read_measure_threads.append(read_thread)
-        timeout_thread = threading.Timer(self._total_measure_time + 3, self._set_timeout)
-        timeout_thread.start()
         starttotalbytes = self._netstat.get_rx_bytes()
 
         for _ in range(0, num_sessions):
-            download_thread = threading.Thread(target= self.do_one_download, args = (url, self._total_measure_time, file_size, result_queue, error_queue))
+            download_thread = threading.Thread(target= self.do_one_download, 
+                                               args = (url, self._total_measure_time, file_size, result_queue, error_queue, measurement_id))
             download_thread.start()
             download_threads.append(download_thread)
             
@@ -106,8 +107,6 @@ class HttpTester:
         for read_thread in self._read_measure_threads:
             read_thread.join()
             
-        timeout_thread.join()
-
         if not error_queue.empty():
             raise MeasurementException(error_queue.get())
         if missing_results:
@@ -133,15 +132,15 @@ class HttpTester:
         return test
 
         
-    def _set_timeout(self):
-        self._timeout = True
         
-    def do_one_download(self, url, total_measure_time, file_size, result_queue, error_queue):
+    def do_one_download(self, url, total_measure_time, file_size, result_queue, error_queue, measurement_id):
         filebytes = 0
 
         try:
-            request = urllib2.Request(url, headers = {"X-requested-file-size" : file_size, "X-requested-measurement-time" : total_measure_time})
-            response = urllib2.urlopen(request)
+            request = urllib2.Request(url, headers = {"X-requested-file-size" : file_size, 
+                                                      "X-requested-measurement-time" : total_measure_time,
+                                                      "X-measurement-id" : measurement_id})
+            response = urllib2.urlopen(request, None, HTTP_TIMEOUT)
         except Exception as e:
             logger.error("Impossibile creare connessione: %s" % str(e))
             self._time_to_stop = True
@@ -152,19 +151,18 @@ class HttpTester:
             error_queue.put("Impossibile aprire la connessione HTTP, codice di errore ricevuto: %d" % response.getcode())
             return
         
-        # In some cases urlopen blocks until all data has been received
-        if self._time_to_stop:
-            logger.warn("Suspected blocked urlopen")
-            # Try to handle anyway!
-            while True:
-                my_buffer = response.read(self._num_bytes)
-                if my_buffer: 
-                    filebytes += len(my_buffer)
-                else: 
-                    break
-                
+#         # In some cases urlopen blocks until all data has been received
+#         if self._time_to_stop:
+#             logger.warn("Suspected blocked urlopen")
+#             # Try to handle anyway!
+#             while True:
+#                 my_buffer = response.read(self._num_bytes)
+#                 if my_buffer: 
+#                     filebytes += len(my_buffer)
+#                 else: 
+#                     break
+#                 
         else:
-#             received_end = False
             while ((not self._time_to_stop) or (not self._received_end)) and not self._timeout:
                 try:
                     my_buffer = response.read(self._num_bytes)
@@ -190,13 +188,25 @@ class HttpTester:
 
     def _read_down_measure(self):
 
+        measuring_time = time.time()
+
         if self._time_to_stop:
-            logger.warn("Time to stop, not measuring")
+            logger.debug("Time to stop, checking for timeout")
+            if not self._received_end and not self._timeout:
+                total_time = measuring_time - self._starttime 
+                if total_time > (self._total_measure_time + DOWNLOAD_TIMEOUT_DELAY):
+                    logger.debug("Timeout, total_time is %.2f" % total_time)
+                    self._timeout = True
+                else:
+                    # Continue until received end or timeout set
+                    logger.debug("Not timeout yet, total_time is %.2f" % total_time)
+                    read_thread = threading.Timer(1.0, self._read_down_measure)
+                    self._read_measure_threads.append(read_thread)
+                    read_thread.start()
             return
         self._measure_count += 1
-        measuring_time = time.time()
         elapsed = (measuring_time - self._last_measured_time)*1000.0
-        
+        self._last_measured_time = measuring_time
         new_rx_bytes = self._netstat.get_rx_bytes()
         rx_diff = new_rx_bytes - self._last_rx_bytes
         rate_tot = float(rx_diff * 8)/float(elapsed) 
@@ -214,9 +224,8 @@ class HttpTester:
         logger.debug("[HTTP] Reading... count = %d, speed = %d" 
                      % (self._measure_count, int(rate_tot)))
         
-        if not self._time_to_stop:
+        if True:#not self._time_to_stop and not self._received_end:
             self._last_rx_bytes = new_rx_bytes
-            self._last_measured_time = measuring_time
             read_thread = threading.Timer(1.0, self._read_down_measure)
             self._read_measure_threads.append(read_thread)
             read_thread.start()
@@ -323,7 +332,7 @@ def _init_test(testtype):
 def _test_from_server_response(response):
     '''
     Server response is a comma separated string containing:
-    <test time>, <total total_bytes received>, <total_bytes received last second>, <total_bytes received 9th second>, ... 
+    <total_bytes received 10th second>, <total_bytes received 9th second>, ... 
     '''
     logger.info("Ricevuto risposta dal server: %s" % str(response))
     test = {}
@@ -430,6 +439,7 @@ class ChunkGenerator:
 
         
 if __name__ == '__main__':
+    socket.setdefaulttimeout(10)
 #    host = "10.80.1.1"
 #    host = "193.104.137.133"
 #    host = "regopptest6.fub.it"

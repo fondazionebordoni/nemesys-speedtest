@@ -109,13 +109,15 @@ def main():
     
     parser = OptionParser(version = "0.10.1.$Rev$",
                           description = "A simple bandwidth tester able to perform HTTP upload/download and PING tests.")
-    parser.add_option("-t", "--type", choices = ('httpdown', 'httpup', 'ping'),
+    parser.add_option("-t", "--type", choices = ('httpdown', 'httpup', 'ftpup', 'ping'),
                       dest = "testtype", default = "httpdown", type = "choice",
-                      help = "Choose the type of test to perform: httpdown (default), httpdown, ping")
+                      help = "Choose the type of test to perform: httpdown (default), httpup, ftpup, ping")
+    parser.add_option("-b", "--bandwidth", dest = "bandwidth", default = "2M", type = "string",
+                      help = "The expected bandwith to measure, used for file size in FTP upload, e.g. 512k, 2M")
     parser.add_option("--ping-timeout", dest = "ping_timeout", default = "5.0", type = "float",
                     help = "Ping timeout")
     parser.add_option("--sessions-up", dest = "sessions_up", default = "1", type = "int",
-                    help = "Number of sessions in upload")
+                    help = "Number of sessions in upload (only HTTP)")
     parser.add_option("--sessions-down", dest = "sessions_down", default = "7", type = "int",
                     help = "Number of sessions in download")
     parser.add_option("-n", "--num-tests", dest = "num_tests", default = "4", type = "int",
@@ -123,14 +125,13 @@ def main():
     parser.add_option("-H", "--host", dest = "host", default = "eagle2.fub.it",
                     help = "An ipaddress or FQDN of server host")
     
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
     #TODO inserire controllo host
     import sysMonitor
     errors = Errorcoder(paths.CONF_ERRORS)
     ip = sysMonitor.getIp(host=options.host, port=80)
     dev = sysMonitor.getDev(host=options.host, port=80)
-    t = Tester(dev, ip, Host(options.host), timeout = float(options.ping_timeout))
-    
+    t = Tester(dev, ip, Host(options.host), timeout = float(options.ping_timeout), username = 'nemesys', password = '4gc0m244')
     #   test = None
     print "==============================================="
     print ('Testing: %s' % options.host)
@@ -140,15 +141,27 @@ def main():
             print "Sleeping...."
             print "-----------------------------------------------"
             time.sleep(5)
+        print('test %d %s' % (i, options.testtype))
         if options.testtype == 'httpup':
-            print('test %d %s' % (i, options.testtype))
             try:
                 res = t.testhttpup(None, int(options.sessions_up))
             except MeasurementException as e:
                 res = {'errorcode': errors.geterrorcode(e), 'error': str(e)}
             printout_http(res)
+        elif options.testtype == 'ftpup':
+            if options.bandwidth.endswith("M"):
+                bw = int(options.bandwidth[:-1]) * 1000000
+            elif options.bandwidth.endswith("k"):
+                bw = int(options.bandwidth[:-1]) * 1000
+            else:
+                print "Please specify bandwith in the form of 2M or 512k"
+            file_size = bw * 10 / 8
+            try:
+                res = t.testftpup(file_size, '/upload/r.raw')
+            except MeasurementException as e:
+                res = {'errorcode': errors.geterrorcode(e), 'error': str(e)}
+            printout_ftp(res)
         elif options.testtype == 'ping':
-            print('test %d %s' % (i, options.testtype))
             try:
                 res = t.testping()
                 print("Ping: %.2f milliseconds" % res['time'])
@@ -156,7 +169,6 @@ def main():
 #                 res = {'errorcode': errors.geterrorcode(e), 'error': str(e)}
                 print("Error: %s" % str(e))
         else:
-            print('test %d %s' % (i, options.testtype))
             try:
                 res = t.testhttpdown(None, int(options.sessions_down))
             except MeasurementException as e:
@@ -180,6 +192,15 @@ def printout_http(res):
 # 
 #   print test
 #   return None
+
+
+def printout_ftp(res):
+    if res['errorcode'] == 0:
+        speed = float(res['bytes_total'] * 8) / float(res['time'])
+        print("Medium speed: %d" % int(speed))
+#         print("Spurious traffic: %.2f%%" % float(res['spurious'] * 100))
+    else:
+        print("Error: %s" % res['error'])
 
 
 if __name__ == '__main__':
