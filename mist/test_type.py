@@ -28,42 +28,16 @@ HTTP_UP_MULTI_25 = 18
 
 
 STRING_TYPES = {PING: "ping", 
-                FTP_UP: "ftp upload", 
-                FTP_DOWN: "ftp download",
+#                 FTP_UP: "ftp upload", 
+#                 FTP_DOWN: "ftp download",
                 HTTP_UP: "http upload",
-                HTTP_DOWN: "http download",
-                HTTP_UP_MULTI: "http upload multisession",
-                HTTP_UP_MULTI_4: "http upload 4 sessioni",
-                HTTP_UP_MULTI_6: "http upload 6 sessioni",
-                HTTP_UP_MULTI_7: "http upload 7 sessioni",
-                HTTP_UP_MULTI_10: "http upload 10 sessioni",
-                HTTP_UP_MULTI_20: "http upload 20 sessioni",
-                HTTP_UP_MULTI_25: "http upload 25 sessioni",
-                HTTP_DOWN_MULTI: "http download multisession",
-                HTTP_DOWN_MULTI_4:'http down 4 sessioni',
-                HTTP_DOWN_MULTI_6: 'http down 6 sessioni',
-                HTTP_DOWN_MULTI_7: 'http down 7 sessioni',
-                HTTP_DOWN_MULTI_8: 'http down 8 sessioni',
-                HTTP_DOWN_LONG: 'http_down_long'
+                HTTP_DOWN: "http download"
                 }
 STRING_TYPES_SHORT = {PING: "ping", 
-                FTP_UP: "ftp up", 
-                FTP_DOWN: "ftp down",
+#                 FTP_UP: "ftp up", 
+#                 FTP_DOWN: "ftp down",
                 HTTP_UP: "http up",
-                HTTP_DOWN: "http down",
-                HTTP_UP_MULTI: "http up multi",
-                HTTP_UP_MULTI_4: "http up multi 4",
-                HTTP_UP_MULTI_6: "http up multi 6",
-                HTTP_UP_MULTI_7: "http up multi 7",
-                HTTP_UP_MULTI_10: "http up multi 10",
-                HTTP_UP_MULTI_20: "http up multi 20",
-                HTTP_UP_MULTI_25: "http up multi 25",
-                HTTP_DOWN_MULTI: "http down multi",
-                HTTP_DOWN_MULTI_4:'http down 4',
-                HTTP_DOWN_MULTI_6: 'http down 6',
-                HTTP_DOWN_MULTI_7: 'http down 7',
-                HTTP_DOWN_MULTI_8: 'http down 8',
-                HTTP_DOWN_LONG: 'http_down_long'
+                HTTP_DOWN: "http down"
 }
 
 

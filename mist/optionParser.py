@@ -28,7 +28,9 @@ class OptionParser(OptionParser):
   
     config = ConfigParser()
   
+    self.add_option("--task-file", dest="task_file", help="read task from file [default: %default]", metavar="FILE")
     self.add_option("-t", "--text", dest="text_based", action="store_true", help="Senza interfaccia grafica [default: %default]")
+    self.add_option("--no-profile", dest="no_profile", action="store_true", help="Non profilare il sistema durante la misura [default: %default]")
 
     if (path.exists(paths.CONF_MAIN)):
       config.read(paths.CONF_MAIN)

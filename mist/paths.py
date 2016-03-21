@@ -54,8 +54,9 @@ OUTBOX_DAY_DIR = path.join(OUTBOX_DIR, DAY)
 
 #LOG
 LOG_DIR = path.join(_APP_PATH, 'logs')
-LOG_DAY_DIR = path.join(LOG_DIR, DAY)
-LOG_FILE = path.join(LOG_DAY_DIR, SEC+'.log')
+# LOG_DAY_DIR = path.join(LOG_DIR, DAY)
+# LOG_FILE = path.join(LOG_DAY_DIR, SEC+'.log')
+LOG_FILE = path.join(LOG_DIR, 'misurainternet-'+DAY+'.log')
 
 # Configuration dirs and files
 _CONF_DIR = path.join(_APP_PATH, 'config')
@@ -72,7 +73,8 @@ def check_paths():
 
   check = []
 
-  dirs = [LOG_DIR, LOG_DAY_DIR, OUTBOX_DIR, OUTBOX_DAY_DIR, SENT_DIR, SENT_DAY_DIR, _CONF_DIR]
+#   dirs = [LOG_DIR, LOG_DAY_DIR, OUTBOX_DIR, OUTBOX_DAY_DIR, SENT_DIR, SENT_DAY_DIR, _CONF_DIR]
+  dirs = [LOG_DIR, OUTBOX_DIR, OUTBOX_DAY_DIR, SENT_DIR, SENT_DAY_DIR, _CONF_DIR]
 
   for dir in dirs:
     if not path.exists(dir):

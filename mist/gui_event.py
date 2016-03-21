@@ -28,7 +28,7 @@ myEVT_AFTER_CHECK = wx.NewEventType()
 EVT_AFTER_CHECK = wx.PyEventBinder(myEVT_AFTER_CHECK)        
 
 
-class CliEventDispatcher():
+class CliEventDispatcher(object):
     '''Generic event dispatcher to be used both by gui and cli'''
     
     def __init__(self):
@@ -58,7 +58,7 @@ class CliEventDispatcher():
                 listeners.remove( listener )
                 self._events[ event_type ] = listeners
 
-class WxGuiEventDispatcher():
+class WxGuiEventDispatcher(object):
     
     def __init__(self, gui):
         self._gui = gui
@@ -100,11 +100,12 @@ class UpdateEvent(GuiEvent):
 class ResultEvent(GuiEvent):
     '''Update message area'''
 
-    def __init__(self, res_type, value):
+    def __init__(self, res_type, value, is_intermediate = False):
         '''Creates the event object'''
         GuiEvent.__init__(self, myEVT_RESULT)
         self._res_type = res_type
         self._value = value
+        self._is_intermediate = is_intermediate
         
     #TODO use property
     def getType(self):
@@ -112,6 +113,9 @@ class ResultEvent(GuiEvent):
     
     def getValue(self):
         return self._value
+    
+    def isIntermediate(self):
+        return self._is_intermediate
     
 class ErrorEvent(GuiEvent):
     '''Update message area'''

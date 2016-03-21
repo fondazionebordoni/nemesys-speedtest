@@ -55,9 +55,9 @@ class Errorcoder:
     secondo la codifica relativa all'dato operatore.
     '''
     try:
-        error = str(exception.args[0])
+        error = str(exception.args[0]).replace(':', ',')
     except AttributeError:
-        error = str(exception)
+        error = str(exception).replace(':', ',')
 
     try:
       errorcode = self._config.getint('Errors', error)
