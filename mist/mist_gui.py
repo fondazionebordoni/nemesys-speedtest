@@ -66,19 +66,23 @@ class mistGUI(wx.Frame):
         self.label_ping.SetForegroundColour((0xff, 0xff, 0xff))
         self.label_ping.SetBackgroundColour((0x13, 0x45, 0x8f))
         self.label_ping.SetSizeHints(140, 18)
+        self.label_ping.SetSize((140, 18))
         self.label_http_down = wx.StaticText(self, -1, "Download", style = wx.ALIGN_CENTRE)
         self.label_http_down.SetForegroundColour((0xff, 0xff, 0xff))
         self.label_http_down.SetBackgroundColour((0x13, 0x45, 0x8f))
+        self.label_http_down.SetSize((200, 18))
         self.label_http_down.SetSizeHints(200, 18)
         
         self.label_ping_res = wx.StaticText(self, -1, "0", style = wx.ALIGN_CENTRE)
         self.label_ping_res.SetForegroundColour((0xff, 0xff, 0xff))
         self.label_ping_res.SetBackgroundColour((0x13, 0x45, 0x8f))
         self.label_ping_res.SetSizeHints(140, 32)
+        self.label_ping_res.SetSize((140, 32))
         self.label_http_down_res = wx.StaticText(self, -1, "0", style = wx.ALIGN_CENTRE)
         self.label_http_down_res.SetForegroundColour((0xff, 0xff, 0xff))
         self.label_http_down_res.SetBackgroundColour((0x13, 0x45, 0x8f))
         self.label_http_down_res.SetSizeHints(200, 32)
+        self.label_http_down_res.SetSize((200, 32))
         
         self.messages_area = wx.TextCtrl(self, -1, "", style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP | wx.BORDER_NONE)
         self.grid_sizer_system_indicators = wx.FlexGridSizer(2, 6, 0, 0)
@@ -457,7 +461,7 @@ class mistGUI(wx.Frame):
         self._update_gauge(1)
         self._busy = False
 
-
+    'TODO: simplify'
     def _writer(self):
         self._stream_flag.set()
         while (len(self._stream) > 0):
@@ -493,17 +497,11 @@ class mistGUI(wx.Frame):
             else:
                 textcolour = 'black'
             
-            if font != None:
-                (size, italic, bold, underline) = font
-                font = wx.Font(size, wx.SWISS, italic, bold, underline, "")
-            else:
-                font = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, 0, "")
-            
             words[message] = (textcolour, wx.NullColour, basic_font)
                 
             self.messages_area.AppendText(text + '\n')
             self.messages_area.SetInsertionPoint(last_pos + 1)
-            self._set_style(text, words, last_pos)
+#             self._set_style(text, words, last_pos)
                 
             self.messages_area.ScrollLines(-1)
         self._stream_flag.clear()

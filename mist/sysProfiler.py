@@ -4,11 +4,10 @@
 # from sysMonitor import SysMonitor, RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC
 from sysMonitor import SysMonitor, RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC
 from collections import OrderedDict
-from threading import Thread, Event
+import threading
 from logger import logging
 import gui_event
 
-import Queue
 import time
 
 logger = logging.getLogger()
@@ -54,12 +53,13 @@ class sysProfiler(object):
         self._device = None
         
         self._sys_monitor = SysMonitor()
-        self._profiler_idle = Event()
-        self._profiler_idle.set()
+        self._lock = threading.Lock()
+#         self._profiler_idle = Event()
+#         self._profiler_idle.set()
 
 
     def profile_once_and_call_back(self, callback, resources = set(ALL_RES), report_progress = False):
-        profiling_thread = Thread(target = self._do_profile, args = (resources, callback, False, report_progress))
+        profiling_thread = threading.Thread(target = self._do_profile, args = (resources, callback, False, report_progress))
         profiling_thread.daemon = True
         profiling_thread.start()
 
@@ -70,7 +70,7 @@ class sysProfiler(object):
 
     def profile_in_background(self, resources = set(ALL_RES), callback = None):
         self._stop = False
-        profiling_thread = Thread(target = self._do_background_profile, args = (resources, callback))
+        profiling_thread = threading.Thread(target = self._do_background_profile, args = (resources, callback))
         profiling_thread.daemon = True
         profiling_thread.start()
 
@@ -85,18 +85,18 @@ class sysProfiler(object):
             time.sleep(1)
     
     def _do_profile(self, resources = set(ALL_RES), callback = None, is_background = False, report_progress = False):
-        self._profiler_idle.wait(10.0)
-        if not self._profiler_idle.is_set():
-            if is_background:
-                return None
-            else:
-                raise Exception("Time out nel profiler, impossibile completare la profilazione del sistema")
-                
-        self._profiler_idle.clear()
-        if report_progress:
-            i = 0
-            self._event_dispatcher.postEvent(gui_event.ProgressEvent(i))
-        try:
+#         self._profiler_idle.wait(10.0)
+#         if not self._profiler_idle.is_set():
+#             if is_background:
+#                 return None
+#             else:
+#                 raise Exception("Time out nel profiler, impossibile completare la profilazione del sistema")
+#              
+        with self._lock:   
+#             self._profiler_idle.clear()
+            if report_progress:
+                i = 0
+                self._event_dispatcher.postEvent(gui_event.ProgressEvent(i))
             self._check_device()
             sysmon_results = OrderedDict([])
             for res in resources:
@@ -113,12 +113,10 @@ class sysProfiler(object):
             results = {}
             for key in sysmon_results:
                 results[key] = sysmon_results[key].get('value', None)
-        finally:
-            self._profiler_idle.set()
-        if callback != None:
-            callback(results)
-        else:
-            return results
+            if callback != None:
+                callback(results)
+            else:
+                return results
 
     
     def _check_device(self):

@@ -109,10 +109,10 @@ class SpeedTester(Thread):
         for server in servers:
             RTT[server.name] = best['delay']
 
-        for repeat in range(maxREP):
+        for _ in range(maxREP):
             sleep(1)
-            self._event_dispatcher.postEvent(gui_event.UpdateEvent("Test %d di %d di ping." % (repeat + 1, maxREP)))
-            self._event_dispatcher.postEvent(gui_event.ProgressEvent(float(repeat + 1)/maxREP))
+#             self._event_dispatcher.postEvent(gui_event.UpdateEvent("Test %d di %d di ping." % (repeat + 1, maxREP)))
+#             self._event_dispatcher.postEvent(gui_event.ProgressEvent(float(repeat + 1)/maxREP))
             for server in servers:
                 try:
                     start = None
@@ -218,12 +218,12 @@ class SpeedTester(Thread):
     def _get_bandwidth_from_test(self, test):
 
         try:
-                return self._get_partial_bandwidth(test['rate_tot_secs'])
+            return self._get_partial_bandwidth(test['rate_tot_secs'])
         except KeyError:
-                if test['time'] > 0:
-                        return float( test['bytes_total'] * 8 )/ test['time'] 
-                else:
-                        raise Exception("Errore durante la valutazione del test")
+            if test['time'] > 0:
+                return float( test['bytes_total'] * 8 )/ test['time'] 
+            else:
+                raise Exception("Errore durante la valutazione del test")
     
     def _get_max_http_bandwidth(self, test):
 
@@ -240,7 +240,7 @@ class SpeedTester(Thread):
         self._event_dispatcher.postEvent(gui_event.ResultEvent(test_type.HTTP_DOWN, speed, is_intermediate = True))
 #         self._event_dispatcher.postEvent(gui_event.UpdateEvent("%d: %f kb/s" % (args['second'], args['speed'])))
     
-    def _do_test(self, tester, t_type, task):
+    def _do_test(self, tester, t_type, task, previous_profiler_result):
         test_done = 0
         test_good = 0
         test_todo = 0
@@ -248,7 +248,7 @@ class SpeedTester(Thread):
         retry = 0
 
         best_value = None
-        self._event_dispatcher.postEvent(gui_event.ProgressEvent(0))
+#         self._event_dispatcher.postEvent(gui_event.ProgressEvent(0))
         
         if t_type == test_type.PING:
             test_todo = task.ping
@@ -262,11 +262,12 @@ class SpeedTester(Thread):
             test_todo = task.http_upload
 
 #         Check before
-        if self._do_profile:
-            pre_profiler_result = self._profiler.profile_once(set([RES_HOSTS, RES_TRAFFIC]))
+#         if False:
+#             pre_profiler_result = self._profiler.profile_once(set([RES_HOSTS, RES_TRAFFIC]))
 
         while (test_good < test_todo) and (self._running.isSet()):
-            self._event_dispatcher.postEvent(gui_event.ProgressEvent((test_good + 0.5)/test_todo))
+            self._progress += self._progress_step
+            self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
 
             if self._do_profile:
                 profiler_result = self._profiler.profile_once(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
@@ -275,11 +276,12 @@ class SpeedTester(Thread):
             self._event_dispatcher.postEvent(gui_event.UpdateEvent("Test %d di %d di %s" % (test_good + 1, test_todo, test_type.get_string_type(t_type ).upper())))
             
             myProof = Proof()
-            if self._do_profile:
-                myProof.update(pre_profiler_result)
-                myProof.update(profiler_result)
+#             if self._do_profile:
+#                 myProof.update(pre_profiler_result)
+#                 myProof.update(profiler_result)
 #             else:
-#                 myProof.update(previous_profiler_result)
+            myProof.update(previous_profiler_result)
+            myProof.update(profiler_result)
             
             try:
                 test_done += 1
@@ -309,7 +311,7 @@ class SpeedTester(Thread):
                         
                 else:
                     bandwidth = self._get_bandwidth_from_test(testres)
-                    
+                    self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type, (bandwidth), is_intermediate = True))
                     self._event_dispatcher.postEvent(gui_event.UpdateEvent("Risultato %s (%s di %s): %s" % (test_type.get_string_type(t_type ).upper(), test_good + 1, test_todo, int(bandwidth))))
 #                     if t_type == test_type.FTP_DOWN or t_type == test_type.FTP_UP:
 #                             self._event_dispatcher.postEvent(gui_event.UpdateEvent("Tempo di trasferimento: %d" % testres['time']))
@@ -327,7 +329,8 @@ class SpeedTester(Thread):
                         best_testres = testres
                         
                 test_good += 1
-                self._event_dispatcher.postEvent(gui_event.ProgressEvent(float(test_good)/test_todo))
+                self._progress += self._progress_step
+                self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
 
             except Exception as e:
                 self._event_dispatcher.postEvent(gui_event.ErrorEvent("Errore durante l'esecuzione di un test: %s" % e))
@@ -348,10 +351,13 @@ class SpeedTester(Thread):
         self._running.set()
         
         self._event_dispatcher.postEvent(gui_event.UpdateEvent("Inizio dei test di misura", gui_event.UpdateEvent.MAJOR_IMPORTANCE))
-        self._event_dispatcher.postEvent(gui_event.ProgressEvent(0))        
+        self._progress = 0.1
+        self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
 
         profiler_result = self._profiler.profile_once(set([RES_IP, RES_DEV, RES_OS, RES_MAC]))
-        self._profiler.profile_in_background(set([RES_OS, RES_IP, RES_DEV, RES_MAC, RES_HOSTS, RES_TRAFFIC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
+        self._profiler.profile_in_background(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
+        self._progress += 0.1
+        self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
 
         server = None        
         if (self.is_oneshot()):
@@ -359,12 +365,23 @@ class SpeedTester(Thread):
             server = ping_test['server']
 
         task = self._download_task(server)
+        self._progress += 0.1
+        self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
         
         if task == None:
             self._event_dispatcher.postEvent(gui_event.ErrorEvent("Impossibile eseguire ora i test di misura. Riprovare tra qualche secondo."))
         else:
             try:
 #                 self._event_dispatcher.postEvent(gui_event.ProgressEvent())
+
+                test_types = [test_type.PING, test_type.HTTP_DOWN] 
+                total_num_tasks = 0
+                for t_type in test_types:
+                    total_num_tasks += 4
+                total_num_tasks *= 2 # Multiply by 2 to make two progress per task
+                total_num_tasks += 3 # Two profilations and save test
+                self._progress_step = (1.0 - self._progress)/total_num_tasks
+
                 if (task.server.location != None):
                     self._event_dispatcher.postEvent(gui_event.UpdateEvent("Selezionato il server di misura di %s" % task.server.location, gui_event.UpdateEvent.MAJOR_IMPORTANCE))
                 
@@ -376,18 +393,19 @@ class SpeedTester(Thread):
 
                 measure = Measure(self._client, start_time, task.server, ip, os, mac, self._version)
                 
-#                 self._profiler.set_check(set([RES_HOSTS, RES_TRAFFIC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
+                profiler_result = self._profiler.profile_once(set([RES_HOSTS, RES_TRAFFIC]))
+                self._progress += self._progress_step
+                self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
 #                 profiler = self._profiler.get_results()
                 sleep(1)
 
-                test_types = [test_type.PING, test_type.HTTP_DOWN] 
 #                                             test_type.HTTP_UP, 
                 task.set_ftpup_bytes(int(self._client.profile.upload * task.multiplier * 1000 / 8))
                 for t_type in test_types:
                     best_bandwidth = 0
                     try:
                         sleep(1)
-                        test = self._do_test(tester, t_type, task)
+                        test = self._do_test(tester, t_type, task, profiler_result)
                         measure.savetest(test) # Saves test in XML file
                         self._event_dispatcher.postEvent(gui_event.UpdateEvent("Elaborazione dei dati"))
                         if t_type != test_type.PING:
@@ -418,7 +436,11 @@ class SpeedTester(Thread):
                 
                 # # Salvataggio della misura ##
                 "TODO: measure.save"
+                self._progress += self._progress_step
+                self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
+                
                 self._save_measure(measure)
+                self._event_dispatcher.postEvent(gui_event.ProgressEvent(1))
                 # # Fine Salvataggio ##
                 
             except Exception as e:

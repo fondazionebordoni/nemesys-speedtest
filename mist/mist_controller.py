@@ -21,7 +21,7 @@ class MistController():
     def play(self):
         '''Function called from GUI'''
         self._gui.set_busy(True)
-        if self._do_profile:
+        if False: #self._do_profile:
             self._profiler.profile_once_and_call_back(callback = self.measure, report_progress = True)
         else:
             self.measure(None)
