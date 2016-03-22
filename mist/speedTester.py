@@ -302,6 +302,7 @@ class SpeedTester(Thread):
                 if t_type == test_type.PING:
                     logger.info("[ Ping: %s ] [ Actual Best: %s ]" % (testres['time'], best_value))
                     self._event_dispatcher.postEvent(gui_event.ResultEvent(test_type.PING, testres['time'], is_intermediate = True))
+                    self._event_dispatcher.postEvent(gui_event.UpdateEvent("Risultato %s (%s di %s): %.1f ms" % (test_type.get_string_type(t_type ).upper(), test_good + 1, test_todo, testres['time'])))
                     if best_value == None:
                         best_value = 4444
                     if testres['time'] < best_value:
@@ -351,12 +352,12 @@ class SpeedTester(Thread):
         self._running.set()
         
         self._event_dispatcher.postEvent(gui_event.UpdateEvent("Inizio dei test di misura", gui_event.UpdateEvent.MAJOR_IMPORTANCE))
-        self._progress = 0.1
+        self._progress = 0.01
         self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
 
         profiler_result = self._profiler.profile_once(set([RES_IP, RES_DEV, RES_OS, RES_MAC]))
         self._profiler.profile_in_background(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
-        self._progress += 0.1
+        self._progress += 0.01
         self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
 
         server = None        
@@ -365,7 +366,7 @@ class SpeedTester(Thread):
             server = ping_test['server']
 
         task = self._download_task(server)
-        self._progress += 0.1
+        self._progress += 0.01
         self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
         
         if task == None:
@@ -420,7 +421,7 @@ class SpeedTester(Thread):
 
                         "TODO: clean up"
                         if t_type == test_type.PING:
-                            self._event_dispatcher.postEvent(gui_event.ResultEvent(test_type.PING, test.time))
+                            self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type, test.time))
 #                         elif t_type == test_type.FTP_DOWN or t_type == test_type.FTP_UP:
 #                             self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type, self._get_bandwidth(test)))
                         elif test_type.is_http(t_type):
