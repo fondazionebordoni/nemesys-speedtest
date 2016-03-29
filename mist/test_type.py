@@ -1,3 +1,19 @@
+# encoding: utf-8
+
+# Copyright (c) 2016 Fondazione Ugo Bordoni.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 '''
 Created on 08/ott/2015
 
@@ -6,25 +22,11 @@ Created on 08/ott/2015
 
 
 '''Global test types'''
-PING_WITH_SLEEP = 0
 PING = 1
 FTP_UP = 2
 FTP_DOWN = 3
 HTTP_UP = 4
 HTTP_DOWN = 5
-HTTP_UP_MULTI = 6
-HTTP_DOWN_MULTI = 7
-HTTP_DOWN_MULTI_4 = 8
-HTTP_DOWN_MULTI_6 = 9
-HTTP_DOWN_MULTI_7 = 10
-HTTP_DOWN_MULTI_8 = 11
-HTTP_DOWN_LONG = 12
-HTTP_UP_MULTI_4 = 13
-HTTP_UP_MULTI_6 = 14
-HTTP_UP_MULTI_7 = 15
-HTTP_UP_MULTI_10 = 16
-HTTP_UP_MULTI_20 = 17
-HTTP_UP_MULTI_25 = 18
 
 
 STRING_TYPES = {PING: "ping", 

@@ -133,7 +133,6 @@ class sysProfiler(object):
         if (self._device == None):
             self._device = dev
             if self._report_device:
-                self._event_dispatcher.postEvent(gui_event.UpdateEvent("Interfaccia di test: %s" % dev))
                 self._event_dispatcher.postEvent(gui_event.UpdateEvent("Indirizzo IP di rete: %s" % ip))
                 self._event_dispatcher.postEvent(gui_event.UpdateEvent("Interfaccia di rete in esame: %s" % dev))
                 

@@ -1,5 +1,19 @@
-#!/usr/bin/env python
 # encoding: utf-8
+
+# Copyright (c) 2016 Fondazione Ugo Bordoni.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 '''
 mist.mist_cli -- CLI version of Speedtest
 
@@ -13,7 +27,6 @@ mist.mist_cli is a network speed test
 @license:    GNU General Public License
 
 @contact:    helpdesk@misurainternet.it
-@deffield    updated: 2015-10-06
 '''
 import gui_event
 import mist_messages
@@ -164,7 +177,7 @@ class MistCli(Thread):
         result_test_type = result_event.getType()
         result_value = result_event.getValue()
         color = bcolors.GREEN
-        if result_test_type == test_type.PING or result_test_type == test_type.PING_WITH_SLEEP:
+        if result_test_type == test_type.PING:
             message = mist_messages.PING_RESULT % result_value
         elif result_test_type == test_type.FTP_DOWN:
             message = mist_messages.FTP_DOWN_RESULT % result_value

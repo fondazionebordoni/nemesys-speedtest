@@ -1,3 +1,19 @@
+# encoding: utf-8
+
+# Copyright (c) 2016 Fondazione Ugo Bordoni.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 '''
 Created on 13/ott/2015
 
@@ -42,7 +58,6 @@ class MistController():
     def measure(self, profiler_result = None):
         '''Callback to continue with measurement after profiling'''
         "TODO: Start background profiler here?"
-#         self._event_dispatcher.postEvent(gui_event.AfterCheckEvent())
 #        speed_tester = SpeedTester(self._version, self._event_dispatcher, do_profile = self._do_profile, task_file=self._task_file)
         speed_tester = SpeedTester(self._version, self._event_dispatcher, do_profile = True)
         speed_tester.start()
