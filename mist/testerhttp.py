@@ -64,7 +64,7 @@ class HttpTester:
         self._last_measured_time = time.time()
 
 
-    def test_down(self, url, total_test_time_secs = TOTAL_MEASURE_TIME, callback_update_speed = None, num_sessions = 1):
+    def test_down(self, url, total_test_time_secs = TOTAL_MEASURE_TIME, callback_update_speed = None, num_sessions = 7):
         self._timeout = False
         self._received_end = False
         self.callback_update_speed = callback_update_speed

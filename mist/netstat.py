@@ -3,11 +3,12 @@ Created on 13/nov/2013
 
 @author: ewedlund
 '''
-from logger import logging
-import platform
-import re
 import netifaces
+import platform
 import psutil
+
+from logger import logging
+
 
 LINUX_RESOURCE_PATH="/sys/class/net"
 logger = logging.getLogger()
@@ -151,7 +152,6 @@ class NetstatWindows(Netstat):
         # in class Wind32_NetworkAdapterConfiguration
         # We now need to get the value of "Description"
         # in the same class
-        entry_value = None
         where_condition = " WHERE SettingID = \"" + if_dev_name + "\""
         entry_name = "Description"
         entry_value = self._get_entry_generic("Win32_NetworkAdapterConfiguration", where_condition, entry_name)
@@ -166,14 +166,14 @@ class NetstatWindows(Netstat):
                         whereCondition=None,
                         entry_name="*"):
         try:
-             import pythoncom
+            import pythoncom
         except ImportError:
-             raise NetstatException("Missing WMI library")
+            raise NetstatException("Missing WMI library")
         pythoncom.CoInitialize()
         try:
-             return self._get_entry_generic_wrapped(wmi_class, whereCondition, entry_name)
+            return self._get_entry_generic_wrapped(wmi_class, whereCondition, entry_name)
         finally:
-             pythoncom.CoUninitialize()
+            pythoncom.CoUninitialize()
 
 
     def _get_entry_generic_wrapped(self, wmi_class=None,
@@ -187,17 +187,16 @@ class NetstatWindows(Netstat):
             wmi_class="Win32_PerfRawData_Tcpip_NetworkAdapter"
         queryString = None
         try:
-             import win32com.client
-             import pythoncom
+            import win32com.client
         except ImportError:
-             raise NetstatException("Missing WMI library")
+            raise NetstatException("Missing WMI library")
         try:
             objWMIService = win32com.client.Dispatch("WbemScripting.SWbemLocator")
             objSWbemServices = objWMIService.ConnectServer(".", "root\cimv2")
             queryString = "SELECT " + entry_name + " FROM " + wmi_class + whereCondition
             result = objSWbemServices.ExecQuery(queryString)
         except Exception as e:
-            raise NetstatException("Impossibile eseguire query al server root\cimv2: ")
+            raise NetstatException("Impossibile eseguire query al server root\cimv2: %s" % str(e))
         if (result):
             try:
                 found = False
@@ -253,7 +252,6 @@ def _read_number_from_file(filename):
         return int(f.readline())
 
 if __name__ == '__main__':
-    import time
     import sysMonitor
     dev = sysMonitor.getDev()
     my_netstat = get_netstat(dev)

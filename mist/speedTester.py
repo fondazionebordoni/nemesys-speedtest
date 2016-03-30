@@ -80,10 +80,12 @@ class SpeedTester(Thread):
     def is_oneshot(self):
         return self._client.is_oneshot()
     
-    def join(self, timeout=None):
+    def stop(self, timeout=None):
         self._running.clear()
         logger.info("Chiusura del tester")
 
+    def is_running(self):
+        return self._running.is_set()
 
     def _getclient(self, options):
 
@@ -244,10 +246,9 @@ class SpeedTester(Thread):
         test_done = 0
         test_good = 0
         test_todo = 0
-
         retry = 0
-
         best_value = None
+        myProof = None
 #         self._event_dispatcher.postEvent(gui_event.ProgressEvent(0))
         
         if t_type == test_type.PING:
@@ -261,11 +262,7 @@ class SpeedTester(Thread):
         elif test_type.is_http_up(t_type):
             test_todo = task.http_upload
 
-#         Check before
-#         if False:
-#             pre_profiler_result = self._profiler.profile_once(set([RES_HOSTS, RES_TRAFFIC]))
-
-        while (test_good < test_todo) and (self._running.isSet()):
+        while (test_good < test_todo) and self._running.is_set():
             self._progress += self._progress_step
             self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
 
@@ -276,10 +273,6 @@ class SpeedTester(Thread):
             self._event_dispatcher.postEvent(gui_event.UpdateEvent("Test %d di %d di %s" % (test_good + 1, test_todo, test_type.get_string_type(t_type ).upper())))
             
             myProof = Proof()
-#             if self._do_profile:
-#                 myProof.update(pre_profiler_result)
-#                 myProof.update(profiler_result)
-#             else:
             myProof.update(previous_profiler_result)
             myProof.update(profiler_result)
             
@@ -341,9 +334,9 @@ class SpeedTester(Thread):
                     sleep(TIME_LAG)
                 else:
                     raise Exception("Superato il numero massimo di errori possibili durante una misura.")
-                    
-        best_testres['done'] = test_done
-        myProof.update(best_testres)
+        if self._running.is_set():            
+            best_testres['done'] = test_done
+            myProof.update(best_testres)
         return myProof
     
     
@@ -403,6 +396,10 @@ class SpeedTester(Thread):
 #                                             test_type.HTTP_UP, 
                 task.set_ftpup_bytes(int(self._client.profile.upload * task.multiplier * 1000 / 8))
                 for t_type in test_types:
+                    if not self._running.isSet():
+                        # Has been interrupted
+                        self._profiler.stop_background_profiling()
+                        return
                     best_bandwidth = 0
                     try:
                         sleep(1)

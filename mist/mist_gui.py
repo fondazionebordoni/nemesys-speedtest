@@ -201,7 +201,8 @@ class mistGUI(wx.Frame):
             dlg.Destroy()
             if res != wx.ID_OK:
                 return
-        self._killTester()        
+            if self._listener:
+                self._listener.kill_test()
         self.Destroy()
             
     def _on_play(self, gui_event):
@@ -210,16 +211,6 @@ class mistGUI(wx.Frame):
             self._listener.play()
         except AttributeError:
             logger.error("Nessun listener adatto configurato, impossibile procedere")
-
-    def _killTester(self):
-        if (self._tester and self._tester != None):
-            self._tester.join()
-            for thread in enumerate():
-                if thread.isAlive():
-                    try:
-                        thread._Thread__stop()
-                    except:
-                        logger.error("%s could not be terminated" % str(thread.getName()))
 
     def _on_check(self, gui_event):
         self._reset_info()
@@ -414,18 +405,18 @@ class mistGUI(wx.Frame):
 
 
     def _on_stop(self, stop_event):
-        self._killTester()
-        self._update_messages("Misura terminata\n", 'medium forest green', (12, 93, 92, 1), True)
-        if (stop_event.isOneShot()):
-#             self._update_interface(">> MISURA TERMINATA <<\nPer la versione completa iscriviti su misurainternet.it", font=(12, 93, 92, 0))
-            self._update_messages("Per effettuare altre misure e conservare i tuoi risultati nell'area riservata effettua l'iscrizione su misurainternet.it\n", 'black', (12, 90, 92, 0), True)
-        else:
-#             self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura", font=(12, 93, 92, 0))
-            self._update_messages("Sistema pronto per una nuova misura", 'black', (12, 90, 92, 0), True)
-        self.set_busy(False, stop_event.isOneShot())
-#         self._enable_button()
-        self._update_gauge(1)
-#         self._busy = False
+        if self._busy:
+            if self._listener:
+                self._listener.kill_test()
+            self._update_messages("Misura terminata\n", 'medium forest green', (12, 93, 92, 1), True)
+            if (stop_event.isOneShot()):
+    #             self._update_interface(">> MISURA TERMINATA <<\nPer la versione completa iscriviti su misurainternet.it", font=(12, 93, 92, 0))
+                self._update_messages("Per effettuare altre misure e conservare i tuoi risultati nell'area riservata effettua l'iscrizione su misurainternet.it\n", 'black', (12, 90, 92, 0), True)
+            else:
+    #             self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura", font=(12, 93, 92, 0))
+                self._update_messages("Sistema pronto per una nuova misura", 'black', (12, 90, 92, 0), True)
+            self.set_busy(False, stop_event.isOneShot())
+            self._update_gauge(1)
 
     'TODO: simplify'
     def _writer(self):

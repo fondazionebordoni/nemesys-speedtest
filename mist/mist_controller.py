@@ -20,6 +20,7 @@ Created on 13/ott/2015
 @author: ewedlund
 '''
 import gui_event
+import threading
 from speedTester import SpeedTester
 
 class MistController():
@@ -32,6 +33,7 @@ class MistController():
         self._task_file = task_file
         self._do_profile = (no_profile == False)
         self._auto = auto
+        self._speed_tester = None
 
  
     def play(self):
@@ -59,5 +61,15 @@ class MistController():
         '''Callback to continue with measurement after profiling'''
         "TODO: Start background profiler here?"
 #        speed_tester = SpeedTester(self._version, self._event_dispatcher, do_profile = self._do_profile, task_file=self._task_file)
-        speed_tester = SpeedTester(self._version, self._event_dispatcher, do_profile = True)
-        speed_tester.start()
+        self._speed_tester = SpeedTester(self._version, self._event_dispatcher, do_profile = True)
+        self._speed_tester.start()
+
+    def kill_test(self):
+        if self._speed_tester != None and self._speed_tester.is_running():
+            self._speed_tester.stop()
+            for thread in threading.enumerate():
+                if thread.isAlive():
+                    try:
+                        thread._Thread__stop()
+                    except:
+                        self._event_dispatcher.postEvent(gui_event.ErrorEvent("Impossibile terminare il processo di misura %s" % str(thread.getName())))

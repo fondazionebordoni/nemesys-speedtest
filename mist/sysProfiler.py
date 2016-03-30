@@ -107,7 +107,6 @@ class sysProfiler(object):
                         i += 1
                         self._event_dispatcher.postEvent(gui_event.ProgressEvent(float(i)/len(resources)))
                     if (res in MESSAGE):
-                        "TODO: call back!"
                         self._event_dispatcher.postEvent(gui_event.ResourceEvent(res, sysmon_results[res], self._message_flag))
             
             results = {}
