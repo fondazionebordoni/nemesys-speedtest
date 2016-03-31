@@ -16,11 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from errorcoder import Errorcoder
 from host import Host
 from logger import logging
 from optparse import OptionParser
-import paths
 import ping
 from testerhttp import HttpTester
 from testerftp import FtpTester
@@ -29,7 +27,6 @@ from measurementexception import MeasurementException
 HTTP_BUFF = 8*1024
 
 logger = logging.getLogger()
-errors = Errorcoder(paths.CONF_ERRORS)
 
 
 class Tester:
@@ -83,10 +80,8 @@ class Tester:
             RTT = ping.do_one(self._host.ip, self._timeout) * 1000
             if (RTT != None):
                 test['time'] = RTT
-
         except Exception as e:
-            test['errorcode'] = errors.geterrorcode(e)
-            error = '[%s] Errore durante la misura %s: %s' % (test['errorcode'], test['type'], e)
+            error = 'Impossibile eseguire il ping: %s' % e
             logger.error(error)
             raise Exception(error)
 
@@ -120,7 +115,6 @@ def main():
     (options, _) = parser.parse_args()
     #TODO inserire controllo host
     import sysMonitor
-    errors = Errorcoder(paths.CONF_ERRORS)
 #        This is for lab environment
 #         ip = sysMonitor.getIp(host=options.host, port=80)
 #         dev = sysMonitor.getDev(host=options.host, port=80)
@@ -149,27 +143,27 @@ def main():
             try:
                     res = t.testhttpup(None, int(options.sessions_up))
             except MeasurementException as e:
-                    res = {'errorcode': errors.geterrorcode(e), 'error': str(e)}
+                    res = {'errorcode': 1, 'error': str(e)}
             printout_http(res)
         elif options.testtype == 'ftpup':
             file_size = bw * 10 / 8
             try:
                 res = t.testftpup(file_size, '/upload/r.raw')
             except MeasurementException as e:
-                res = {'errorcode': errors.geterrorcode(e), 'error': str(e)}
+                res = {'errorcode': 1, 'error': str(e)}
             printout_ftp(res)
         elif options.testtype == 'ping':
             try:
                 res = t.testping()
                 print("Ping: %.2f milliseconds" % res['time'])
             except Exception as e:
-#                                 res = {'errorcode': errors.geterrorcode(e), 'error': str(e)}
+#                                 res = {'errorcode': 1, 'error': str(e)}
                 print("Error: %s" % str(e))
         else:
             try:
                     res = t.testhttpdown(None, int(options.sessions_down))
             except MeasurementException as e:
-                    res = {'errorcode': errors.geterrorcode(e), 'error': str(e)}
+                    res = {'errorcode': 1, 'error': str(e)}
             printout_http(res)
     print "==============================================="
 

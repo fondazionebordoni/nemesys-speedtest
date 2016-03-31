@@ -21,7 +21,6 @@ from collections import OrderedDict
 from SysProf.NemesysException import LocalProfilerException, RisorsaException, FactoryException
 from SysProf import LocalProfilerFactory
 from xml.etree import ElementTree as ET
-from errorcoder import Errorcoder
 from platform import system
 from logger import logging
 
@@ -31,7 +30,6 @@ import netifaces
 import xmltodict
 import netstat
 import socket
-import paths
 import time
 import re
 
@@ -81,7 +79,6 @@ th_cpu = 85                     # Massimo carico percentuale sulla CPU
 
 
 logger = logging.getLogger()
-errors = Errorcoder(paths.CONF_ERRORS)
 
 
 def interfaces():

@@ -443,8 +443,8 @@ class SpeedTester(Thread):
                 
             except Exception as e:
                 logger.warning('Misura sospesa per eccezione: %s.' % e)
-                import traceback
-                traceback.print_exc(e)
+#                 import traceback
+#                 traceback.print_exc(e)
                 self._event_dispatcher.postEvent(gui_event.ErrorEvent('Misura sospesa per errore: %s' % e))
                 
         self._profiler.stop_background_profiling()

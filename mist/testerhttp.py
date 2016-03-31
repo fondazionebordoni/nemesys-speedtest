@@ -24,11 +24,9 @@ import time
 import urllib2
 import Queue
 
-from errorcoder import Errorcoder
 from fakefile import Fakefile
 from logger import logging
 import netstat
-import paths
 from measurementexception import MeasurementException
 
 
@@ -38,7 +36,6 @@ MAX_TRANSFERED_BYTES = 100 * 1000000 * 11 / 8 # 100 Mbps for 11 seconds
 BUF_SIZE = 8*1024
 HTTP_TIMEOUT = 10.0 # 10 seconds timeout on open and read operations
 logger = logging.getLogger()
-errors = Errorcoder(paths.CONF_ERRORS)
 
 '''
 NOTE: not thread-safe, make sure to only call 
