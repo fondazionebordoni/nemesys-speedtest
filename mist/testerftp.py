@@ -19,18 +19,16 @@
 import errno
 from ftplib import FTP
 import ftplib
-from optparse import OptionParser
 import socket
 import sys
 import time
+import threading
 
 from errorcoder import Errorcoder
 from fakefile import Fakefile
 from logger import logging
 import netstat
 import paths
-import ping
-from statistics import Statistics
 
 
 logger = logging.getLogger()
@@ -49,15 +47,33 @@ class FtpTester:
     self._bufsize = bufsize
     self._netstat = netstat.get_netstat(dev)
     self._timeout_secs = timeout_secs
-    #Ignore any given timeout
     self._timeout_millis = float(timeout_secs * 1000)
+    socket.setdefaulttimeout(self._timeout_secs)
+
+    
+  def _init_counters(self, is_down_measure = True):
+    self._time_to_stop = False
+    if is_down_measure:
+        self._last_bytes = self._netstat.get_rx_bytes()
+    else:
+        self._last_bytes = self._netstat.get_tx_bytes()
+    self._measure_count = 0
+    self._read_measure_threads = []
+    self._last_measured_time = time.time()
+
     
   def _ftp_down(self):
     size = 0
     elapsed = 0
-        
+    self._init_counters()
+
     self._ftp.voidcmd('TYPE I')
     conn = self._ftp.transfercmd('RETR %s' % self._file, rest=None)
+    
+    # Read progress each second
+    read_thread = threading.Timer(1.0, self._read_down_measure)
+    read_thread.start()
+    self._read_measure_threads.append(read_thread)
     
     start = time.time()
     while True:
@@ -79,11 +95,58 @@ class FtpTester:
       if (e.args[0][:3] == '426'):
         pass
       else:
+        self._time_to_stop = True
         raise e
     
     stop = time.time()
     elapsed = float((stop-start)*1000)
+    self._time_to_stop = True
+    for read_thread in self._read_measure_threads:
+        read_thread.join()
+
     return (size, elapsed)
+
+  def _read_down_measure(self):
+
+    if self._time_to_stop:
+        return
+    self._measure_count += 1
+    measuring_time = time.time()
+    elapsed = (measuring_time - self._last_measured_time)*1000.0
+    
+    new_bytes = self._netstat.get_rx_bytes()
+    diff = new_bytes - self._last_bytes
+    rate_tot = float(diff * 8)/float(elapsed) 
+    logger.debug("[FTP] Reading... count = %d, speed = %d" 
+          % (self._measure_count, int(rate_tot)))
+    
+    self._last_bytes = new_bytes
+    self._last_measured_time = measuring_time
+    read_thread = threading.Timer(1.0, self._read_down_measure)
+    self._read_measure_threads.append(read_thread)
+    read_thread.start()
+
+  "TODO: should be one method for both up and down measure"
+  def _read_up_measure(self):
+
+    if self._time_to_stop:
+        return
+    self._measure_count += 1
+    measuring_time = time.time()
+    elapsed = (measuring_time - self._last_measured_time)*1000.0
+    
+    new_bytes = self._netstat.get_tx_bytes()
+    diff = new_bytes - self._last_bytes
+    rate_tot = float(diff * 8)/float(elapsed) 
+    logger.debug("[FTP] Reading... count = %d, speed = %d" 
+          % (self._measure_count, int(rate_tot)))
+    
+    self._last_bytes = new_bytes
+    self._last_measured_time = measuring_time
+    read_thread = threading.Timer(1.0, self._read_up_measure)
+    self._read_measure_threads.append(read_thread)
+    read_thread.start()
+
     
   def _ftp_up(self):
     size = 0
@@ -92,6 +155,11 @@ class FtpTester:
     self._ftp.voidcmd('TYPE I')
     conn = self._ftp.transfercmd('STOR %s' % self._filepath, rest=None)
     
+    # Read progress each second
+    self._init_counters(is_down_measure=False)
+    read_thread = threading.Timer(1.0, self._read_up_measure)
+    read_thread.start()
+    self._read_measure_threads.append(read_thread)
     start = time.time()
     while True:
       data = self._file.read(self._bufsize)
@@ -102,6 +170,7 @@ class FtpTester:
       stop = time.time()
       elapsed = float((stop-start)*1000)
       if (elapsed > self._timeout_millis):
+        self._time_to_stop = True
         break
 
     try:
@@ -112,10 +181,16 @@ class FtpTester:
       if (e.args[0][:3] == '426'):
         pass
       else:
+        self._time_to_stop = True
         raise e
     
     stop = time.time()
     elapsed = float((stop-start)*1000)
+
+    self._time_to_stop = True
+    for read_thread in self._read_measure_threads:
+        read_thread.join()
+
     return (size, elapsed)
 
   def testftpdown(self, server, filename, bytes, username='anonymous', password='anonymous@'):
@@ -124,15 +199,12 @@ class FtpTester:
     test['type'] = 'download'
     test['time'] = 0
     test['bytes'] = 0
-    test['stats'] = {}
     test['errorcode'] = 0
 
     self._file = filename
+    logger.info("Using file %s, server is %s" % (filename, server))
 
     try:
-      # TODO Il timeout non viene onorato in Python 2.6: http://bugs.python.org/issue8493
-      #self._ftp = FTP(self._host.ip, self._username, self._password, timeout=timeout)
-#       self._ftp = FTP(self._host.ip, self._username, self._password)
       self._ftp = FTP(server, username, password, timeout=self._timeout_secs)
     except ftplib.all_errors as e:
       test['errorcode'] = errors.geterrorcode(e)
@@ -158,8 +230,7 @@ class FtpTester:
       bytes_total = end_total_bytes - start_total_bytes
       if (bytes_total < 0):
           raise Exception("Ottenuto banda negativa, possibile azzeramento dei contatori.")
-      test['stats'] = Statistics(byte_down_nem = size, byte_down_all = bytes_total)
-
+      test['bytes_total'] = bytes_total
       logger.info("Banda: (%s*8)/%s = %s Kbps" % (size,elapsed,(size*8)/elapsed))
 
       logger.info('Test done!')
@@ -192,14 +263,12 @@ class FtpTester:
     test['type'] = 'upload'
     test['time'] = 0
     test['bytes'] = 0
-    test['stats'] = {}
     test['errorcode'] = 0
 
     self._file = Fakefile(bytes)
     self._filepath = filename
 
     try:
-      # TODO Il timeout non viene onorato in Python 2.6: http://bugs.python.org/issue8493
       self._ftp = FTP(server, username, password, self._timeout_secs)
     except ftplib.all_errors as e:
       test['errorcode'] = errors.geterrorcode(e)
@@ -226,7 +295,6 @@ class FtpTester:
           raise Exception("Ottenuto banda negativa, possibile azzeramento dei contatori.")
       test['bytes'] = size
       test['time'] = elapsed
-      test['stats'] = Statistics(byte_up_nem = size, byte_up_all = total_bytes)
       test['bytes_total'] = total_bytes
 
       logger.info('Test done!')
@@ -252,19 +320,14 @@ if __name__ == '__main__':
     import platform
     platform_name = platform.system().lower()
     dev = None
-#    nap = "eagle2.fub.it"
+#     nap = "eagle2.fub.it"
+#     nap = "193.104.137.2"
     nap = '193.104.137.133'
     import sysMonitor
     dev = sysMonitor.getDev()
     t = FtpTester(dev)
-        
-#    print t.testftpdown(nap, '/download/40000.rnd', 1000000, 'nemesys', '4gc0m244')
-    print "Copyright (c) 2014 Fondazione Ugo Bordoni"
-    print "Autore: ELIN  WEDLUND <ewdlund@fub.it>"
-    print "\n---------------------------\n"
-    print "Download test:"
-    print t.testftpdown(nap, '/download/40000.rnd', 1000000, 'nemesys','4gc0m244')
-    print "\n---------------------------\n"
-    print "Upload test:"
-    print t.testftpup(nap, '/upload/r.raw', 100000000, 'nemesys', '4gc0m244')
+#     print t.testftpdown(nap, '/download/90000.rnd', 1000000, 'nemesys', '4gc0m244')
+    for _ in range(0,100):
+        print "\n---------------------------\n"
+        print t.testftpup(nap, '/upload/r.raw', 76856169, 'nemesys', '4gc0m244')
     

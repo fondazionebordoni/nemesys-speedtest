@@ -52,17 +52,17 @@ class Target:
 
 setup(
   data_files=data_files,
-    options = {
-        'py2exe': {
-            'packages': 'encodings',
+	options = {
+		'py2exe': {
+			'packages': 'encodings',
             'optimize': 2,
             'includes': ['SysProf.windows.profiler']
-         }
-    },
-    name = 'mist',
-    version = get_version(),
-    windows = [
-        {"script": "mist.py", 'uac_info': "requireAdministrator", "icon_resources": [(1, "..\\mist.ico")]},
-    ],
-    #packages = ['mist'],
+ 		}
+	},
+	name = 'mist',
+	version = get_version(),
+	windows = [
+		{"script": "mist.py", 'uac_info': "requireAdministrator", "icon_resources": [(1, "..\\mist.ico")]},
+	],
+	#packages = ['mist'],
 )

@@ -20,13 +20,19 @@ import random
 
 class Fakefile:
 
-  def __init__(self, bytes):
-    self._initial_bytes = int(bytes)
+  def __init__(self, size):
+    self._initial_bytes = int(size)
     self._bytes = self._initial_bytes
     self.data = None
     self.data_len = None
   
-  def read(self, bufsize):
+  def read(self, bufsize = -1):
+      
+    if bufsize <= 0:
+        bufsize = 8192
+    
+    if (self._bytes < bufsize):
+        bufsize = self._bytes
   
     if bufsize <= 0:
         bufsize = 8192
@@ -35,8 +41,8 @@ class Fakefile:
         bufsize = self._bytes
   
     if self._bytes <= 0:
-      return None    
-  
+        return None
+
     if not self.data or self.data_len != bufsize:
         # data random between 0 and FFFFF...FF, 
         # e.g. 0-FF  in case of one byte buffer

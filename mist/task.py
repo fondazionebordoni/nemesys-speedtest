@@ -22,18 +22,19 @@ from server import Server
 
 
 
-BANDS = [128, 256, 384, 400, 512, 640, 704, 768, 832, 1000, 1200, 1250, 1280, 1500, 1600, 1750, 2000, 2250, 2500, 2750, 3000, 3250, 3500, 4000, 4096, 4500, 5000, 5500, 6000, 6122, 6500, 7000, 7168, 7500, 8000, 8500, 8192, 9000, 9500, 10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 20480, 22000, 24000, 26000, 28000, 30000, 32000, 34000, 36000, 38000, 40000]
+BANDS = [128, 256, 384, 400, 512, 640, 704, 768, 832, 1000, 1200, 1250, 1280, 1500, 1600, 1750, 2000, 2250, 2500, 2750, 3000, 3250, 3500, 4000, 4096, 4500, 5000, 5500, 6000, 6122, 6500, 7000, 7168, 7500, 8000, 8500, 8192, 9000, 9500, 10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 20480, 22000, 24000, 26000, 28000, 30000, 32000, 34000, 36000, 38000, 40000, 80000, 90000, 100000]
 logger = logging.getLogger()
 
 class Task:
 
-  def __init__(self, id, start, server, ftpdownpath, ftpuppath, upload=4, download=4, multiplier=10, ping=4, nicmp=1, delay=1, now=False, message=None, http_download=1, http_upload=1):
+  def __init__(self, id, start, server, ftpdownpath, ftpuppath, upload=4, download=4, multiplier=10, ping=4, nicmp=1, delay=1, now=False, message=None, http_download=4, http_upload=4):
     
     self._id = id
     self._start = start
     self._server = server
     self._ftpdownpath = ftpdownpath
     self._ftpuppath = ftpuppath
+    self._ftpup_bytes = 0
     self._upload = upload
     self._download = download
     self._http_upload = http_upload
@@ -105,12 +106,19 @@ class Task:
   def message(self):
     return self._message
 
+  @property
+  def ftpup_bytes(self):
+      return self._ftpup_bytes
+
+  def set_ftpup_bytes(self, num_bytes):
+    self._ftpup_bytes = num_bytes
+
   def update_ftpdownpath(self, bandwidth):
     '''
     Aggiorna il path del file da scaricare in modo da scaricare un file di
     dimensioni le più vicine possibili alla banda specificata.
     '''
-    logger.info('Aggiornamento path per la banda in download')
+    logger.info('Aggiornamento path per la banda in download FTP')
     try:
       BANDS.sort(reverse=True)
       for band in BANDS:

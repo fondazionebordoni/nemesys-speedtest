@@ -52,16 +52,11 @@ class Proof:
   
   @property
   def bytesOth(self):
-    if self.type == 'download':
-      return self._test.get('stats',{}).byte_down_all
-    elif self.type == 'upload':
-      return self._test.get('stats',{}).byte_up_all
-    else:
-      return 0
+    return self._test.get('bytes_total',0) - self._test.get('bytes',0)
 
   @property
-  def counter_stats(self):
-    return self._test.get('stats',{})
+  def bytesTot(self):
+    return self._test.get('bytes_total',0)
 
   @property
   def errorcode(self, errorcode=None):
@@ -75,11 +70,11 @@ class Proof:
 
 
   def __str__(self):
-    return '|Type:%s|Done:%s|Time:%1.3f|Bytes:%d|BytesOth:%d|Stats:%s|Errorcode:%d|' \
-            % (self.type, self.done, self.time, self.bytes, self.bytesOth, self.counter_stats, self.errorcode)
+    return '|Type:%s|Done:%s|Time:%1.3f|Bytes:%d|BytesOth:%d|Errorcode:%d|' \
+            % (self.type, self.done, self.time, self.bytes, self.bytesOth, self.errorcode)
 
 if __name__ == '__main__':
-    test = Proof({'type':'download','time':8642,'bytes':50000,'stats':{},'errorcode':0})
-    print str(test)
+    test = Proof()
+    test.update({'type':'download','time':10,'bytes':30000, 'bytes_total':51000, 'errorcode':0})
     
     

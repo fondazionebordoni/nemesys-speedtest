@@ -21,15 +21,15 @@
 #   -> https://pypi.python.org/pypi/arprequest
 
 import ipcalc
-from threading import Thread
-import string
-import re
-from logger import logging
-import socket
 import platform
-import ping
 import re
+import socket
+import string
 from subprocess import Popen, PIPE
+
+from logger import logging
+import ping
+
 
 is_windows = (platform.system().startswith("Windows"))
 logger = logging.getLogger()
@@ -94,18 +94,18 @@ def _val2int(val):
     return int(''.join(['%02d'%ord(c) for c in val]), 16)
 
 def _is_technicolor(ip, mac):
-  if (not re.match("([0-9A-F]{2}:){5}[0-9A-F]", mac, re.I)):
-    logger.warn("Errore nell'utilizzo della funzione _is_technicolor: formato MAC non corretto (%s)" % mac)
-
-  for ip_technicolor in TECHNICOLOR_IPS:
-    if (ip == ip_technicolor):
-      logger.debug("Trovato possibile IP spurio di router Technicolor: %s" % ip)
-      for mac_technicolor in TECHNICOLOR_MACS:
-        if re.search(mac_technicolor, mac, re.I):
-          logger.info("Trovato IP spurio di router Technicolor: %s [%s]" % (ip, mac))
-          return True
-
-  return False
+    if (not re.match("([0-9A-F]{2}:){5}[0-9A-F]", mac, re.I)):
+        logger.warn("Errore nell'utilizzo della funzione _is_technicolor: formato MAC non corretto (%s)" % mac)
+    
+    for ip_technicolor in TECHNICOLOR_IPS:
+        if (ip == ip_technicolor):
+            logger.debug("Trovato possibile IP spurio di router Technicolor: %s" % ip)
+            for mac_technicolor in TECHNICOLOR_MACS:
+                if re.search(mac_technicolor, mac, re.I):
+                    logger.info("Trovato IP spurio di router Technicolor: %s [%s]" % (ip, mac))
+                    return True
+        
+    return False
 
 def do_arping(if_dev_name, IPsrc, NETmask, realSubnet = True, timeout = 1, mac = None, threshold = 1):
     if is_windows:
@@ -171,14 +171,14 @@ def do_linux_arping(if_dev_name, IPsrc, NETmask, realSubnet = True, timeout = 1,
 
         #if (index >= MAX or lasting <= 0):
         if (lasting <= 0):
-          index = 0
+            index = 0
+            
+            try:
+                IPtable = receive_arp_response(mac, my_socket, timeout)
+            except Exception as e:
+                logger.error("Errore durante la ricezione degli arping: %s" % e)
 
-          try:
-            IPtable = receive_arp_response(mac, my_socket, timeout)
-          except Exception as e:
-            logger.error("Errore durante la ricezione degli arping: %s" % e)
-
-        #TODO why this?
+        'TODO: why this?'
 #        if(nHosts > threshold):
 #            break
     my_socket.close()
@@ -265,7 +265,6 @@ def receive_arp_response(mac_addr, my_socket, timeout):
             if (src_ip not in IPtable):
                 if (not _is_technicolor(src_ip, src_mac)):
                     IPtable[src_ip] = src_mac
-                    logger.info('Trovato Host %s con indirizzo fisico %s' % (src_ip, src_mac))
             else:
                 logger.debug("Found response from Technicolor")
     return IPtable
@@ -312,7 +311,6 @@ def _send_one_mac_arp(IPdst, timeout=0.01):
     if my_match:
         mac_str = _pad_mac_string(my_match.groups()[0])
         if (not _is_technicolor(IPdst, mac_str)):
-            logger.info('Trovato Host %s con indirizzo fisico %s' % (IPdst, mac_str))
             return mac_str
         else :
             logger.debug("Found response from Technicolor")
@@ -365,7 +363,6 @@ def do_win_arping(IPsrc = None, NETmask=24, realSubnet=True):
 
 def _send_one_win_arp(IPdst, result_queue):
     # Send ARP reuqest
-    logger.debug("Sending ARP to \'%s\'" % IPdst)
     IPdst = str(IPdst)
     mac_addr = (c_ulong*2)()
     addr_len = c_ulong(6)

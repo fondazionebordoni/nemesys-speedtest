@@ -16,15 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime
-from logger import logging
 import ntplib
 import time
 import ping
 
 SERVERNTP = ["ntp.spadhausen.com","ntp.fub.it","time.windows.com","0.pool.ntp.org","1.pool.ntp.org","2.pool.ntp.org","3.pool.ntp.org"]
 
-logger = logging.getLogger()
 
 def _timestamp(server):
   try:
@@ -67,5 +64,5 @@ def timestampNtp():
 if __name__ == '__main__':
   request_num = 8
   for x in range(request_num):
-    logger.debug("Richiesta %s di %s:" % (x+1,request_num))
+#     logger.debug("Richiesta %s di %s:" % (x+1,request_num))
     timestampNtp()

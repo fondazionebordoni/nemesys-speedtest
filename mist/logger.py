@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from os import path
 import logging.config
 import paths
 #import re
@@ -55,8 +54,40 @@ format=%(asctime)s MIST %(filename)s.%(funcName)s():%(lineno)d [%(levelname)s] %
 datefmt=%b %d %H:%M:%S
 '''
 
+default_no_stdout = '''
+[loggers]
+keys=root
+
+[handlers]
+keys=console,file
+
+[formatters]
+keys=formatter
+
+[logger_root]
+level=DEBUG
+handlers=console,file
+
+[handler_console]
+class=StreamHandler
+level=CRITICAL
+formatter=formatter
+args=(sys.stdout,)
+
+[handler_file]
+class=FileHandler
+level=DEBUG
+formatter=formatter
+args=(''' + repr(logfile) + ''',)
+
+[formatter_formatter] 
+format=%(asctime)s MIST %(filename)s.%(funcName)s():%(lineno)d [%(levelname)s] %(message)s
+datefmt=%b %d %H:%M:%S
+'''
+
 with open(configfile, 'w') as file:
-  s = str(default)
+  'TODO: choose which one to use'
+  s = str(default_no_stdout)
   file.write(s) 
 
 logging.config.fileConfig(configfile)
