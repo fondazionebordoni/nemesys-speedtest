@@ -207,7 +207,7 @@ class HttpTester:
             kbit_per_second = (measured_bytes * 8.0) / elapsed_time
             total_bytes = self._netstat.get_tx_bytes() - start_total_bytes
             if (total_bytes < 0):
-                test['errorcode'] = errors.geterrorcode("Ottenuto banda negativa, possibile azzeramento dei contatori.")
+                self._test['errorcode'] = errors.geterrorcode("Ottenuto banda negativa, possibile azzeramento dei contatori.")
             self._test['bytes'] = measured_bytes
             self._test['time'] = elapsed_time
             self._test['rate_avg'] = kbit_per_second
