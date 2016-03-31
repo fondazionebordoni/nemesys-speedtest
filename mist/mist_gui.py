@@ -51,7 +51,6 @@ class mistGUI(wx.Frame):
     def make_left_header_panel(self, panel_header):
         dc = wx.ScreenDC()
         result_font = wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
-#yourFont =  wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.NORMAL, True)
         dc.SetFont(result_font) 
         w,h = dc.GetTextExtent('X') 
         panel_header_left = wx.Panel(panel_header, -1) #, pos=(0,0),size=(600,122))
@@ -98,6 +97,7 @@ class mistGUI(wx.Frame):
         sizer_header_right = wx.BoxSizer(wx.HORIZONTAL)
         sizer_header_right.Add(bitmap_header_right, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL)
         sizer_header_right.Add(box_sizer_buttons, 0, wx.RIGHT | wx.ALIGN_CENTER, 10)
+        sizer_header_right.SetMinSize((-1, 45))
         panel_header_right.SetSizerAndFit(sizer_header_right)
         return panel_header_right
     
@@ -171,11 +171,8 @@ class mistGUI(wx.Frame):
         window_panel.SetSizerAndFit(sizer)
         self.SetSize((800, 460))
 
-        self.Layout()
-
         self.SetTitle("%s - versione %s" % (mist_messages.SWN, self._version))
         self.messages_area_style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP | wx.BORDER_NONE
-         
         
         self.Bind(wx.EVT_CLOSE, self._on_close)
         self.Bind(wx.EVT_BUTTON, self._on_play, self.button_play)
@@ -191,6 +188,7 @@ class mistGUI(wx.Frame):
 
         self._initial_message()
 
+        self.Layout()
         
     def _on_close(self, gui_event):
         'TODO: handle in controller?'

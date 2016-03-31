@@ -43,21 +43,22 @@ def main(argv=None):
     try:
         'TODO: Needs fixing, mixup with optionParser.OptionParser'
         parser = OptionParser(version=program_version_string, epilog=program_longdesc)#, description=program_license)
-        parser.add_option("--task-file", dest="task_file", help="read task from file [default: %default]", metavar="FILE")
+#         parser.add_option("--task-file", dest="task_file", help="read task from file [default: %default]", metavar="FILE")
 #         parser.add_option("-c", "--check", dest="check", action="store_true", help="Fare solo la verifica del sistema, senza misura [default: %default]")
         parser.add_option("-t", "--text", dest="text_based", action="store_true", help="Senza interfaccia grafica [default: %default]")
-        parser.add_option("--no-profile", dest="no_profile", action="store_true", help="Non profilare il sistema durante la misura [default: %default]")
+#         parser.add_option("--no-profile", dest="no_profile", action="store_true", help="Non profilare il sistema durante la misura [default: %default]")
 #         parser.add_option("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %default]")
 
         # set defaults
-        parser.set_defaults(check = False, measure = False, text_based = False, task_file = None)
+#         parser.set_defaults(check = False, measure = False, text_based = False, task_file = None)
+        parser.set_defaults(text_based = False)
 
         # process options
         (opts, _) = parser.parse_args(argv)
 
         SWN = 'MisuraInternet Speed Test'
         logger.info('Starting %s v.%s' % (SWN, FULL_VERSION)) 
-        mist(text_based = opts.text_based, task_file = opts.task_file, no_profile = False)#opts.no_profile)
+        mist(text_based = opts.text_based, task_file = None, no_profile = False)#opts.no_profile)
         # MAIN BODY #
 #        mist_cli = MistCli()
         # Register for events

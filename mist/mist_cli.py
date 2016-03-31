@@ -37,7 +37,6 @@ import platform
 import test_type
 import thread
 from threading import Event, Thread
-#import paths
 
 from _generated_version import __version__
 from logger import logging
@@ -149,7 +148,7 @@ class MistCli(Thread):
         pass
 
     def _on_resource(self, resource_event):
-#         if resource_event.getMessageFlag():
+        if resource_event.getMessageFlag():
             try:
                 info_string = str(resource_event.getValue().get('info'))
                 status = resource_event.getValue().get('status')
