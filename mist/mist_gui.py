@@ -190,7 +190,7 @@ class mistGUI(wx.Frame):
 
         self.Layout()
         
-    def _on_close(self, gui_event):
+    def _on_close(self, event):
         'TODO: handle in controller?'
         logger.info("Richiesta di close")
         if self._busy:
@@ -201,6 +201,14 @@ class mistGUI(wx.Frame):
                 return
             if self._listener:
                 self._listener.kill_test()
+            self.Unbind(gui_event.EVT_UPDATE)
+            self.Unbind(gui_event.EVT_PROGRESS)
+            self.Unbind(gui_event.EVT_RESULT)
+            self.Unbind(gui_event.EVT_ERROR)
+            self.Unbind(gui_event.EVT_RESOURCE)
+            self.Unbind(gui_event.EVT_STOP)
+            self.Unbind(gui_event.EVT_AFTER_CHECK)
+
         self.Destroy()
             
     def _on_play(self, gui_event):
