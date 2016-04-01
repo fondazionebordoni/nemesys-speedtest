@@ -8,28 +8,36 @@ except IOError as e:
     sys.exit()
 # from sysMonitor import interfaces, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
 #from sysMonitor import interfaces#, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_TRAFFIC, RES_HOSTS
-from checkSoftware import CheckSoftware
-from mist_controller import MistController
-# from optparse import OptionParser
-from optionParser import OptionParser
-from platform import system
-from sysProfiler import sysProfiler
-from time import sleep
-
-import gui_event
-import mist_cli
 import os
+import platform
 import sys
-import sysMonitor
+from time import sleep
 import wx
 
 from _generated_version import __version__, FULL_VERSION, __updated__
-
+from checkSoftware import CheckSoftware
+import gui_event
+import mist_cli
+from mist_controller import MistController
 import mist_gui
+from optionParser import OptionParser
+import sysMonitor
+from sysProfiler import sysProfiler
+
+
+# from optparse import OptionParser
 logger = logging.getLogger()
 
 
 def main(argv=None):
+    ''' Check for sudo on linux'''
+    current_os = platform.system().lower()
+    if current_os.startswith('lin') or current_os.startswith('darwin'):
+        if (os.getenv('SUDO_USER') == None) and (os.getenv('USER') != 'root'):
+            logger.error('Speedtest avviato senza privilegi di root - chiusura tester')
+            sys.stderr.write('Speedtest avviato senza privilegi di root - chiusura tester\n')
+            sys.stderr.write('Avviare con \'sudo\'\n')
+            sys.exit()
     '''Command line options.'''
     program_name = os.path.basename(sys.argv[0])
     program_version = __version__
@@ -71,7 +79,7 @@ def main(argv=None):
     except Exception, e:
         indent = len(program_name) * " "
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
-        sys.stderr.write(indent + "  for help use --help")
+        sys.stderr.write(indent + "  for help use --help\n")
         return 2
 
 
@@ -95,7 +103,7 @@ def mist(text_based, task_file, no_profile):
         GUI.set_listener(controller)
         GUI.start()
     else:
-        if (system().lower().startswith('win')):
+        if (platform.system().lower().startswith('win')):
             wx.CallLater(200, sleeper)
         GUI = mist_gui.mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE)# ^ wx.RESIZE_BORDER) #& ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
         event_dispatcher = gui_event.WxGuiEventDispatcher(GUI)
