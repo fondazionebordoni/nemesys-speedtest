@@ -85,15 +85,16 @@ format=%(asctime)s MIST %(filename)s.%(funcName)s():%(lineno)d [%(levelname)s] %
 datefmt=%b %d %H:%M:%S
 '''
 
-with open(configfile, 'w') as file:
-  'TODO: choose which one to use'
-  s = str(default_no_stdout)
-  file.write(s) 
+def init_log():
+    with open(configfile, 'w') as f:
+        'TODO: choose which one to use'
+        s = str(default_no_stdout)
+        f.write(s) 
 
-logging.config.fileConfig(configfile)
+    logging.config.fileConfig(configfile, disable_existing_loggers=False)
     
 # create logger
-class Logger(logging.getLoggerClass()):
-
-  def __init__(self):
-    pass
+# class Logger(logging.getLoggerClass()):
+# 
+#     def __init__(self):
+#         init_log()

@@ -39,8 +39,8 @@ import thread
 from threading import Event, Thread
 
 from _generated_version import __version__
-from logger import logging
-logger = logging.getLogger()
+import logging
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_WIDTH = 80

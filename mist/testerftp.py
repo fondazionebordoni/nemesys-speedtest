@@ -26,12 +26,12 @@ import threading
 
 from errorcoder import Errorcoder
 from fakefile import Fakefile
-from logger import logging
+import logging
 import netstat
 import paths
 
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 errors = Errorcoder(paths.CONF_ERRORS)
 
 class FtpTester:
@@ -316,7 +316,9 @@ class FtpTester:
 
 
 if __name__ == '__main__':
-   if len(sys.argv) < 2:
+  import log_conf
+  log_conf.init_log()
+  if len(sys.argv) < 2:
     import platform
     platform_name = platform.system().lower()
     dev = None

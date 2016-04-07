@@ -17,7 +17,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from host import Host
-from logger import logging
+import logging
 from optparse import OptionParser
 import ping
 from testerhttp import HttpTester
@@ -25,8 +25,9 @@ from testerftp import FtpTester
 from measurementexception import MeasurementException
 
 HTTP_BUFF = 8*1024
-
-logger = logging.getLogger()
+BW_3M = 3000000
+BW_100M = 100000000
+logger = logging.getLogger(__name__)
 
 
 class Tester:
@@ -55,15 +56,28 @@ class Tester:
         url = "http://%s/file.rnd" % self._host.ip
         return self._testerhttp.test_down(url, 10, callback_update_speed, num_sessions=num_sessions)        
  
-    def testhttpup(self, callback_update_speed, num_sessions=1):
-        url = "http://%s/file.rnd" % self._host.ip
-        return self._testerhttp.test_up(url, callback_update_speed, num_sessions=num_sessions)        
+#     def testhttpup(self, callback_update_speed, num_sessions=1, tcp_window_size = None):
+#         url = "http://%s:8080/file.rnd" % self._host.ip
+#         return self._testerhttp.test_up(url, callback_update_speed, num_sessions=num_sessions, tcp_window_size=tcp_window_size)        
+#          
+    def testhttpup(self, callback_update_speed, bw=BW_100M):
+        url = "http://%s:8080/file.rnd" % self._host.ip
+        if bw < BW_3M:
+            num_sessions = 1
+            tcp_window_size = 22 * 1024
+        elif bw == BW_3M:
+            num_sessions = 1
+            tcp_window_size = 65 * 1024
+        else:
+            num_sessions = 6
+            tcp_window_size = 65 * 1024
+        return self._testerhttp.test_up(url, callback_update_speed, num_sessions=num_sessions, tcp_window_size=tcp_window_size)        
          
-    def testftpdown(self, bytes, filename):
-        return self._testerftp.testftpdown(self._host.ip, filename, bytes, self._username, self._password)
+    def testftpdown(self, num_bytes, filename):
+        return self._testerftp.testftpdown(self._host.ip, filename, num_bytes, self._username, self._password)
 
-    def testftpup(self, bytes, filename):
-        return self._testerftp.testftpup(self._host.ip, filename, bytes, self._username, self._password)
+    def testftpup(self, num_bytes, filename):
+        return self._testerftp.testftpup(self._host.ip, filename, num_bytes, self._username, self._password)
 
     def testping(self):
         
@@ -99,28 +113,29 @@ def main():
     parser.add_option("-t", "--type", choices = ('httpdown', 'httpup', 'ftpup', 'ping'),
                                     dest = "testtype", default = "httpdown", type = "choice",
                                     help = "Choose the type of test to perform: httpdown (default), httpup, ftpup, ping")
-    parser.add_option("-b", "--bandwidth", dest = "bandwidth", default = "2M", type = "string",
-                                    help = "The expected bandwith to measure, used for file size in FTP upload, e.g. 512k, 2M")
-    parser.add_option("--ping-timeout", dest = "ping_timeout", default = "20.0", type = "float",
-                                    help = "Ping timeout")
-    parser.add_option("--sessions-up", dest = "sessions_up", default = "1", type = "int",
-                                    help = "Number of sessions in upload (only HTTP)")
-    parser.add_option("--sessions-down", dest = "sessions_down", default = "7", type = "int",
-                                    help = "Number of sessions in download")
-    parser.add_option("-n", "--num-tests", dest = "num_tests", default = "4", type = "int",
+    parser.add_option("-b", "--bandwidth", dest = "bandwidth", default = "100M", type = "string",
+                                    help = "The expected bandwith to measure, used in upload tests, e.g. 512k, 2M")
+#     parser.add_option("-w", "--tcp-window", dest = "tcp_window_size", default = "66560", type = "int",
+#                                     help = "The TCP window size, only for HTTP upload, e.g. 22528")
+#     parser.add_option("--ping-timeout", dest = "ping_timeout", default = "20.0", type = "float",
+#                                     help = "Ping timeout")
+#     parser.add_option("--sessions-up", dest = "sessions_up", default = "1", type = "int",
+#                                     help = "Number of sessions in upload (only HTTP)")
+#     parser.add_option("--sessions-down", dest = "sessions_down", default = "7", type = "int",
+#                                     help = "Number of sessions in download")
+    parser.add_option("-n", "--num-tests", dest = "num_tests", default = "1", type = "int",
                                     help = "Number of tests to perform")
     parser.add_option("-H", "--host", dest = "host", default = "eagle2.fub.it",
                                     help = "An ipaddress or FQDN of server host")
     
     (options, _) = parser.parse_args()
-    #TODO inserire controllo host
     import sysMonitor
 #        This is for lab environment
 #         ip = sysMonitor.getIp(host=options.host, port=80)
 #         dev = sysMonitor.getDev(host=options.host, port=80)
     ip = sysMonitor.getIp()
     dev = sysMonitor.getDev()
-    t = Tester(dev, ip, Host(options.host), timeout = float(options.ping_timeout), username = 'nemesys', password = '4gc0m244')
+    t = Tester(dev, ip, Host(options.host), timeout = 10.0, username = 'nemesys', password = '4gc0m244')
     if options.bandwidth.endswith("M"):
         bw = int(options.bandwidth[:-1]) * 1000000
     elif options.bandwidth.endswith("k"):
@@ -141,7 +156,7 @@ def main():
         print('test %d %s' % (i, options.testtype))
         if options.testtype == 'httpup':
             try:
-                    res = t.testhttpup(None, int(options.sessions_up))
+                    res = t.testhttpup(None, bw=bw)
             except MeasurementException as e:
                     res = {'errorcode': 1, 'error': str(e)}
             printout_http(res)
@@ -174,15 +189,6 @@ def printout_http(res):
 #                 print("Spurious traffic: %.2f%%" % float(res['spurious'] * 100))
     else:
             print("Error: %s" % res['error'])
-#     tests = {
-#         'httpdown': t.testhttpdown(None, options.sessions_down),
-#         'httpup': t.testhttpup(None, options.sessions_up),
-#         'ping': t.testping(),
-#     }
-#     test = tests.get(options.testtype)
-# 
-#     print test
-#     return None
 
 
 def printout_ftp(res):
@@ -195,4 +201,6 @@ def printout_ftp(res):
 
 
 if __name__ == '__main__':
+    import log_conf
+    log_conf.init_log()
     main()

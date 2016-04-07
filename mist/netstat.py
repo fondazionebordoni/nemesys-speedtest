@@ -7,10 +7,10 @@ import netifaces
 import platform
 import psutil
 
-from logger import logging
+import logging
 
 LINUX_RESOURCE_PATH="/sys/class/net"
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def get_netstat(if_device):
@@ -251,6 +251,8 @@ def _read_number_from_file(filename):
         return int(f.readline())
 
 if __name__ == '__main__':
+    import log_conf
+    log_conf.init_log()
     import sysMonitor
     dev = sysMonitor.getDev()
     my_netstat = get_netstat(dev)

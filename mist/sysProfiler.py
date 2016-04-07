@@ -5,12 +5,12 @@
 from sysMonitor import SysMonitor, RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC
 from collections import OrderedDict
 import threading
-from logger import logging
+import logging
 import gui_event
 
 import time
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 ALL_RES = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC]
 MESSAGE = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_IP, RES_HOSTS, RES_TRAFFIC]

@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-try:
-    from logger import logging
-except IOError as e:
-    print "Impossibile inizializzare il logging, assicurarsi che il programma stia girando con i permessi di amministratore."
-    import sys
-    sys.exit()
+import logging
 # from sysMonitor import interfaces, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
 #from sysMonitor import interfaces#, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_TRAFFIC, RES_HOSTS
 import os
@@ -26,7 +21,7 @@ from sysProfiler import sysProfiler
 
 
 # from optparse import OptionParser
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def main(argv=None):
@@ -77,9 +72,10 @@ def main(argv=None):
 
 
     except Exception, e:
-        indent = len(program_name) * " "
+#         indent = len(program_name) * " "
+        logging.critical("Impossibile avviare il programma", exc_info=True)
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
-        sys.stderr.write(indent + "  for help use --help\n")
+#         sys.stderr.write(indent + "  for help use --help\n")
         return 2
 
 
@@ -121,4 +117,10 @@ def sleeper():
   
   
 if __name__ == "__main__":
+    try:
+        import log_conf
+        log_conf.init_log()
+    except IOError as e:
+        print "Impossibile inizializzare il logging, assicurarsi che il programma stia girando con i permessi di amministratore."
+        sys.exit()
     main()

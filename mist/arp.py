@@ -27,12 +27,12 @@ import socket
 import string
 from subprocess import Popen, PIPE
 
-from logger import logging
+import logging
 import ping
 
 
 is_windows = (platform.system().startswith("Windows"))
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 if (is_windows):
     from ctypes import *
@@ -384,6 +384,8 @@ def _send_one_win_arp(IPdst, result_queue):
 
 
 if __name__ == '__main__':
+    import log_conf
+    log_conf.init_log()
     #from arprequest import ArpRequest
 #     ar = ArpRequest('192.168.112.2', 'eth0', '192.168.112.24')
 #     result = ar.request()

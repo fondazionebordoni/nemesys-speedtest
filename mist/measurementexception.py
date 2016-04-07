@@ -10,7 +10,7 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -19,13 +19,13 @@
 
 class MeasurementException(Exception):
 
-  def __init__(self, message):
-    Exception.__init__(self, message)
-    self._message = message.decode('utf-8')
+    def __init__(self, message):
+        Exception.__init__(self, message)
+        self._message = message.decode('utf-8')
 
-  @property
-  def message(self):
-    return self._message
+    @property
+    def message(self):
+        return self._message
 
 # Bandwidth not stabilized
-FAIL_STABILIZATION = MeasurementException('Bandwidth non stabilizzata.')
+# FAIL_STABILIZATION = MeasurementException('Bandwidth non stabilizzata.')

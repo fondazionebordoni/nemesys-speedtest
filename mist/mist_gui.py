@@ -28,7 +28,7 @@ import wx
 
 from collections import deque
 from datetime import datetime
-from logger import logging
+import logging
 "TODO: move from sysmonitor"
 from sysMonitor import RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_TRAFFIC, RES_HOSTS 
 from threading import Event#, enumerate
@@ -39,7 +39,7 @@ MY_BLUE = (0x13, 0x45, 0x8f)
 # '''In quest'area saranno riportati i risultati della misura
 # espressi attraverso i valori di ping, download e upload.'''
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 class mistGUI(wx.Frame):
     def __init__(self, *args, **kwds):

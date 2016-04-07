@@ -10,7 +10,7 @@
 # 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
@@ -20,27 +20,26 @@ from host import Host
 
 class Server(Host):
 
-  def __init__(self, id, ip, name=None, location=None):
-    Host.__init__(self, ip=ip, name=name)
-    self._id = id
-    self._location = location
+    def __init__(self, server_id, ip, name=None, location=None):
+        Host.__init__(self, ip=ip, name=name)
+        self._id = server_id
+        self._location = location
 
-  @property
-  def id(self):
-    return self._id
-  
-  @property
-  def location(self):
-    return self._location
+    @property
+    def id(self):
+        return self._id
+    
+    @property
+    def location(self):
+        return self._location
 
-  def __str__(self):
-    return 'id: %s; ip: %s; name: %s; location: %s' % (self.id, self.ip, self.name, self.location)
+    def __str__(self):
+        return 'id: %s; ip: %s; name: %s; location: %s' % (self.id, self.ip, self.name, self.location)
 
 if __name__ == '__main__':
-  s = Server('namexrm', '192.168.1.1', 'Namex server')
-  print s
-  s = Server(id='namexrm', ip='192.168.1.1')
-  print s
-  s = Server('namexrm', '192.168.1.1')
-  print s
-
+    s = Server('namexrm', '192.168.1.1', 'Namex server')
+    print s
+    s = Server(server_id='namexrm', ip='192.168.1.1')
+    print s
+    s = Server('namexrm', '192.168.1.1')
+    print s

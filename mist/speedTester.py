@@ -1,9 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Copyright (c) 2010-2016 Fondazione Ugo Bordoni.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# from sysMonitor import RES_OS, RES_IP, RES_DEV, RES_MAC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
+
 from sysMonitor import RES_OS, RES_IP, RES_DEV, RES_MAC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_TRAFFIC, RES_HOSTS
-from xmlutils import getvalues, getxml, xml2task
+from xmlutils import getvalues, getxml#, xml2task
 from os import path, walk, listdir, remove, removedirs
 from optionParser import OptionParser
 from sysProfiler import sysProfiler
@@ -15,7 +29,7 @@ from urlparse import urlparse
 from measure import Measure
 from measurementexception import MeasurementException
 from profile import Profile
-from logger import logging
+import logging
 from client import Client
 from server import Server
 from tester import Tester
@@ -24,15 +38,16 @@ from time import sleep
 from isp import Isp
 
 import gui_event
-import httputils
+# import httputils
 import shutil
 import paths
 import ping
 import test_type
 import wx
 import re
+import task
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 TASK_FILE = '40000'
 
@@ -54,9 +69,6 @@ class SpeedTester(Thread):
         for check in paths_check:
             logger.info(check)
             
-        self._sent = paths.SENT_DAY_DIR
-        self._outbox = paths.OUTBOX_DAY_DIR
-
         self._version = version
         self._event_dispatcher = event_dispatcher
         self._do_profile = do_profile
@@ -89,10 +101,10 @@ class SpeedTester(Thread):
 
     def _getclient(self, options):
 
-        profile = Profile(id=None, upload=options.bandwidthup,
+        profile = Profile(profile_id=None, upload=options.bandwidthup,
                                             download=options.bandwidthdown)
         isp = Isp('fub001')
-        return Client(id=options.clientid, profile=profile, isp=isp,
+        return Client(client_id=options.clientid, profile=profile, isp=isp,
                                     geocode=None, username='speedtest',
                                     password=options.password)
 
@@ -113,8 +125,6 @@ class SpeedTester(Thread):
 
         for _ in range(maxREP):
             sleep(1)
-#             self._event_dispatcher.postEvent(gui_event.UpdateEvent("Test %d di %d di ping." % (repeat + 1, maxREP)))
-#             self._event_dispatcher.postEvent(gui_event.ProgressEvent(float(repeat + 1)/maxREP))
             for server in servers:
                 try:
                     start = None
@@ -141,42 +151,9 @@ class SpeedTester(Thread):
         else:
             self._event_dispatcher.postEvent(gui_event.ErrorEvent("Impossibile eseguire i test poiche' i server risultano irragiungibili da questa linea. Contattare l'helpdesk del progetto Misurainternet per avere informazioni sulla risoluzione del problema."))
 
-        return best
+        return best['server']
     
-    
-    def _download_task(self, server=None):
-        '''Scarica il prossimo task dallo scheduler'''
-
-        try:
-            url = urlparse(self._scheduler)
-            certificate = self._client.isp.certificate
-            
-            connection = httputils.getverifiedconnection(url=url, certificate=certificate, timeout=self._httptimeout)
-            if (server != None):
-                connection.request('GET', '%s?clientid=%s&version=%s&confid=%s&server=%s' % (url.path, self._client.id, self._version, self._md5conf, server.ip))
-            else:
-                connection.request('GET', '%s?clientid=%s&version=%s&confid=%s' % (url.path, self._client.id, self._version, self._md5conf))
-            
-            data = connection.getresponse().read()
-            task = xml2task(data)
-            
-            if (task == None): 
-                logger.info('Lo scheduler ha inviato un task vuoto.')
-            else:
-                task.ftpdownpath = '/download/' + TASK_FILE + '.rnd'
-                self._client.profile.upload = int(TASK_FILE)
-                logger.info("--------[ TASK ]--------")
-                for key, val in task.dict.items():
-                    logger.info("%s : %s" % (key, val))
-                logger.info("------------------------")
-                
-        except Exception as e:
-            logger.error('Impossibile scaricare lo scheduling. Errore: %s.' % e)
-            return None
         
-        return task
-    
-    
     def _test_gating(self, test, testtype):
         '''
         Funzione per l'analisi del contabit ed eventuale gating dei risultati del test
@@ -242,7 +219,7 @@ class SpeedTester(Thread):
         self._event_dispatcher.postEvent(gui_event.ResultEvent(test_type.HTTP_DOWN, speed, is_intermediate = True))
 #         self._event_dispatcher.postEvent(gui_event.UpdateEvent("%d: %f kb/s" % (args['second'], args['speed'])))
     
-    def _do_test(self, tester, t_type, task, previous_profiler_result):
+    def _do_test(self, tester, t_type, my_task, previous_profiler_result):
         test_done = 0
         test_good = 0
         test_todo = 0
@@ -252,15 +229,15 @@ class SpeedTester(Thread):
 #         self._event_dispatcher.postEvent(gui_event.ProgressEvent(0))
         
         if t_type == test_type.PING:
-            test_todo = task.ping
+            test_todo = my_task.ping
 #         elif t_type == test_type.FTP_DOWN:
-#             test_todo = task.download
+#             test_todo = my_task.download
 #         elif t_type == test_type.FTP_UP:
-#             test_todo = task.upload
+#             test_todo = my_task.upload
         elif test_type.is_http_down(t_type):
-            test_todo = task.http_download
+            test_todo = my_task.http_download
         elif test_type.is_http_up(t_type):
-            test_todo = task.http_upload
+            test_todo = my_task.http_upload
 
         while (test_good < test_todo) and self._running.is_set():
             self._progress += self._progress_step
@@ -287,8 +264,7 @@ class SpeedTester(Thread):
                 elif t_type == test_type.HTTP_DOWN:
                     testres = tester.testhttpdown(self.receive_partial_results)
                 elif t_type == test_type.HTTP_UP:
-                    pass
-#                     testres = tester.testhttpup(self.receive_partial_results, num_sessions=1)
+                    testres = tester.testhttpup(self.receive_partial_results, bw=self._client.profile.upload)
                 else:
                     logger.warn("Tipo di test da effettuare non definito: %s" % test_type.get_string_type(t_type))
 
@@ -341,9 +317,7 @@ class SpeedTester(Thread):
     
     
     def run(self):
-
         self._running.set()
-        
         self._event_dispatcher.postEvent(gui_event.UpdateEvent("Inizio dei test di misura", gui_event.UpdateEvent.MAJOR_IMPORTANCE))
         self._progress = 0.01
         self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
@@ -352,22 +326,24 @@ class SpeedTester(Thread):
         self._profiler.profile_in_background(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
         self._progress += 0.01
         self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
-
-        server = None        
         if (self.is_oneshot()):
-            ping_test = self._get_server()
-            server = ping_test['server']
-
-        task = self._download_task(server)
-        self._progress += 0.01
-        self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
+            server = self._get_server()
+        else:
+            server = None        
+        my_task = task.download_task(url=urlparse(self._scheduler), 
+                                     client_id=self._client.id, 
+                                     certificate=self._client.isp.certificate, 
+                                     version=self._version, 
+                                     md5conf=self._md5conf, 
+                                     timeout=self._httptimeout, 
+                                     server=server)
         
-        if task == None:
+        if my_task == None:
             self._event_dispatcher.postEvent(gui_event.ErrorEvent("Impossibile eseguire ora i test di misura. Riprovare tra qualche secondo."))
         else:
+            self._progress += 0.01
+            self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
             try:
-#                 self._event_dispatcher.postEvent(gui_event.ProgressEvent())
-
                 test_types = [test_type.PING, test_type.HTTP_DOWN] 
                 total_num_tasks = 0
                 for t_type in test_types:
@@ -376,16 +352,16 @@ class SpeedTester(Thread):
                 total_num_tasks += 3 # Two profilations and save test
                 self._progress_step = (1.0 - self._progress)/total_num_tasks
 
-                if (task.server.location != None):
-                    self._event_dispatcher.postEvent(gui_event.UpdateEvent("Selezionato il server di misura di %s" % task.server.location, gui_event.UpdateEvent.MAJOR_IMPORTANCE))
+                if (my_task.server.location != None):
+                    self._event_dispatcher.postEvent(gui_event.UpdateEvent("Selezionato il server di misura di %s" % my_task.server.location, gui_event.UpdateEvent.MAJOR_IMPORTANCE))
                 
                 start_time = datetime.fromtimestamp(timestampNtp())
 
                 (ip, dev, os, mac) = (profiler_result[RES_IP], profiler_result[RES_DEV], profiler_result[RES_OS], profiler_result[RES_MAC])
-                tester = Tester(dev=dev, ip=ip, host=task.server, timeout=self._testtimeout,
+                tester = Tester(dev=dev, ip=ip, host=my_task.server, timeout=self._testtimeout,
                                      username=self._client.username, password=self._client.password)
 
-                measure = Measure(self._client, start_time, task.server, ip, os, mac, self._version)
+                measure = Measure(self._client, start_time, my_task.server, ip, os, mac, self._version)
                 
                 profiler_result = self._profiler.profile_once(set([RES_HOSTS, RES_TRAFFIC]))
                 self._progress += self._progress_step
@@ -393,8 +369,7 @@ class SpeedTester(Thread):
 #                 profiler = self._profiler.get_results()
                 sleep(1)
 
-#                                             test_type.HTTP_UP, 
-                task.set_ftpup_bytes(int(self._client.profile.upload * task.multiplier * 1000 / 8))
+                my_task.set_ftpup_bytes(int(self._client.profile.upload * my_task.multiplier * 1000 / 8))
                 for t_type in test_types:
                     if not self._running.isSet():
                         # Has been interrupted
@@ -403,7 +378,7 @@ class SpeedTester(Thread):
                     best_bandwidth = 0
                     try:
                         sleep(1)
-                        test = self._do_test(tester, t_type, task, profiler_result)
+                        test = self._do_test(tester, t_type, my_task, profiler_result)
                         measure.savetest(test) # Saves test in XML file
                         self._event_dispatcher.postEvent(gui_event.UpdateEvent("Elaborazione dei dati"))
                         if t_type != test_type.PING:
@@ -411,9 +386,9 @@ class SpeedTester(Thread):
                             if (bandwidth > best_bandwidth):
                                 self._client.profile.download = min(bandwidth, 100000)
                                 if test_type.is_http_down(t_type):
-                                        task.update_ftpdownpath(bandwidth)
+                                        my_task.update_ftpdownpath(bandwidth)
                                 else:
-                                        task.set_ftpup_bytes(int(bandwidth / 8 * 10000))
+                                        my_task.set_ftpup_bytes(int(bandwidth / 8 * 10000))
                                 best_bandwidth = bandwidth
 
                         "TODO: clean up"
@@ -453,7 +428,7 @@ class SpeedTester(Thread):
     
     def _save_measure(self, measure):
         # Salva il file con le misure
-        f = open('%s/measure_%s.xml' % (self._outbox, measure.id), 'w')
+        f = open('%s/measure_%s.xml' % (paths.OUTBOX_DAY_DIR, measure.id), 'w')
         f.write(str(measure))
         # Aggiungi la data di fine in fondo al file
         f.write('\n<!-- [finished] %s -->' % datetime.fromtimestamp(timestampNtp()).isoformat())
@@ -593,7 +568,7 @@ class SpeedTester(Thread):
                 if (re.search(pattern, f) != None):
                     # Spostarli tutti in self._sent
                     old = path.join(filedir, f)
-                    new = path.join(self._sent, f)
+                    new = path.join(paths.SENT_DAY_DIR, f)
                     shutil.move(old, new)
 
         except Exception as e:
@@ -610,14 +585,3 @@ class SpeedTester(Thread):
                     if not listdir(filedir):    # to check wither the dir is empty
                         logger.info("Elimino la directory vuota: %s" % filedir)
                         removedirs(filedir)
-
-
-
-
-if __name__ == "__main__":
-    sleep(8)
-    test = SpeedTester(None)
-    test._remEmptyDir(paths.OUTBOX_DIR)
-    test._remEmptyDir(paths.SENT_DIR)
-                    
-                    

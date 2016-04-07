@@ -10,7 +10,7 @@
 # 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
@@ -22,115 +22,116 @@ import zipfile
 import datetime
 from httplib import HTTPException
 from httputils import post_multipart
-from logger import logging
+import logging
 from os import path, remove
 from urlparse import urlparse
 from ssl import SSLError
 from timeNtp import timestampNtp
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 class Deliverer:
 
-  def __init__(self, url, certificate, timeout=60):
-    self._url = url
-    self._certificate = certificate
-    self._timeout = timeout
+    def __init__(self, url, certificate, timeout=60):
+        self._url = url
+        self._certificate = certificate
+        self._timeout = timeout
 
-  def upload(self, filename):
-    '''
-    Effettua l'upload del file. Restituisce la risposta ricevuta dal repository o None se c'è stato un problema.
-    '''
-    response = None
-    logger.info('Invio a WEB: %s' % self._url)
-    logger.info('Del file ZIP: %s' % filename)
-    try:
-      with open(filename, 'rb') as file:
-        body = file.read()
-      
-      url = urlparse(self._url)
-      response = post_multipart(url, fields=None, files=[('myfile', path.basename(filename), body)], certificate=self._certificate, timeout=self._timeout)
+    def upload(self, filename):
+        '''
+        Effettua l'upload del file. Restituisce la risposta ricevuta dal repository o None se c'è stato un problema.
+        '''
+        response = None
+        logger.info('Invio a WEB: %s' % self._url)
+        logger.info('Del file ZIP: %s' % filename)
+        try:
+            with open(filename, 'rb') as file:
+                body = file.read()
+            
+            url = urlparse(self._url)
+            response = post_multipart(url, fields=None, files=[('myfile', path.basename(filename), body)], certificate=self._certificate, timeout=self._timeout)
 
-    except HTTPException as e:
-      remove(file.name)
-      logger.error('Impossibile effettuare l\'invio del file delle misure. Errore: %s' % e)
+        except HTTPException as e:
+            remove(file.name)
+            logger.error('Impossibile effettuare l\'invio del file delle misure. Errore: %s' % e)
 
-    except SSLError as e:
-      remove(file.name)
-      logger.error('Errore SSL durante l\'invio del file delle misure: %s' % e)
+        except SSLError as e:
+            remove(file.name)
+            logger.error('Errore SSL durante l\'invio del file delle misure: %s' % e)
 
-    return response
+        return response
 
-  def pack(self, filename):
-    '''
-    Crea un file zip contenente //filename// e la sua firma SHA1.
-    Restituisce il nome del file zip creato.
-    '''
+    def pack(self, filename):
+        '''
+        Crea un file zip contenente //filename// e la sua firma SHA1.
+        Restituisce il nome del file zip creato.
+        '''
 
-    # Aggiungi la data di invio in fondo al file
-    with open(filename, 'a') as file:
-      file.write('\n<!-- [packed] %s -->' % datetime.datetime.fromtimestamp(timestampNtp()).isoformat())      
+        # Aggiungi la data di invio in fondo al file
+        with open(filename, 'a') as file:
+            file.write('\n<!-- [packed] %s -->' % datetime.datetime.fromtimestamp(timestampNtp()).isoformat())            
 
-    # Gestione della firma del file
-    sign = None
-    if self._certificate != None and path.exists(self._certificate):
-      # Crea il file della firma
-      signature = self.sign(filename)
-      if signature == None:
-        logger.error('Impossibile eseguire la firma del file delle misure. Creazione dello zip omettendo il .sign')
-      else:
-        with open('%s.sign' % filename[0:-4], 'wb') as sign:
-          sign.write(signature)
+        # Gestione della firma del file
+        sign = None
+        if self._certificate != None and path.exists(self._certificate):
+            # Crea il file della firma
+            signature = self.sign(filename)
+            if signature == None:
+                logger.error('Impossibile eseguire la firma del file delle misure. Creazione dello zip omettendo il .sign')
+            else:
+                with open('%s.sign' % filename[0:-4], 'wb') as sign:
+                    sign.write(signature)
 
-    # Creazione del file zip
-    zipname = '%s.zip' % filename[0:-4]
-    zip = zipfile.ZipFile(zipname, 'a', zipfile.ZIP_DEFLATED)
-    zip.write(file.name, path.basename(file.name))
+        # Creazione del file zip
+        zipname = '%s.zip' % filename[0:-4]
+        zip = zipfile.ZipFile(zipname, 'a', zipfile.ZIP_DEFLATED)
+        zip.write(file.name, path.basename(file.name))
 
-    # Sposto la firma nello zip
-    if sign != None and path.exists(sign.name):
-        zip.write(sign.name, path.basename(sign.name))
-        remove(sign.name)
+        # Sposto la firma nello zip
+        if sign != None and path.exists(sign.name):
+                zip.write(sign.name, path.basename(sign.name))
+                remove(sign.name)
 
-    # Controllo lo zip
-    if zip.testzip() != None:
-      zip.close()
-      logger.error("Lo zip %s è corrotto. Lo elimino." % zipname)
-      remove(zipname)
-      zipname = None
-    else:
-      zip.close()
-      logger.info("XML: %s" % filename)
-      logger.info("Compresso correttamente in")
-      logger.info("ZIP: %s" % zipname)
+        # Controllo lo zip
+        if zip.testzip() != None:
+            zip.close()
+            logger.error("Lo zip %s è corrotto. Lo elimino." % zipname)
+            remove(zipname)
+            zipname = None
+        else:
+            zip.close()
+            logger.info("XML: %s" % filename)
+            logger.info("Compresso correttamente in")
+            logger.info("ZIP: %s" % zipname)
 
-    # A questo punto ho un xml e uno zip
-    return zipname
+        # A questo punto ho un xml e uno zip
+        return zipname
 
-  #restituisce la firma del file da inviare
-  def sign(self, filename):
-    '''
-    Restituisce la stringa contenente la firma del digest SHA1 del
-    file da firmare
-    '''
-    try:
-      from M2Crypto import RSA
-    except Exception:
-      logger.debug('Impossibile importare il modulo M2Crypto')
-      return None
+    #restituisce la firma del file da inviare
+    def sign(self, filename):
+        '''
+        Restituisce la stringa contenente la firma del digest SHA1 del
+        file da firmare
+        '''
+        try:
+            from M2Crypto import RSA
+        except Exception:
+            logger.debug('Impossibile importare il modulo M2Crypto')
+            return None
 
-    data = open(filename, 'rb').read()
-    digest = hashlib.sha1(data).digest()
+        data = open(filename, 'rb').read()
+        digest = hashlib.sha1(data).digest()
 
-    rsa = RSA.load_key(self._certificate)
+        rsa = RSA.load_key(self._certificate)
 
-    signature = rsa.sign(digest)
-    if rsa.verify(digest, signature):
-      return signature
-    else:
-      return None
+        signature = rsa.sign(digest)
+        if rsa.verify(digest, signature):
+            return signature
+        else:
+            return None
 
 if __name__ == '__main__':
-  d = Deliverer('https://repository.agcom244.fub.it/Upload', 'fub000.pem')
-  print ('%s' % d.upload(d.pack("outbox/measure.xml")))
-
+    import log_conf
+    log_conf.init_log()
+    d = Deliverer('https://repository.agcom244.fub.it/Upload', 'fub000.pem')
+    print ('%s' % d.upload(d.pack("outbox/measure.xml")))

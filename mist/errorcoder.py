@@ -15,13 +15,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-
+'TODO: remove!'
 import ConfigParser
-from logger import logging
+import logging
 from os import path
 import paths
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 configerror = 00000  # codice di errore utilizzato in presenza errori di errorcoder.py
 

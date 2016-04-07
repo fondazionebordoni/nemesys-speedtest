@@ -16,18 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import httpclient
+import Queue
 import random
-import requests
 import socket
 import threading
 import time
 import urllib2
-import Queue
 
 from fakefile import Fakefile
-from logger import logging
-import netstat
+import logging
 from measurementexception import MeasurementException
+import netstat
 
 
 TOTAL_MEASURE_TIME = 10
@@ -35,7 +35,9 @@ DOWNLOAD_TIMEOUT_DELAY = 5 #Wait another 5 secs in case end of file has not arri
 MAX_TRANSFERED_BYTES = 100 * 1000000 * 11 / 8 # 100 Mbps for 11 seconds
 BUF_SIZE = 8*1024
 HTTP_TIMEOUT = 10.0 # 10 seconds timeout on open and read operations
-logger = logging.getLogger()
+END_STRING = '_ThisIsTheEnd_'
+
+logger = logging.getLogger(__name__)
 
 '''
 NOTE: not thread-safe, make sure to only call 
@@ -261,7 +263,16 @@ class HttpTester:
     the average speed payload/net in order to 
     verify spurious traffic.
     '''
-    def test_up(self, url, callback_update_speed = None, total_test_time_secs = TOTAL_MEASURE_TIME, file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 8 * 1024, is_first_try = True, num_sessions = 1):
+    def test_up(self, 
+                url, 
+                callback_update_speed = None, 
+                total_test_time_secs = TOTAL_MEASURE_TIME, 
+                file_size = MAX_TRANSFERED_BYTES, recv_bufsize = 8 * 1024, 
+                is_first_try = True, 
+                num_sessions = 1,
+                tcp_window_size = None):
+        
+        logger.info("HTTP upload, %d sessions, TCP window size = %d" % (num_sessions, tcp_window_size))
         measurement_id = "sess-%d" % random.randint(0, 100000)
         self.callback_update_speed = callback_update_speed
         upload_threads = []
@@ -279,7 +290,14 @@ class HttpTester:
         start_tx_bytes = self._netstat.get_tx_bytes()
         for _ in range(0, num_sessions):
             fakefile = Fakefile(file_size)
-            upload_thread = UploadThread(httptester=self, fakefile=fakefile, url=url, upload_sending_time_secs=self._upload_sending_time_secs, measurement_id=measurement_id, recv_bufsize=recv_bufsize, num_bytes=self._num_bytes)#threading.Thread(target = self._do_one_upload, args = (fakefile, url, self._upload_sending_time_secs))
+            upload_thread = UploadThread(httptester = self, 
+                                         fakefile = fakefile, 
+                                         url=url, 
+                                         upload_sending_time_secs = self._upload_sending_time_secs, 
+                                         measurement_id=measurement_id, 
+                                         recv_bufsize=recv_bufsize, 
+                                         num_bytes=self._num_bytes,
+                                         tcp_window_size = tcp_window_size)
             upload_thread.start()
             upload_threads.append(upload_thread)
         for upload_thread in upload_threads:
@@ -341,8 +359,11 @@ def _test_from_server_response(response):
         test['rate_secs'] = -1
         test['errorcode'] = 1
     else:
-        test['errorcode'] = 0
-        results = str(response).split(',')
+        try:
+            results = map(int, response.strip(']').strip('[').split(', '))
+            test['errorcode'] = 0
+        except:
+            raise MeasurementException("Ricevuto risposta errata dal server")
         test['time'] = len(results) * 1000
         partial_bytes = [float(x) for x in results] 
         test['rate_secs'] = []
@@ -358,7 +379,7 @@ def _test_from_server_response(response):
 
 class UploadThread(threading.Thread):
     
-    def __init__(self, httptester, fakefile, url, upload_sending_time_secs, measurement_id, recv_bufsize, num_bytes):
+    def __init__(self, httptester, fakefile, url, upload_sending_time_secs, measurement_id, recv_bufsize, num_bytes, tcp_window_size = None):
         threading.Thread.__init__(self)
         self._httptester = httptester
         self._fakefile = fakefile
@@ -367,6 +388,7 @@ class UploadThread(threading.Thread):
         self._measurement_id = measurement_id
         self._recv_bufsize = recv_bufsize
         self._num_bytes = num_bytes
+        self._tcp_window_size = tcp_window_size
         self._error = None
         self._response = None
 
@@ -376,22 +398,25 @@ class UploadThread(threading.Thread):
         try:
             logger.info("Connecting to server, sending time is %d" % self._upload_sending_time_secs)
             headers = {"X-measurement-id" : self._measurement_id}
-            response = requests.post(self._url, data=chunk_generator.gen_chunk(), headers = headers)#, hooks = dict(response = self._response_received))
-            self._httptester._stop_up_measurement()
+#             response = requests.post(self._url, data=chunk_generator.gen_chunk(), headers = headers)#, hooks = dict(response = self._response_received))
+            response = httpclient.post(self._url, data_source=chunk_generator.gen_chunk(), headers = headers, tcp_window_size = self._tcp_window_size)#, hooks = dict(response = self._response_received))
         except Exception as e:
-            self._httptester._stop_up_measurement()
-            chunk_generator.stop()
+            logger.error("Failed connection to server", exc_info=True)
             self._error = "Errore di connessione: %s" % str(e)
-        if response == None:
+        finally:
             self._httptester._stop_up_measurement()
             chunk_generator.stop()
+            if response:
+                try:
+                    response.close()
+                except:
+                    pass
+        if response == None:
             if not self._error:
                 self._error = "Nessuna risposta dal server" 
         elif response.status_code != 200:
-            self._httptester._stop_up_measurement()
-            chunk_generator.stop()
             if not self._error:
-                self._error = "Ricevuto risposta %d dal server" % self._response.status_code
+                self._error = "Ricevuto risposta %d dal server" % response.status_code
         self._response = response
 
     def get_bytes_read(self):
@@ -404,7 +429,6 @@ class UploadThread(threading.Thread):
         return self._response
 
 
-END_STRING = '_ThisIsTheEnd_'
 
 class ChunkGenerator:
 
@@ -440,20 +464,21 @@ if __name__ == '__main__':
 #    host = "10.80.1.1"
 #    host = "193.104.137.133"
 #    host = "regopptest6.fub.it"
-    host = "eagle2.fub.it"
+#     host = "eagle2.fub.it"
+    host = "rambo.fub.it"
 #     host = "regoppwebtest.fub.it"
 #    host = "rocky.fub.it"
 #    host = "billia.fub.it"
     import sysMonitor
     dev = sysMonitor.getDev()
     http_tester = HttpTester(dev)
-    print "\n------ DOWNLOAD -------\n"
-    for _ in range(0, 10):
-        res = http_tester.test_down("http://%s:80" % host, num_sessions=7)
-        print res
-#     print "\n------ UPLOAD ---------\n"
-#     res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=1)
-#     print res
+#     print "\n------ DOWNLOAD -------\n"
+#     for _ in range(0, 10):
+#         res = http_tester.test_down("http://%s:80" % host, num_sessions=7)
+#         print res
+    print "\n------ UPLOAD ---------\n"
+    res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=1, tcp_window_size=8192)
+    print res
 #     print "\n------ UPLOAD ---------\n"
 #     res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=2)
 #     print res
