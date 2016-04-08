@@ -10,7 +10,7 @@
 # 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
@@ -18,63 +18,64 @@
 
 class Proof:
 
-  def __init__(self, test = {}):
-    self._test = {}
-    self.clear()
-    self.update(test)
+    def __init__(self, test = {}):
+        self._test = {}
+        self.clear()
+        self.update(test)
+        
+    def update(self, test):
+        self._test.update(test)
+        
+    def clear(self):
+        self._test.clear()
     
-  def update(self, test):
-    self._test.update(test)
+    def dict(self):
+        return self._test
     
-  def clear(self):
-    self._test.clear()
-  
-  def dict(self):
-    return self._test
-  
-  
-  @property
-  def type(self):
-    return self._test.get('type','test')
-  
-  @property
-  def done(self):
-    return self._test.get('done',0)
+    
+    @property
+    def type(self):
+        return self._test.get('type','test')
+    
+    @property
+    def done(self):
+        return self._test.get('done',0)
 
-  @property
-  def time(self):
-    #!# Values must be saved in milliseconds #!#
-    return self._test.get('time',0)
+    @property
+    def time(self):
+        #!# Values must be saved in milliseconds #!#
+        return self._test.get('time',0)
 
-  @property
-  def bytes(self):
-    return self._test.get('bytes',0)
-  
-  @property
-  def bytesOth(self):
-    return self._test.get('bytes_total',0) - self._test.get('bytes',0)
+    @property
+    def bytes(self):
+        return self._test.get('bytes',0)
+    
+    @property
+    def bytesOth(self):
+        return self._test.get('bytes_total',0) - self._test.get('bytes',0)
 
-  @property
-  def bytesTot(self):
-    return self._test.get('bytes_total',0)
+    @property
+    def bytesTot(self):
+        return self._test.get('bytes_total',0)
 
-  @property
-  def errorcode(self, errorcode=None):
-    if (errorcode != None):
-      if errorcode > 99999 or errorcode < 0:
-        errorcode = (errorcode - 90000) % 99999
-        # Faccio rimanere nelle ultime 4 cifre l'errore del test #
-      self._test['errorcode'] = errorcode
-    else:
-      return self._test.get('errorcode',0)
+    'TODO: remove'
+    @property
+    def errorcode(self, errorcode=None):
+        if (errorcode != None):
+            if errorcode > 99999 or errorcode < 0:
+                errorcode = (errorcode - 90000) % 99999
+                # Faccio rimanere nelle ultime 4 cifre l'errore del test #
+            self._test['errorcode'] = errorcode
+        else:
+            return self._test.get('errorcode',0)
 
 
-  def __str__(self):
-    return '|Type:%s|Done:%s|Time:%1.3f|Bytes:%d|BytesOth:%d|Errorcode:%d|' \
-            % (self.type, self.done, self.time, self.bytes, self.bytesOth, self.errorcode)
+    def __str__(self):
+        return '|Type:%s|Done:%s|Time:%1.3f|Bytes:%d|BytesOth:%d|Errorcode:%d|' \
+                        % (self.type, self.done, self.time, self.bytes, self.bytesOth, self.errorcode)
 
 if __name__ == '__main__':
-    test = Proof()
-    test.update({'type':'download','time':10,'bytes':30000, 'bytes_total':51000, 'errorcode':0})
-    
-    
+        test = Proof()
+        test.update({'type':'download','time':10,'bytes':30000, 'bytes_total':51000, 'errorcode':0})
+        
+        

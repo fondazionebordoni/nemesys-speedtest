@@ -19,7 +19,6 @@
 from datetime import datetime
 import logging
 from server import Server
-from status import Status
 from string import join
 from task import Task
 from xml.dom import Node
@@ -104,7 +103,7 @@ def xml2task(data):
 
     # Aggancio dei dati richiesti
     try:
-        id = getvalues(node, tag_id)
+        task_id = getvalues(node, tag_id)
         upload = getvalues(node, tag_upload)
         download = getvalues(node, tag_download)
         ping = getvalues(node, tag_ping)
@@ -182,7 +181,7 @@ def xml2task(data):
     ##TODO: Controllare validità dati IP##
 
     server = Server(serverid, serverip, servername, srvlocation)
-    task = Task(task_id=id, start=start, server=server, ftpdownpath=ftpdownpath, ftpuppath=ftpuppath, upload=upload, download=download, multiplier=multiplier, ping=ping, nicmp=nicmp, delay=delay, now=bool(now), message=message)
+    task = Task(task_id=task_id, start=start, server=server, ftpdownpath=ftpdownpath, ftpuppath=ftpuppath, upload=upload, download=download, multiplier=multiplier, ping=ping, nicmp=nicmp, delay=delay, now=bool(now), message=message)
     
     return task 
 
@@ -207,31 +206,6 @@ def nodedata(node):
         if child.nodeType != Node.TEXT_NODE:
             s += '%s: %s\n' % (child.nodeName, getvalues(child))
     return s.strip('\n')
-
-def xml2status(data):
-
-    try:
-        xml = getxml(data)
-    except Exception as e:
-        logger.error('Errore durante la conversione dei dati di stato del processo di misura')
-        raise Exception('Le informazioni di stato del processo di misura non sono corrette. %s. Provare a riavviare il programma.' % e)
-
-    nodes = xml.getElementsByTagName('status')
-    if (len(nodes) < 1):
-        logger.debug('Nessun status trovato nell\'XML:\n%s' % xml.toxml())
-        raise Exception('Nessuna informazione ricevuta sullo stato del processo che effettua misure.');
-
-    node = nodes[0]
-
-    # Aggancio dei dati richiesti
-    try:
-        color = getvalues(node, 'color')
-        message = getvalues(node, 'message')
-    except IndexError:
-        logger.error('L\'XML ricevuto non contiene tutti i dati richiesti. XML: %s' % data)
-        raise Exception('I messaggi di stato del processo che effettua le misure non contengono tutte le informazioni richieste.');
-
-    return Status(color, message)
 
 def getcommentvalue(filename, comment, pattern='.*'):
     '''
@@ -341,12 +315,6 @@ if __name__ == '__main__':
     </task>
  </calendar>
     '''
-    status_xml = '''<?xml version="1.0" encoding="UTF-8"?>
-    <status>
-        <color>orange</color>
-        <message>MIST sta effettuando una misura.</message>
-    </status>
-    '''
     empty_xml_file = 'test/empty_xml_file.xml'
     fake_xml_file = 'test/fake_xml_file.xml'
     generic_xml_file = 'test/generic_xml_file.xml'
@@ -384,19 +352,6 @@ if __name__ == '__main__':
     except Exception as e:
         print e
     
-    # Test xml2task
-    print '(xml2status) XML legittimo ma non status: %s' % generic_xml
-    try:
-        print xml2status(generic_xml)
-    except Exception as e:
-        print e
-    
-    print '(xml2status) XML di status: %s' % status_xml
-    try:
-        print xml2status(status_xml)
-    except Exception as e:
-        print e
-
     print '(file2xml) Conversione file vuoto in xml: %s' % empty_xml_file    
     try:
         print file2xml(empty_xml_file)

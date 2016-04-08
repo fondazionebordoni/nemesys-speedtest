@@ -80,7 +80,7 @@ class Tester:
         return self._testerftp.testftpup(self._host.ip, filename, num_bytes, self._username, self._password)
 
     def testping(self):
-        
+        'TODO: remove errorcode and verify that it does not create problems'
         # si utilizza funzione ping.py
         test = {}
         test['type'] = 'ping'
@@ -156,10 +156,10 @@ def main():
         print('test %d %s' % (i, options.testtype))
         if options.testtype == 'httpup':
             try:
-                    res = t.testhttpup(None, bw=bw)
+                res = t.testhttpup(None, bw=bw)
+                printout_http(res)
             except MeasurementException as e:
-                    res = {'errorcode': 1, 'error': str(e)}
-            printout_http(res)
+                print("Error: %s" % str(e))
         elif options.testtype == 'ftpup':
             file_size = bw * 10 / 8
             try:
@@ -176,19 +176,16 @@ def main():
                 print("Error: %s" % str(e))
         else:
             try:
-                    res = t.testhttpdown(None, int(options.sessions_down))
+                res = t.testhttpdown(None)
+                printout_http(res)
             except MeasurementException as e:
-                    res = {'errorcode': 1, 'error': str(e)}
-            printout_http(res)
+                print("Error: %s" % str(e))
     print "==============================================="
 
 
 def printout_http(res):
-    if res['errorcode'] == 0:
-            print("Medium speed: %d" % (int(sum(res['rate_tot_secs']))/len(res['rate_tot_secs'])))
+    print("Medium speed: %d" % (int(sum(res['rate_tot_secs']))/len(res['rate_tot_secs'])))
 #                 print("Spurious traffic: %.2f%%" % float(res['spurious'] * 100))
-    else:
-            print("Error: %s" % res['error'])
 
 
 def printout_ftp(res):

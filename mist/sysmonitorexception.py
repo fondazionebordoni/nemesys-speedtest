@@ -10,7 +10,7 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -19,22 +19,22 @@
 
 class SysmonitorException(Exception):
 
-  def __init__(self, alert_type, message):
-    Exception.__init__(self, message)
-    if isinstance (alert_type, SysmonitorException):
-      self._alert_type = alert_type.alert_type.decode('utf-8')
-    else:
-      self._alert_type = alert_type.decode('utf-8')
+    def __init__(self, alert_type, message):
+        Exception.__init__(self, message)
+        if isinstance (alert_type, SysmonitorException):
+            self._alert_type = alert_type.alert_type.decode('utf-8')
+        else:
+            self._alert_type = alert_type.decode('utf-8')
 
-    self._message = message.decode('utf-8')
+        self._message = message.decode('utf-8')
 
-#  @property
-#  def alert_type(self):
-#    return self._alert_type.encode('ascii', 'xmlcharrefreplace')
-
-#  @property
-#  def message(self):
-#    return self._message.encode('ascii', 'xmlcharrefreplace')
+    @property
+    def alert_type(self):
+        return self._alert_type.encode('ascii', 'xmlcharrefreplace')
+ 
+    @property
+    def message(self):
+        return self._message.encode('ascii', 'xmlcharrefreplace')
 
 #Error while trying to recover the System Profile
 FAILPROF = SysmonitorException('FAILPROF', 'Non sono riuscito a trovare lo stato del computer con SystemProfiler.')
@@ -42,7 +42,7 @@ FAILPROF = SysmonitorException('FAILPROF', 'Non sono riuscito a trovare lo stato
 FAILSTATUS = SysmonitorException('FAILSTATUS', 'Errore durante il recupero dello stato del computer.')
 #Error on param reading
 FAILREADPARAM = SysmonitorException('FAILREADPARAM', 'Errore di lettura di un parametro in SystemProfiler.')
-#Error  on determining param's value
+#Error    on determining param's value
 FAILVALUEPARAM = SysmonitorException('FAILVALUEPARAM', 'Errore nel valore di un parametro in SystemProfiler.')
 #Error on connection list
 BADCONN = SysmonitorException('BADCONN', 'Lista delle connessioni attive non conforme.')

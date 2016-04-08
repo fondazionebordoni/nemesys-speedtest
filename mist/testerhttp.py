@@ -126,7 +126,7 @@ class HttpTester:
         test['rate_max'] = self._get_max_rate() 
         test['rate_tot_secs'] = self._measures_tot
         test['spurious'] = spurio
-        test['errorcode'] = 0
+#         test['errorcode'] = 0
 
         return test
 
@@ -143,6 +143,7 @@ class HttpTester:
         except Exception as e:
             logger.error("Impossibile creare connessione: %s" % str(e))
             self._time_to_stop = True
+            self._timeout = True
             error_queue.put("Impossibile aprire la connessione HTTP: %s" % str(e))
             return
         if response.getcode() != 200:
@@ -341,7 +342,7 @@ def _init_test(testtype):
     test['time'] = 0
     test['bytes'] = 0
     test['bytes_total'] = 0
-    test['errorcode'] = 0
+#     test['errorcode'] = 0
     return test
         
 def _test_from_server_response(response):
@@ -357,11 +358,11 @@ def _test_from_server_response(response):
         test['rate_medium'] = -1
         test['rate_max'] = -1
         test['rate_secs'] = -1
-        test['errorcode'] = 1
+#         test['errorcode'] = 1
     else:
         try:
             results = map(int, response.strip(']').strip('[').split(', '))
-            test['errorcode'] = 0
+#             test['errorcode'] = 0
         except:
             raise MeasurementException("Ricevuto risposta errata dal server")
         test['time'] = len(results) * 1000
