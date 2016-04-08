@@ -253,8 +253,8 @@ def _read_number_from_file(filename):
 if __name__ == '__main__':
     import log_conf
     log_conf.init_log()
-    import sysmonitor
-    dev = sysmonitor.getDev()
+    import sysMonitor
+    dev = sysMonitor.getDev()
     my_netstat = get_netstat(dev)
     print "RX bytes", my_netstat.get_rx_bytes()
     print "TX bytes", my_netstat.get_tx_bytes()
