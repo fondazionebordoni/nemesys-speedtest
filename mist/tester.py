@@ -111,7 +111,7 @@ def main():
     parser = OptionParser(version = "0.10.1.$Rev$",
                                                 description = "A simple bandwidth tester able to perform HTTP upload/download and PING tests.")
     parser.add_option("-t", "--type", choices = ('httpdown', 'httpup', 'ftpup', 'ping'),
-                                    dest = "testtype", default = "httpdown", type = "choice",
+                                    dest = "testtype", default = "httpup", type = "choice",
                                     help = "Choose the type of test to perform: httpdown (default), httpup, ftpup, ping")
     parser.add_option("-b", "--bandwidth", dest = "bandwidth", default = "100M", type = "string",
                                     help = "The expected bandwith to measure, used in upload tests, e.g. 512k, 2M")
