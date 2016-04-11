@@ -20,7 +20,8 @@ from host import Host
 import logging
 from optparse import OptionParser
 import ping
-from testerhttp import HttpTester
+from testerhttpup import HttpTesterUp
+from testerhttpdown import HttpTesterDown
 from testerftp import FtpTester
 from measurementexception import MeasurementException
 
@@ -47,14 +48,15 @@ class Tester:
         self._password = password
         self._timeout = timeout
         
-        self._testerhttp = HttpTester(dev, HTTP_BUFF)
+        self._testerhttpup = HttpTesterUp(dev, HTTP_BUFF)
+        self._testerhttpdown = HttpTesterDown(dev, HTTP_BUFF)
         self._testerftp = FtpTester(dev, timeout, HTTP_BUFF)
         
         
 
     def testhttpdown(self, callback_update_speed, num_sessions = 7):
         url = "http://%s/file.rnd" % self._host.ip
-        return self._testerhttp.test_down(url, 10, callback_update_speed, num_sessions=num_sessions)        
+        return self._testerhttpdown.test_down(url, 10, callback_update_speed, num_sessions=num_sessions)        
  
 #     def testhttpup(self, callback_update_speed, num_sessions=1, tcp_window_size = None):
 #         url = "http://%s:8080/file.rnd" % self._host.ip
@@ -71,7 +73,7 @@ class Tester:
         else:
             num_sessions = 6
             tcp_window_size = 65 * 1024
-        return self._testerhttp.test_up(url, callback_update_speed, num_sessions=num_sessions, tcp_window_size=tcp_window_size)        
+        return self._testerhttpup.test_up(url, callback_update_speed, num_sessions=num_sessions, tcp_window_size=tcp_window_size)        
          
     def testftpdown(self, num_bytes, filename):
         return self._testerftp.testftpdown(self._host.ip, filename, num_bytes, self._username, self._password)
