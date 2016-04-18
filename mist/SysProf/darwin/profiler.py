@@ -86,12 +86,18 @@ class RAM(Risorsa):
 
     def total_memory(self):
         #Necessaria psutil 0.4.1
-        val = psutil.phymem_usage().total
+        try:
+            val = psutil.virtual_memory().total
+        except:
+            val = psutil.phymem_usage().total
         return self.xmlFormat('totalPhysicalMemory', val)
 
     def percentage_ram_usage(self):
         #Necessaria psutil 0.4.1
-        val = psutil.phymem_usage().percent
+        try:
+            val = psutil.virtual_memory().percent
+        except:
+            val = psutil.phymem_usage().percent
         return self.xmlFormat('RAMUsage', val)
 
 class sistemaOperativo(Risorsa):
