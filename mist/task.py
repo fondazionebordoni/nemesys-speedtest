@@ -59,9 +59,6 @@ def download_task(url, certificate, client_id, version, md5conf, timeout, server
     
     return task
 
-    
-
-
 
 class Task:
 

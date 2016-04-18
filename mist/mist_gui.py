@@ -1,5 +1,4 @@
 # encoding: utf-8
-
 # Copyright (c) 2016 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -30,7 +29,7 @@ from collections import deque
 from datetime import datetime
 import logging
 "TODO: move from sysmonitor"
-from sysMonitor import RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_TRAFFIC, RES_HOSTS 
+from system_resource import SystemResource, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HOSTS, RES_TRAFFIC
 from threading import Event#, enumerate
 
 TOTAL_STEPS = 1000
@@ -216,7 +215,7 @@ class mistGUI(wx.Frame):
         try:
             self._listener.play()
         except AttributeError:
-            logger.error("Nessun listener adatto configurato, impossibile procedere")
+            logger.error("Nessun listener adatto configurato, impossibile procedere", exc_info = True)
 
     def _on_check(self, gui_event):
         self._reset_info()
@@ -262,7 +261,7 @@ class mistGUI(wx.Frame):
         checkable_set = set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HOSTS, RES_TRAFFIC])
 
         for resource in checkable_set:
-            self._set_resource_info(resource, {'status': None, 'info': None, 'value': None})
+            self._set_resource_info(resource, SystemResource(None, None, None, None))#{'status': None, 'info': None, 'value': None})
 
         self.label_http_down_res.SetLabel("- - - -")
         self.label_ping_res.SetLabel("- - - -")
@@ -302,13 +301,15 @@ class mistGUI(wx.Frame):
     def _set_resource_info(self, resource, info, message_flag=True):
         res_bitmap = None
         res_label = None
-        if info['status'] == None:
-            colour = 'gray'
-        elif info['status'] == True:
-            colour = 'green'
-        else:
-            colour = 'red'
-
+        try:
+            if info.status == None:
+                colour = 'gray'
+            elif info.status == True:
+                colour = 'green'
+            else:
+                colour = 'red'
+        except:
+            logger.critical("res %s" % info, exc_info = True)
         if resource == RES_CPU:
             res_bitmap = self.bitmap_cpu
             res_label = self.label_cpu
@@ -332,20 +333,20 @@ class mistGUI(wx.Frame):
             res_bitmap.SetBitmap(wx.Bitmap(os.path.join(paths.ICONS, u"%s_%s.png" % (resource.lower(), colour))))
 
         if (res_label != None):
-            if (info['value'] != None):
+            if (info.value != None):
                 if resource == RES_ETH or resource == RES_WIFI:
                     status = {-1:"Not Present", 0:"Off Line", 1:"On Line"}
-                    res_label.SetLabel("%s\n%s" % (resource, status[info['value']]))
+                    res_label.SetLabel("%s\n%s" % (resource, status[info.value]))
                 elif resource == RES_CPU or resource == RES_RAM:
-                    res_label.SetLabel("%s\n%.1f%%" % (resource, float(info['value'])))
+                    res_label.SetLabel("%s\n%.1f%%" % (resource, float(info.value)))
                 else:
-                    res_label.SetLabel("%s\n%s" % (resource, info['value']))
+                    res_label.SetLabel("%s\n%s" % (resource, info.value))
             else:
                 res_label.SetLabel("%s\n- - - -" % resource)
 
         if message_flag:
-            if info['info'] != None:
-                self._update_messages(info['info'], colour)
+            if info.info != None:
+                self._update_messages(info.info, colour)
 
         self.Layout()
 

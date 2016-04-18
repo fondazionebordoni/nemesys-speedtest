@@ -77,7 +77,7 @@ class HttpTesterDown:
         starttotalbytes = self._netstat.get_rx_bytes()
 
         for _ in range(0, num_sessions):
-            download_thread = threading.Thread(target= self.do_one_download, 
+            download_thread = threading.Thread(target= self._do_one_download, 
                                                args = (url, self._total_measure_time, file_size, result_queue, error_queue, measurement_id))
             download_thread.start()
             download_threads.append(download_thread)
@@ -124,7 +124,7 @@ class HttpTesterDown:
 
         
         
-    def do_one_download(self, url, total_measure_time, file_size, result_queue, error_queue, measurement_id):
+    def _do_one_download(self, url, total_measure_time, file_size, result_queue, error_queue, measurement_id):
         filebytes = 0
 
         try:
@@ -227,8 +227,8 @@ if __name__ == '__main__':
 #     host = "regoppwebtest.fub.it"
 #    host = "rocky.fub.it"
 #    host = "billia.fub.it"
-    import sysMonitor
-    dev = sysMonitor.getDev()
+    import iptools
+    dev = iptools.get_dev()
     http_tester = HttpTesterDown(dev)
     print "\n------ DOWNLOAD -------\n"
     for _ in range(0, 1):

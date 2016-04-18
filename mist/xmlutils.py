@@ -18,16 +18,18 @@
 
 from datetime import datetime
 import logging
-from server import Server
+import re
 from string import join
-from task import Task
 from xml.dom import Node
 from xml.dom.minidom import parseString
 from xml.etree import ElementTree as ET
 from xml.parsers.expat import ExpatError
-from timeNtp import timestampNtp
+
+from server import Server
 import sysmonitorexception
-import re
+from task import Task
+from timeNtp import timestampNtp
+
 
 tag_task = 'task'
 tag_id = 'id'

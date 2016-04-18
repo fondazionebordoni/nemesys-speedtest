@@ -16,14 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from host import Host
 import logging
 from optparse import OptionParser
-import ping
-from testerhttpup import HttpTesterUp
-from testerhttpdown import HttpTesterDown
-from testerftp import FtpTester
+
+from host import Host
+import iptools
 from measurementexception import MeasurementException
+import ping
+from testerftp import FtpTester
+from testerhttpdown import HttpTesterDown
+from testerhttpup import HttpTesterUp
+
 
 HTTP_BUFF = 8*1024
 BW_3M = 3000000
@@ -135,8 +138,8 @@ def main():
 #        This is for lab environment
 #         ip = sysMonitor.getIp(host=options.host, port=80)
 #         dev = sysMonitor.getDev(host=options.host, port=80)
-    ip = sysMonitor.getIp()
-    dev = sysMonitor.getDev()
+    ip = iptools.getipaddr()
+    dev = iptools.get_dev(ip = ip)
     t = Tester(dev, ip, Host(options.host), timeout = 10.0, username = 'nemesys', password = '4gc0m244')
     if options.bandwidth.endswith("M"):
         bw = int(options.bandwidth[:-1]) * 1000000

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
-# from sysMonitor import interfaces, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_TRAFFIC, RES_HOSTS
-#from sysMonitor import interfaces#, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_TRAFFIC, RES_HOSTS
 import os
 import platform
 import sys
@@ -15,9 +13,10 @@ import gui_event
 import mist_cli
 from mist_controller import MistController
 import mist_gui
+import mist_options
 from optionParser import OptionParser
-import sysMonitor
-from sysProfiler import sysProfiler
+import sysmonitor
+# from system_profiler import SystemProfiler
 
 
 # from optparse import OptionParser
@@ -48,7 +47,7 @@ def main(argv=None):
         parser = OptionParser(version=program_version_string, epilog=program_longdesc)#, description=program_license)
 #         parser.add_option("--task-file", dest="task_file", help="read task from file [default: %default]", metavar="FILE")
 #         parser.add_option("-c", "--check", dest="check", action="store_true", help="Fare solo la verifica del sistema, senza misura [default: %default]")
-        parser.add_option("-t", "--text", dest="text_based", action="store_true", help="Senza interfaccia grafica [default: %default]")
+#         parser.add_option("-t", "--text", dest="text_based", action="store_true", help="Senza interfaccia grafica [default: %default]")
 #         parser.add_option("--no-profile", dest="no_profile", action="store_true", help="Non profilare il sistema durante la misura [default: %default]")
 #         parser.add_option("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %default]")
 
@@ -57,11 +56,11 @@ def main(argv=None):
         parser.set_defaults(text_based = False)
 
         # process options
-        (opts, _) = parser.parse_args(argv)
-
+        (args_opts, _) = parser.parse_args(argv)
+        (file_opts, _, md5conf) = parser.parse()
         SWN = 'MisuraInternet Speed Test'
         logger.info('Starting %s v.%s' % (SWN, FULL_VERSION)) 
-        mist(text_based = opts.text_based, task_file = None, no_profile = False)#opts.no_profile)
+        mist(args_opts.text_based, file_opts, md5conf)
         # MAIN BODY #
 #        mist_cli = MistCli()
         # Register for events
@@ -79,7 +78,7 @@ def main(argv=None):
         return 2
 
 
-def mist(text_based, task_file, no_profile):
+def mist(text_based, file_opts, md5conf):
     version = __version__
     if not text_based:
         app = wx.App(False)
@@ -89,13 +88,13 @@ def mist(text_based, task_file, no_profile):
         
         if not version_ok:
             return
-    # Logs all network interfaces
-    sysMonitor.interfaces()
+    mist_opts = mist_options.MistOptions(file_opts, md5conf)
+    sysmonitor.SysMonitor().log_interfaces()
     if text_based:
         event_dispatcher = gui_event.CliEventDispatcher()
         GUI = mist_cli.MistCli(event_dispatcher)
-        profiler = sysProfiler(event_dispatcher)
-        controller = MistController(GUI, version, profiler, event_dispatcher, task_file, no_profile)
+#         profiler = SystemProfiler(event_dispatcher)
+        controller = MistController(GUI, version, event_dispatcher, mist_opts)
         GUI.set_listener(controller)
         GUI.start()
     else:
@@ -103,8 +102,8 @@ def mist(text_based, task_file, no_profile):
             wx.CallLater(200, sleeper)
         GUI = mist_gui.mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE)# ^ wx.RESIZE_BORDER) #& ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
         event_dispatcher = gui_event.WxGuiEventDispatcher(GUI)
-        profiler = sysProfiler(event_dispatcher)
-        controller = MistController(GUI, version, profiler, event_dispatcher, task_file, no_profile)
+#         profiler = SystemProfiler(event_dispatcher)
+        controller = MistController(GUI, version, event_dispatcher, mist_opts)
         GUI.init_frame(version, event_dispatcher)
         GUI.set_listener(controller)
         app.SetTopWindow(GUI)

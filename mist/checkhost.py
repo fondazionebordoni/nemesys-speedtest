@@ -45,28 +45,33 @@ class sendit(Thread):
             self.status = 0
             pass
 
-def countHosts(ipAddress, netMask, bandwidthup, bandwidthdown, provider = None, threshold = 4, arping = 0, mac = None, dev = None):
-    realSubnet = True
-    if(provider == "fst001" and not bool(re.search('^192\.168\.', ipAddress))):
+def countHosts(ipAddress, netMask, bandwidthup, bandwidthdown, threshold = 4, arping = 0, mac = None, dev = None):
+    # Controllo che non siano indirizzi pubblici, in quel caso ritorno 1, effettuo la misura
+    if not bool(re.search('^10\.|^172\.(1[6-9]|2[0-9]|3[01])\.|^192\.168\.', ipAddress)):
+        logger.info("IP della scheda di rete di misura pubblico. Non controllo il numero degli host. Host in rete: 1")
+        return 1
+
+    if not bool(re.search('^192\.168\.', ipAddress)):
         realSubnet = False
         if bandwidthup == bandwidthdown and not bool(re.search('^10\.', ipAddress)):
             #profilo fibra
-            netMask = 29
-            logger.debug("Profilo Fastweb in Fibra. Modificata sottorete in %d" % netMask)
+            netmask_to_use = 29
+            logger.debug("Sospetto profilo Fastweb in Fibra. Modificata sottorete in %d" % netmask_to_use)
         else:
             #profilo ADSL
-            netMask = 30
-            logger.debug("Profilo Fastweb ADSL o Fibra con indirizzo 10.*. Modificata sottorete in %d" % netMask)
+            netmask_to_use = 30
+            logger.debug("Spspetto profilo Fastweb ADSL o Fibra con indirizzo 10.*. Modificata sottorete in %d" % netmask_to_use)
 
-    # Controllo che non siano indirizzi pubblici, in quel caso ritorno 1, effettuo la misura
-    # elif not bool(re.search('^10\.|^172\.(1[6-9]|2[0-9]|3[01])\.|^192\.168\.', ipAddress)):
-        # logger.info("IP della scheda di rete di misura pubblico. Non controllo il numero degli host. Host in rete: 1")
-        # return 1
-
+        n_host = _countNetHosts(ipAddress, netmask_to_use, realSubnet, threshold, arping, mac, dev)
+        if n_host > 0:
+            return n_host
+        
+    realSubnet = True
+    netmask_to_use = netMask
     #logger.info("Indirizzo: %s/%d; Realsubnet: %s; Threshold: %d" % (ipAddress, netMask, realSubnet, threshold))
-
-    n_host = _countNetHosts(ipAddress, netMask, realSubnet, threshold, arping, mac, dev)
+    n_host = _countNetHosts(ipAddress, netmask_to_use, realSubnet, threshold, arping, mac, dev)
     return n_host
+
 
 def _countNetHosts(ipAddress, netMask, realSubnet = True, threshold = 4, arping = 0, mac = None, dev = None):
     '''

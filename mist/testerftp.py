@@ -325,8 +325,8 @@ if __name__ == '__main__':
 #     nap = "eagle2.fub.it"
 #     nap = "193.104.137.2"
     nap = '193.104.137.133'
-    import sysMonitor
-    dev = sysMonitor.getDev()
+    import iptools
+    dev = iptools.get_dev()
     t = FtpTester(dev)
 #     print t.testftpdown(nap, '/download/90000.rnd', 1000000, 'nemesys', '4gc0m244')
     for _ in range(0,100):

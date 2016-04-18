@@ -73,12 +73,15 @@ class HttpClient():
         s.send(post_request)
         receive_thread = threading.Thread(target = self._read_response, args = (s,))
         receive_thread.start()
-        threading.Timer(float(timeout), self._timeout)
+        timeout_timer = threading.Timer(float(timeout), self._timeout)
+        timeout_timer.start()
         bytes_sent = 0
         if data_source != None:
             for data_chunk in data_source:
                 if self._response_received:
                     logger.debug("Received response, stop sending")
+                    s.shutdown(socket.SHUT_RDWR)
+                    s.close()
                     break
                 if data_chunk == None or data_chunk == "":
                     try:
@@ -95,6 +98,7 @@ class HttpClient():
                     break
         logger.debug("sent %d bytes" % bytes_sent)
         receive_thread.join()
+        timeout_timer.cancel()
         return self._http_response
     
     def _timeout(self):
@@ -103,10 +107,22 @@ class HttpClient():
     def _read_response(self, sock):
         done = False
         all_data = ""
+        start_body_found = False
         while (not done) and (not self._read_timeout):
             data = ""
             try:
                 data = sock.recv(1)
+                if data != None:
+                    all_data = "%s%s" % (all_data, data)
+                if '[' in data:
+                    start_body_found = True
+                if ']' in data and start_body_found:
+                    logging.debug("Found end of data")
+                    self._response_received = True
+#                     sock.close()
+                    sock.shutdown(socket.SHUT_RDWR)
+                    sock.close()
+                    break
                 'TODO: min length'
                 if not data and len(all_data) > 10:
                     break
@@ -114,8 +130,6 @@ class HttpClient():
                 pass
             except:
                 break
-            all_data = "%s%s" % (all_data, data)
-        self._response_received = True
         if all_data and '\n' in all_data:
             lines = all_data.split('\n')
             try:
@@ -139,11 +153,6 @@ class HttpClient():
             response_cause = "No data received from server"
             content = ""
         self._http_response = HttpResponse(response_code, response_cause, content)
-        'TODO: close here?'
-        try:
-            sock.close()
-        except:
-            pass
 
 class HttpResponse(object):
     '''Read from socket and parse

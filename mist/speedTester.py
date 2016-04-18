@@ -16,36 +16,33 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-from sysMonitor import RES_OS, RES_IP, RES_DEV, RES_MAC, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_TRAFFIC, RES_HOSTS
-from xmlutils import getvalues, getxml#, xml2task
-from os import path, walk, listdir, remove, removedirs
-from optionParser import OptionParser
-from sysProfiler import sysProfiler
-from threading import Thread, Event
-from timeNtp import timestampNtp
-from deliverer import Deliverer
 from datetime import datetime
+import logging
+from os import path, walk, listdir, remove, removedirs
+import re
+import shutil
+from threading import Thread, Event
+from time import sleep
 from urlparse import urlparse
+import wx
+
+from deliverer import Deliverer
+import gui_event
+import iptools
 from measure import Measure
 from measurementexception import MeasurementException
-from profile import Profile
-import logging
-from client import Client
-from server import Server
-from tester import Tester
-from proof import Proof
-from time import sleep
-from isp import Isp
-
-import gui_event
-# import httputils
-import shutil
 import paths
 import ping
+from proof import Proof
+from server import Server
+import system_resource
 import test_type
-import wx
-import re
+from tester import Tester
+from timeNtp import timestampNtp
+from xmlutils import getvalues, getxml  # , xml2task
+'TODO: resolve import loop between xmlutils and Task'
 import task
+
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +59,7 @@ MAX_SEND_RETRY = 3
 
 class SpeedTester(Thread):
 
-    def __init__(self, version, event_dispatcher, do_profile = True):
+    def __init__(self, version, event_dispatcher, system_profiler, mist_options):#do_profile = True):
         Thread.__init__(self)
         
         paths_check = paths.check_paths()
@@ -71,42 +68,28 @@ class SpeedTester(Thread):
             
         self._version = version
         self._event_dispatcher = event_dispatcher
-        self._do_profile = do_profile
-        self._profiler = sysProfiler(event_dispatcher, 'tester')
+#         self._do_profile = do_profile
+        self._profiler = system_profiler #sysProfiler(event_dispatcher, 'tester')
+        self._client = mist_options.client
+        self._scheduler = mist_options.scheduler
+        self._tasktimeout = mist_options.tasktimeout
+        self._httptimeout = mist_options.httptimeout
+        self._testtimeout = mist_options.testtimeout
+        self._md5conf = mist_options.md5conf
+        self._deliverer = Deliverer(mist_options._repository, self._client.isp.certificate, self._httptimeout)
 
-        parser = OptionParser(version=self._version, description='')
-        (options, _, md5conf) = parser.parse()
-
-        self._client = self._getclient(options)
-        self._scheduler = options.scheduler
-        self._repository = options.repository
-        self._tasktimeout = options.tasktimeout
-        self._testtimeout = options.testtimeout
-        self._httptimeout = options.httptimeout
-        self._md5conf = md5conf
-        
-        self._deliverer = Deliverer(self._repository, self._client.isp.certificate, self._httptimeout)
-
+        'TODO: does not need to be an event'
         self._running = Event()
     
     def is_oneshot(self):
         return self._client.is_oneshot()
     
-    def stop(self, timeout=None):
+    def stop(self):
         self._running.clear()
         logger.info("Chiusura del tester")
 
     def is_running(self):
         return self._running.is_set()
-
-    def _getclient(self, options):
-
-        profile = Profile(profile_id=None, upload=options.bandwidthup,
-                                            download=options.bandwidthdown)
-        isp = Isp('fub001')
-        return Client(client_id=options.clientid, profile=profile, isp=isp,
-                                    geocode=None, username='speedtest',
-                                    password=options.password)
 
     
     def _get_server(self, servers=set([Server('NAMEX', '193.104.137.133', 'NAP di Roma'), Server('MIX', '193.104.137.4', 'NAP di Milano')])):
@@ -171,15 +154,18 @@ class SpeedTester(Thread):
             if (0 <= traffic_ratio <= TH_TRAFFIC):
                 test_status = True
                 info = 'Traffico internet non legato alla misura: percentuale %s' % value1
-                self._event_dispatcher.postEvent(gui_event.ResourceEvent(RES_TRAFFIC, {'status': True, 'info': info, 'value': value1}, False))
+                self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC, 
+                                                                         system_resource.SystemResource(status=True, info=info, value=value1), False))
             elif (traffic_ratio > TH_TRAFFIC):
                 info = 'Eccessiva presenza di traffico internet non legato alla misura: percentuale %s' % value1
-                self._event_dispatcher.postEvent(gui_event.ResourceEvent(RES_TRAFFIC, {'status': False, 'info': info, 'value': value1}, True))
+                self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC, 
+                                                                         system_resource.SystemResource(status=False, info=info, value=value1), True))
             else:
                 self._event_dispatcher.postEvent(gui_event.ErrorEvent('Errore durante la verifica del traffico di misura: impossibile salvare i dati.'))
         else:
             info = 'Errore durante la misura, impossibile analizzare i dati di test'
-            self._event_dispatcher.postEvent(gui_event.ResourceEvent(RES_TRAFFIC, {'status': False, 'info': info, 'value': 'error'}, True))
+            self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC, 
+                                                                     system_resource.SystemResource(status=False, info=info, value='error'), True))
         
         return test_status
     
@@ -243,8 +229,8 @@ class SpeedTester(Thread):
             self._progress += self._progress_step
             self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
 
-            if self._do_profile:
-                profiler_result = self._profiler.profile_once(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
+#             if self._do_profile:
+            profiler_result = self._profiler.profile_once(set([system_resource.RES_CPU, system_resource.RES_RAM, system_resource.RES_ETH, system_resource.RES_WIFI]))
             sleep(1)
             
             self._event_dispatcher.postEvent(gui_event.UpdateEvent("Test %d di %d di %s" % (test_good + 1, test_todo, test_type.get_string_type(t_type ).upper())))
@@ -303,6 +289,7 @@ class SpeedTester(Thread):
                 self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
 
             except Exception as e:
+                logger.error("Errore durante l'esecuzione di un test", exc_info = True)
                 self._event_dispatcher.postEvent(gui_event.ErrorEvent("Errore durante l'esecuzione di un test: %s" % e))
                 retry += 1
                 if (retry < MAX_TEST_RETRY):
@@ -322,8 +309,12 @@ class SpeedTester(Thread):
         self._progress = 0.01
         self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
 
-        profiler_result = self._profiler.profile_once(set([RES_IP, RES_DEV, RES_OS, RES_MAC]))
-        self._profiler.profile_in_background(set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI]))
+        ip = iptools.getipaddr()
+        dev = iptools.get_dev(ip = ip)
+        mac = iptools.get_mac_address(ip)
+        os = self._profiler.get_os()
+#         profiler_result = self._profiler.profile_once(set([RES_IP, RES_DEV, RES_OS, RES_MAC]))
+        self._profiler.profile_in_background(set([system_resource.RES_CPU, system_resource.RES_RAM, system_resource.RES_ETH, system_resource.RES_WIFI]))
         self._progress += 0.01
         self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
         if (self.is_oneshot()):
@@ -357,13 +348,13 @@ class SpeedTester(Thread):
                 
                 start_time = datetime.fromtimestamp(timestampNtp())
 
-                (ip, dev, os, mac) = (profiler_result[RES_IP], profiler_result[RES_DEV], profiler_result[RES_OS], profiler_result[RES_MAC])
+#                 (ip, dev, os, mac) = (profiler_result[RES_IP], profiler_result[RES_DEV], profiler_result[RES_OS], profiler_result[RES_MAC])
                 tester = Tester(dev=dev, ip=ip, host=my_task.server, timeout=self._testtimeout,
                                      username=self._client.username, password=self._client.password)
 
                 measure = Measure(self._client, start_time, my_task.server, ip, os, mac, self._version)
                 
-                profiler_result = self._profiler.profile_once(set([RES_HOSTS, RES_TRAFFIC]))
+                profiler_result = self._profiler.profile_once(set([system_resource.RES_HOSTS, system_resource.RES_TRAFFIC]))
                 self._progress += self._progress_step
                 self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
 #                 profiler = self._profiler.get_results()

@@ -10,7 +10,7 @@
 # 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
@@ -19,92 +19,90 @@
 # This code is derived from: recipe-146306-1.py by Wade Leftwich
 # Licensed under the Python Software Foundation License
 # Original version by Wade Leftwich:
-#   -> http://code.activestate.com/recipes/146306-http-client-to-post-using-multipartform-data/
+#     -> http://code.activestate.com/recipes/146306-http-client-to-post-using-multipartform-data/
 
 import httplib, mimetypes
-import ssl
-from socket import socket
 
 def verifypeer(url):
-  '''
-  # TODO Verificare il certificato del server
-  s = socket()
-  c = ssl.wrap_socket(s, cert_reqs=ssl.CERT_REQUIRED, ssl_version=ssl.PROTOCOL_SSLv3)
-  c.connect((url.hostname, 443))
+    '''
+    # TODO Verificare il certificato del server
+    s = socket()
+    c = ssl.wrap_socket(s, cert_reqs=ssl.CERT_REQUIRED, ssl_version=ssl.PROTOCOL_SSLv3)
+    c.connect((url.hostname, 443))
 
-  # naive and incomplete check to see if cert matches host
-  cert = c.getpeercert()
-  print cert
-  #if not cert or ('commonName', u'www.google.com') not in cert['subject'][4]:
-  #    raise Exception('Danger!')
+    # naive and incomplete check to see if cert matches host
+    cert = c.getpeercert()
+    print cert
+    #if not cert or ('commonName', u'www.google.com') not in cert['subject'][4]:
+    #        raise Exception('Danger!')
 
-  c.close()
-  '''
-  return True
+    c.close()
+    '''
+    return True
 
 def getverifiedconnection(url, certificate=None, timeout=60):
-    connection = None
+        connection = None
 
-    if (url.scheme != 'https'):
-      connection = httplib.HTTPConnection(host=url.hostname, timeout=timeout)
-    elif verifypeer(url):
-      if (certificate != None):
-        connection = httplib.HTTPSConnection(host=url.hostname, key_file=certificate, cert_file=certificate, timeout=timeout)
-      else:
-        connection = httplib.HTTPSConnection(host=url.hostname, timeout=timeout)
+        if (url.scheme != 'https'):
+            connection = httplib.HTTPConnection(host=url.hostname, timeout=timeout)
+        elif verifypeer(url):
+            if (certificate != None):
+                connection = httplib.HTTPSConnection(host=url.hostname, key_file=certificate, cert_file=certificate, timeout=timeout)
+            else:
+                connection = httplib.HTTPSConnection(host=url.hostname, timeout=timeout)
 
-    return connection
+        return connection
 
 def post_multipart(url, fields, files, certificate=None, timeout=60):
-    """
-    Post fields and files to an http host as multipart/form-data.
-    fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
-    Return the server's response page.
-    """
-    content_type, body = encode_multipart_formdata(fields, files)
+        """
+        Post fields and files to an http host as multipart/form-data.
+        fields is a sequence of (name, value) elements for regular form fields.
+        files is a sequence of (name, filename, value) elements for data to be uploaded as files
+        Return the server's response page.
+        """
+        content_type, body = encode_multipart_formdata(fields, files)
 
-    h = getverifiedconnection(url=url, certificate=certificate, timeout=timeout)
-    h.putrequest('POST', url.path)
-    h.putheader('content-type', content_type)
-    h.putheader('content-length', str(len(body)))
-    h.endheaders()
-    h.send(body)
-    response = h.getresponse().read()
-    h.close()
+        h = getverifiedconnection(url=url, certificate=certificate, timeout=timeout)
+        h.putrequest('POST', url.path)
+        h.putheader('content-type', content_type)
+        h.putheader('content-length', str(len(body)))
+        h.endheaders()
+        h.send(body)
+        response = h.getresponse().read()
+        h.close()
 
-    return response
+        return response
 
 def encode_multipart_formdata(fields, files):
-    """
-    fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
-    Return (content_type, body) ready for httplib.HTTP instance
-    """
-    BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
-    CRLF = '\r\n'
-    L = []
+        """
+        fields is a sequence of (name, value) elements for regular form fields.
+        files is a sequence of (name, filename, value) elements for data to be uploaded as files
+        Return (content_type, body) ready for httplib.HTTP instance
+        """
+        BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
+        CRLF = '\r\n'
+        L = []
 
-    if fields != None:
-      for (key, value) in fields:
-          L.append('--' + BOUNDARY)
-          L.append('Content-Disposition: form-data; name="%s"' % key)
-          L.append('')
-          L.append(value)
+        if fields != None:
+            for (key, value) in fields:
+                    L.append('--' + BOUNDARY)
+                    L.append('Content-Disposition: form-data; name="%s"' % key)
+                    L.append('')
+                    L.append(value)
 
-    if files != None:
-      for (key, filename, value) in files:
-          L.append('--' + BOUNDARY)
-          L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
-          L.append('Content-Type: %s' % get_content_type(filename))
-          L.append('')
-          L.append(value)
+        if files != None:
+            for (key, filename, value) in files:
+                    L.append('--' + BOUNDARY)
+                    L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
+                    L.append('Content-Type: %s' % get_content_type(filename))
+                    L.append('')
+                    L.append(value)
 
-    L.append('--' + BOUNDARY + '--')
-    L.append('')
-    body = CRLF.join(L)
-    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-    return content_type, body
+        L.append('--' + BOUNDARY + '--')
+        L.append('')
+        body = CRLF.join(L)
+        content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
+        return content_type, body
 
 def get_content_type(filename):
-    return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+        return mimetypes.guess_type(filename)[0] or 'application/octet-stream'

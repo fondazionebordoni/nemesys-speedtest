@@ -1,4 +1,5 @@
 # encoding: utf-8
+from sys import exc_info
 
 # Copyright (c) 2016 Fondazione Ugo Bordoni.
 #
@@ -150,8 +151,8 @@ class MistCli(Thread):
     def _on_resource(self, resource_event):
         if resource_event.getMessageFlag():
             try:
-                info_string = str(resource_event.getValue().get('info'))
-                status = resource_event.getValue().get('status')
+                info_string = str(resource_event.getValue().info)
+                status = resource_event.getValue().status
                 if status == None:
                     color = None
                     info_string = '\t' + info_string
@@ -219,7 +220,7 @@ class MistCli(Thread):
         try:
             self._listener.play()
         except AttributeError:
-            logger.error("Nessun listener adatto configurato, impossibile procedere")
+            logger.error("Nessun listener adatto configurato, impossibile procedere", exc_info = True)
 
 
     def _print_greeting(self):

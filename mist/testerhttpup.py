@@ -141,6 +141,8 @@ class HttpTesterUp:
         tx_diff = self._netstat.get_tx_bytes() - start_tx_bytes
         if (tx_diff < 0):
             raise MeasurementException("Ottenuto banda negativa, possibile azzeramento dei contatori.")
+        if (bytes_read == 0) or (tx_diff == 0):
+            raise MeasurementException("Test non risucito - connessione interrotta")
         spurious = (float(tx_diff - bytes_read)/float(tx_diff))
         logger.info("Traffico spurio: %0.4f" % spurious)
         test['bytes_total'] = int(test['bytes'] * (1 + spurious))
@@ -260,13 +262,13 @@ if __name__ == '__main__':
 #    host = "10.80.1.1"
 #    host = "193.104.137.133"
 #    host = "regopptest6.fub.it"
-#     host = "eagle2.fub.it"
-    host = "rambo.fub.it"
+    host = "eagle2.fub.it"
+#     host = "rambo.fub.it"
 #     host = "regoppwebtest.fub.it"
 #    host = "rocky.fub.it"
 #    host = "billia.fub.it"
-    import sysMonitor
-    dev = sysMonitor.getDev()
+    import iptools
+    dev = iptools.get_dev()
     http_tester = HttpTesterUp(dev)
 #     print "\n------ DOWNLOAD -------\n"
 #     for _ in range(0, 10):
