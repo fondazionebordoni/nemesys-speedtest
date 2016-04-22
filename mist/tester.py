@@ -1,7 +1,7 @@
 # tester.py
 # -*- coding: utf8 -*-
 
-# Copyright (c) 2010 Fondazione Ugo Bordoni.
+# Copyright (c) 2010-2016 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ from host import Host
 import iptools
 from measurementexception import MeasurementException
 import ping
-from testerftp import FtpTester
+# from testerftp import FtpTester
 from testerhttpdown import HttpTesterDown
 from testerhttpup import HttpTesterUp
 
@@ -53,7 +53,7 @@ class Tester:
         
         self._testerhttpup = HttpTesterUp(dev, HTTP_BUFF)
         self._testerhttpdown = HttpTesterDown(dev, HTTP_BUFF)
-        self._testerftp = FtpTester(dev, timeout, HTTP_BUFF)
+#         self._testerftp = FtpTester(dev, timeout, HTTP_BUFF)
         
         
 
@@ -61,10 +61,6 @@ class Tester:
         url = "http://%s/file.rnd" % self._host.ip
         return self._testerhttpdown.test_down(url, 10, callback_update_speed, num_sessions=num_sessions)        
  
-#     def testhttpup(self, callback_update_speed, num_sessions=1, tcp_window_size = None):
-#         url = "http://%s:8080/file.rnd" % self._host.ip
-#         return self._testerhttp.test_up(url, callback_update_speed, num_sessions=num_sessions, tcp_window_size=tcp_window_size)        
-#          
     def testhttpup(self, callback_update_speed, bw=BW_100M):
         url = "http://%s:8080/file.rnd" % self._host.ip
         if bw < BW_3M:
@@ -78,31 +74,28 @@ class Tester:
             tcp_window_size = 65 * 1024
         return self._testerhttpup.test_up(url, callback_update_speed, num_sessions=num_sessions, tcp_window_size=tcp_window_size)        
          
-    def testftpdown(self, num_bytes, filename):
-        return self._testerftp.testftpdown(self._host.ip, filename, num_bytes, self._username, self._password)
+#     def testftpdown(self, num_bytes, filename):
+#         return self._testerftp.testftpdown(self._host.ip, filename, num_bytes, self._username, self._password)
+# 
+#     def testftpup(self, num_bytes, filename):
+#         return self._testerftp.testftpup(self._host.ip, filename, num_bytes, self._username, self._password)
 
-    def testftpup(self, num_bytes, filename):
-        return self._testerftp.testftpup(self._host.ip, filename, num_bytes, self._username, self._password)
-
-    def testping(self):
+    def testping(self, timeout = 10):
         'TODO: remove errorcode and verify that it does not create problems'
         # si utilizza funzione ping.py
         test = {}
         test['type'] = 'ping'
         test['time'] = 0
-        test['errorcode'] = 0
-        
-#         self._timeout = float(22)
-        
+
         try:
             # Il risultato deve essere espresso in millisecondi
-            RTT = ping.do_one(self._host.ip, self._timeout) * 1000
-            if (RTT != None):
-                test['time'] = RTT
+            RTT = ping.do_one(self._host.ip, timeout)
+            if RTT != None:
+                test['time'] = RTT * 1000
+            else:
+                raise Exception("Ping timeout")
         except Exception as e:
-            error = 'Impossibile eseguire il ping: %s' % e
-            logger.error(error)
-            raise Exception(error)
+            raise MeasurementException('Impossibile eseguire il ping: %s' % e)
 
         return test
     
@@ -134,10 +127,9 @@ def main():
                                     help = "An ipaddress or FQDN of server host")
     
     (options, _) = parser.parse_args()
-    import sysMonitor
 #        This is for lab environment
-#         ip = sysMonitor.getIp(host=options.host, port=80)
-#         dev = sysMonitor.getDev(host=options.host, port=80)
+#         ip = iptools.getaddr(host=options.host, port=80)
+#         dev = iptoold.get_dev(host=options.host, port=80)
     ip = iptools.getipaddr()
     dev = iptools.get_dev(ip = ip)
     t = Tester(dev, ip, Host(options.host), timeout = 10.0, username = 'nemesys', password = '4gc0m244')
@@ -177,7 +169,6 @@ def main():
                 res = t.testping()
                 print("Ping: %.2f milliseconds" % res['time'])
             except Exception as e:
-#                                 res = {'errorcode': 1, 'error': str(e)}
                 print("Error: %s" % str(e))
         else:
             try:

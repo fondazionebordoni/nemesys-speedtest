@@ -19,7 +19,6 @@
 from collections import OrderedDict
 import netifaces
 import platform
-import socket
 import time
 
 import checkhost
@@ -52,141 +51,12 @@ th_cpu = 85
 
 logger = logging.getLogger(__name__)
 
-# class SysmonitorException(Exception):
-# 
-#     def __init__(self, message, alert_type):
-#         Exception.__init__(self, message)
-#         if isinstance (alert_type, SysmonitorException):
-#             self._alert_type = alert_type.alert_type.decode('utf-8')
-#         else:
-#             self._alert_type = alert_type.decode('utf-8')
-#     
-#         self._message = message.decode('utf-8')
-
-'''
-TODO:
-
-Log this:
-
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():90 [INFO] ============================================
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Name : eth12
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Device : eth12
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Status : Enabled
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | isActive : True
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Type : Ethernet 802.3
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | IPaddress : 192.168.112.24
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | MACaddress : 78:2b:cb:96:55:3e
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():90 [INFO] ============================================
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Name : lo
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Device : lo
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Status : Disabled
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | isActive : False
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Type : 772
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | IPaddress : 127.0.0.1
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | MACaddress : 00:00:00:00:00:00
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():90 [INFO] ============================================
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Name : vboxnet0
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Device : vboxnet0
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Status : Disabled
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | isActive : False
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Type : Ethernet 802.3
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | IPaddress : 127.0.0.1
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | MACaddress : 0a:00:27:00:00:00
-apr 13 13:51:42 MIST sysMonitor.py.interfaces():93 [INFO] ============================================
-
-or, on windows:
-
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():93 [INFO] ============================================
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Status : 2
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Name : Scheda desktop Intel(R) PRO/1000 MT
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Descr : Connessione alla rete locale (LAN)
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | IP : 10.0.2.15
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Mask : 255.255.255.0
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | MAC : 08:00:27:27:60:B7
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | IfName : S
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | GUID : {F01A0ADB-6C17-420D-A837-C7F47D8B37F2}
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Type : Ethernet 802.3
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Gateway : 10.0.2.2
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():93 [INFO] ============================================
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Status : 0
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Name : RAS Async Adapter
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Descr : unknown
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | IP : unknown
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Mask : unknown
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | MAC : unknown
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | IfName : R
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | GUID : {78032B7E-4968-42D3-9F37-287EA86C0AAA}
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Type : unknown
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Gateway : unknown
-Mar 21 14:47:23 MIST sysMonitor.py.interfaces():96 [INFO] ============================================
-
-Currently on WIn:
-
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():147 [INFO] ============================================
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _type_string : Ethernet 802.3
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _is_enabled : 2
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _name : Scheda desktop Intel(R) PRO/1000 MT
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _macaddr : 08:00:27:27:60:B7
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _ipaddr : 10.0.2.15
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _is_active : False
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():151 [INFO] ============================================
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():147 [INFO] ============================================
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _type_string : Unknown
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _is_enabled : False
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _name : RAS Async Adapter
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _macaddr : 00:00:00:00:00:00
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _ipaddr : 0.0.0.0
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _is_active : False
-Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():151 [INFO] ============================================
-
-'''
-
-# class SystemResource:
-#     
-#     def __init__(self, res, status, value, info):
-#         self._res = res
-#         self._status = status
-#         self._value = value
-#         self._info = info
-#         
-#     @property
-#     def res(self):
-#         return self._res
-#     
-#     @property
-#     def status(self):
-#         return self._status
-#     
-#     @property
-#     def value(self):
-#         return self._value
-#     
-#     @property
-#     def info(self):
-#         return self._info
-
 
 class SysMonitor():
     def __init__(self):
         self._strict_check = True
         self._profiler = profiler.get_profiler()
         self._netstat =  netstat.get_netstat(iptools.get_dev())
-
-#         self._system = OrderedDict \
-#         ([ \
-#         (system_resource.RES_OS, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
-#         (system_resource.RES_CPU, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
-#         (system_resource.RES_RAM, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
-#         (system_resource.RES_ETH, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
-#         (system_resource.RES_WIFI, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
-# #         (system_resource.RES_DEV, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
-# #         (system_resource.RES_MAC, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
-# #         (system_resource.RES_IP, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
-# #         (system_resource.RES_MASK, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
-#         (system_resource.RES_HOSTS, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])),\
-#         (system_resource.RES_TRAFFIC, OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ])) \
-#         ])
-
         self._checks = OrderedDict \
         ([ \
         (system_resource.RES_OS,self.check_os),\
@@ -194,37 +64,101 @@ class SysMonitor():
         (system_resource.RES_RAM,self.checkmem),\
         (system_resource.RES_ETH,self.is_ethernet_active),\
         (system_resource.RES_WIFI,self.checkwireless),\
-#        (system_resource.RES_HSPA,self._check_hspa),\
-#         (system_resource.RES_DEV,self._getDev),\
-#         (system_resource.RES_MAC,self._get_mac),\
-#         (system_resource.RES_IP,self._get_ip),\
-#         (system_resource.RES_MASK,self._get_mask),\
         (system_resource.RES_HOSTS,self.checkhosts),\
         (system_resource.RES_TRAFFIC,self.check_traffic) \
         ])
-        
 
-        self._net_if = {'netifaces':None, 'profiler':None, 'time':None}
   
     def checkres(self, res, *args):
-        
         return self._checks[res](*args)
         
     
+    '''
+    TODO:
+    
+    Log this:
+    
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():90 [INFO] ============================================
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Name : eth12
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Device : eth12
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Status : Enabled
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | isActive : True
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Type : Ethernet 802.3
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | IPaddress : 192.168.112.24
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | MACaddress : 78:2b:cb:96:55:3e
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():90 [INFO] ============================================
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Name : lo
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Device : lo
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Status : Disabled
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | isActive : False
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Type : 772
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | IPaddress : 127.0.0.1
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | MACaddress : 00:00:00:00:00:00
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():90 [INFO] ============================================
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Name : vboxnet0
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Device : vboxnet0
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Status : Disabled
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | isActive : False
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | Type : Ethernet 802.3
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | IPaddress : 127.0.0.1
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():92 [INFO] | MACaddress : 0a:00:27:00:00:00
+    apr 13 13:51:42 MIST sysMonitor.py.interfaces():93 [INFO] ============================================
+    
+    or, on windows:
+    
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():93 [INFO] ============================================
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Status : 2
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Name : Scheda desktop Intel(R) PRO/1000 MT
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Descr : Connessione alla rete locale (LAN)
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | IP : 10.0.2.15
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Mask : 255.255.255.0
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | MAC : 08:00:27:27:60:B7
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | IfName : S
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | GUID : {F01A0ADB-6C17-420D-A837-C7F47D8B37F2}
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Type : Ethernet 802.3
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Gateway : 10.0.2.2
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():93 [INFO] ============================================
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Status : 0
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Name : RAS Async Adapter
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Descr : unknown
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | IP : unknown
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Mask : unknown
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | MAC : unknown
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | IfName : R
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | GUID : {78032B7E-4968-42D3-9F37-287EA86C0AAA}
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Type : unknown
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():95 [INFO] | Gateway : unknown
+    Mar 21 14:47:23 MIST sysMonitor.py.interfaces():96 [INFO] ============================================
+    
+    Currently on WIn:
+    
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():147 [INFO] ============================================
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _type_string : Ethernet 802.3
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _is_enabled : 2
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _name : Scheda desktop Intel(R) PRO/1000 MT
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _macaddr : 08:00:27:27:60:B7
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _ipaddr : 10.0.2.15
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _is_active : False
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():151 [INFO] ============================================
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():147 [INFO] ============================================
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _type_string : Unknown
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _is_enabled : False
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _name : RAS Async Adapter
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _macaddr : 00:00:00:00:00:00
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _ipaddr : 0.0.0.0
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():150 [INFO] | _is_active : False
+    Apr 13 15:56:48 MIST sysMonitor.py.log_interfaces():151 [INFO] ============================================
+    
+    '''
     def log_interfaces(self):
         all_devices = self._profiler.get_all_devices()
         for device in all_devices:
             logger.info("============================================")
-            device_dict = device.__dict__
+            device_dict = device.dict()
             for key in device_dict: 
                 logger.info("| %s : %s" % (key, device_dict[key]))
             logger.info("============================================")
     
-
-
-#     def _clear(self):
-#         for res in self._system:
-#             self._system[res].update(OrderedDict([ (STATUS,False) , (VALUE,None) , (INFO,None) , (TIME,None) ]))
 
     def check_os(self, res = system_resource.RES_OS):
         value = 'unknown'
@@ -344,10 +278,8 @@ class SysMonitor():
             value = -1
             num_active_eth = 0
             info = 'Dispositivi ethernet non presenti.'
-#             devices = self._get_NetIF(True)
             devices = self._profiler.get_all_devices()
-            for device in devices:#.findall('rete/NetworkDevice'):
-                #logger.debug(ET.tostring(device))
+            for device in devices:
                 dev_type = device.type
                 if (dev_type == 'Ethernet 802.3'):
                     
@@ -442,47 +374,6 @@ class SysMonitor():
         # TODO: Reinserire questo check quanto corretto il problema di determinazione del dato
         #checkdisk()
     
-    
-    
-#     def get_mac(self, ip = None):
-#         return self.my
-#     def get_mac(self, ip = None):
-#         mac_addr = None
-#         
-#         if ip == None:
-#             ip = self._get_ActiveIp()
-#         
-#         for interface in netifaces.interfaces():
-#             addresses = netifaces.ifaddresses(interface)
-#             try:
-#                 ip_addresses = addresses[netifaces.AF_INET]
-#                 for ip_address in ip_addresses:
-#                     if_ip = ip_address['addr']
-#                     if if_ip == ip:
-#                         try:
-#                             mac_addr = addresses[netifaces.AF_LINK][0]['addr'].upper()
-#                         except:
-#                             logger.error("Could not get MAC address for IP %s" % ip)
-#             except:
-#                 pass # No IP address on this interface
-#         if not mac_addr:
-#             raise SysmonitorException(sysmonitorexception.BADMAC, "Impossibile recuperare il valore del mac address dell'IP %s" % ip)
-#         return mac_addr
-    
-    def _get_ActiveIp(self, host = 'speedtest.agcom244.fub.it', port = 443):
-        
-        #logger.debug('Determinazione dell\'IP attivo verso Internet')
-        try:
-            s = socket.socket(socket.AF_INET)
-            s.connect((host, port))
-            value = s.getsockname()[0]
-        except socket.gaierror:
-            raise sysmonitorexception.WARNLINK
-        
-        if not self._checkipsyntax(value):
-            raise sysmonitorexception.UNKIP
-        
-        return value
     
     def _get_NetIF(self):
         my_interfaces = {}

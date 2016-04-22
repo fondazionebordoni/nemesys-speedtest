@@ -15,6 +15,7 @@ from mist_controller import MistController
 import mist_gui
 import mist_options
 from optionParser import OptionParser
+import paths
 import sysmonitor
 # from system_profiler import SystemProfiler
 
@@ -79,6 +80,7 @@ def main(argv=None):
 
 
 def mist(text_based, file_opts, md5conf):
+    paths.check_paths()
     version = __version__
     if not text_based:
         app = wx.App(False)

@@ -49,31 +49,40 @@ class mistGUI(wx.Frame):
 
     def make_left_header_panel(self, panel_header):
         dc = wx.ScreenDC()
-        result_font = wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        result_font = wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         dc.SetFont(result_font) 
         w,h = dc.GetTextExtent('X') 
         panel_header_left = wx.Panel(panel_header, -1) #, pos=(0,0),size=(600,122))
         panel_header_left.SetBackgroundColour((0x13, 0x45, 0x8f))
         bitmap_header_left = wx.StaticBitmap(panel_header_left, -1, wx.Bitmap(os.path.join(paths.ICONS, u"logo_mist.png"), wx.BITMAP_TYPE_ANY), style = wx.NO_BORDER)
         label_ping = wx.StaticText(panel_header_left, -1, "Ping", style=wx.ALIGN_LEFT)
-        label_ping.SetMinSize((w * 6, h))
+        label_ping.SetMinSize((w * 8, h))
         label_ping.SetForegroundColour('white')
         label_ping.SetBackgroundColour(MY_BLUE)
         label_http_down = wx.StaticText(panel_header_left, -1, "Download", style=wx.ALIGN_LEFT)
         label_http_down.SetForegroundColour('white')
         label_http_down.SetBackgroundColour(MY_BLUE)
         label_http_down.SetMinSize((w * 10, h))
+        label_http_up = wx.StaticText(panel_header_left, -1, "Upload", style=wx.ALIGN_LEFT)
+        label_http_up.SetForegroundColour('white')
+        label_http_up.SetBackgroundColour(MY_BLUE)
+        label_http_up.SetMinSize((w * 10, h))
         self.label_ping_res = wx.StaticText(panel_header_left, -1, "- - - -", style=wx.ALIGN_LEFT)
         self.label_ping_res.SetForegroundColour('white')
+        self.label_ping_res.SetFont(result_font)
         self.label_http_down_res = wx.StaticText(panel_header_left, -1, "- - - -", style=wx.ALIGN_LEFT)
         self.label_http_down_res.SetForegroundColour('white')
         self.label_http_down_res.SetFont(result_font)
-        self.label_ping_res.SetFont(result_font)
-        grid_sizer_results = wx.FlexGridSizer(2, 2, 0, 0) # Ping and Download
+        self.label_http_up_res = wx.StaticText(panel_header_left, -1, "- - - -", style=wx.ALIGN_LEFT)
+        self.label_http_up_res.SetForegroundColour('white')
+        self.label_http_up_res.SetFont(result_font)
+        grid_sizer_results = wx.FlexGridSizer(2, 3, 0, 0) # Ping and Download
         grid_sizer_results.Add(label_ping, 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 20)
         grid_sizer_results.Add(label_http_down, 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 20)
+        grid_sizer_results.Add(label_http_up, 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 20)
         grid_sizer_results.Add(self.label_ping_res, 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 20)
         grid_sizer_results.Add(self.label_http_down_res, 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 20)
+        grid_sizer_results.Add(self.label_http_up_res, 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 20)
         grid_sizer_results.SetMinSize((300, 122))
         sizer_header_left = wx.BoxSizer(wx.HORIZONTAL)
         sizer_header_left.Add(bitmap_header_left, 0, wx.LEFT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 30)
@@ -238,9 +247,8 @@ class mistGUI(wx.Frame):
         self.Layout()
 
     def _update_http_up(self, upwidth):
-            pass
-#         self.label_http_up_res.SetLabel("%.0f kbps" % upwidth)
-#         self.Layout()
+        self.label_http_up_res.SetLabel("%.0f kbps" % upwidth)
+        self.Layout()
 
     def _update_ftp_down(self, downwidth):
             pass
@@ -263,6 +271,7 @@ class mistGUI(wx.Frame):
         for resource in checkable_set:
             self._set_resource_info(resource, SystemResource(None, None, None, None))#{'status': None, 'info': None, 'value': None})
 
+        self.label_http_up_res.SetLabel("- - - -")
         self.label_http_down_res.SetLabel("- - - -")
         self.label_ping_res.SetLabel("- - - -")
 
@@ -392,7 +401,7 @@ class mistGUI(wx.Frame):
                 update_method = self._update_http_down
             elif test_type.is_http_up(result_test_type):
                 message = "Upload (HTTP): %.0f kbps" % result_value
-                update_method = self._update_http_down
+                update_method = self._update_http_up
             else: 
                 logger.error("Unknown result %s: %s" % (result_test_type, result_value))
             self._update_messages(message, color, font)

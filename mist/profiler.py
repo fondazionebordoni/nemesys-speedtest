@@ -18,13 +18,14 @@
 
 
 import platform
-import psutil, os
-import threading
+import psutil
+import os
 
 import iptools
+from collections import OrderedDict
 
 
-LINUX_RESOURCE_PATH="/sys/class/net"
+LINUX_RESOURCE_PATH='/sys/class/net/'
 WIFI_WORDS = ['wireless', 'wifi', 'wi-fi', 'senzafili', 'wlan', 'fili']
 ERROR_NET_IF = 'Impossibile ottenere informazioni sulle interfacce di rete'
 
@@ -39,6 +40,17 @@ class Device(object):
         self._is_enabled = False 
         self._guid = None
     
+    def dict(self):
+        return OrderedDict([('Name', self._name),\
+#TODO:        ('Descr',self._description),\
+                ('IP', self._ipaddr),\
+#TODO:        ('Mask',self._mask),\
+                ('MAC', self._macaddr),\
+                ('Type', self._type_string),\
+                ('isEnabled', self._is_enabled),\
+                ('isActive', self._is_active)\
+                ])
+
     @property
     def name(self):
         return self._name
@@ -138,20 +150,19 @@ class ProfilerLinux(Profiler):
         super(ProfilerLinux, self).__init__()
 
     def is_wireless_active(self):
-        devpath = '/sys/class/net/'
         descriptors = ['type', 'operstate']
         val = {'type': ' ', 'operstate': ' '}
-        devlist = os.listdir(devpath)
+        devlist = os.listdir(LINUX_RESOURCE_PATH)
         if len(devlist) > 0:
             for dev in devlist:
                 for descriptor in descriptors:
-                    fname = devpath + str(dev) + '/' + str(descriptor)
+                    fname = LINUX_RESOURCE_PATH + str(dev) + '/' + str(descriptor)
                     f = open(fname)
                     val[descriptor] = f.readline()
 
                 if val['operstate'].rstrip() == "up":
                     # Device is enabled
-                    wifipath = devpath + str(dev)
+                    wifipath = LINUX_RESOURCE_PATH + str(dev)
                     inner_folders = os.listdir(wifipath)
                     for folder in inner_folders:
                         for mot in WIFI_WORDS:
@@ -162,22 +173,19 @@ class ProfilerLinux(Profiler):
 
     def get_all_devices(self):
         'TODO: get netmask too?'
-        devpath = '/sys/class/net/'
         wireless = ['wireless', 'wifi', 'wi-fi', 'senzafili', 'wlan']
         descriptors = ['address', 'type', 'operstate', 'uevent']
         
         self.ipaddr = iptools.getipaddr()
-        devlist = os.listdir(devpath)
-#         maindevxml = ET.Element('rete')
+        devlist = os.listdir(LINUX_RESOURCE_PATH)
         devices = []
         if len(devlist) > 0:
             for dev in devlist:
                 val = {}
                 for des in descriptors:
-                    fname = devpath + str(dev) + '/' + str(des)
+                    fname = LINUX_RESOURCE_PATH + str(dev) + '/' + str(des)
                     f = open(fname)
                     val[des] = f.read().strip('\n')
-                    #print des, '=', val[des]
 
                 device = Device(dev)
 
@@ -195,13 +203,10 @@ class ProfilerLinux(Profiler):
                 
                 for word in wireless:
                     if word in val['uevent']:
-#                         val['type'] = 'Wireless'
                         device.set_type('Wireless')
                 
                 device.set_macaddr(val['address'])
-                
                 devices.append(device)
-
         return devices
 
 
@@ -229,8 +234,6 @@ class ProfilerWindows(Profiler):
     
     def __init__(self):
         super(ProfilerWindows, self).__init__()
-
-#         pythoncom.CoInitialize()
 
     def is_wireless_active(self):
         wmi_class = 'Win32_NetworkAdapter'

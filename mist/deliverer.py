@@ -16,21 +16,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-
-import hashlib
-import zipfile
 import datetime
+import hashlib
 from httplib import HTTPException
-from httputils import post_multipart
 import logging
-from os import path, remove
-from urlparse import urlparse
+import os
 from ssl import SSLError
+from urlparse import urlparse
+import zipfile
+
+from httputils import post_multipart
 from timeNtp import timestampNtp
+
 
 logger = logging.getLogger(__name__)
 
-class Deliverer:
+class Deliverer(object):
 
     def __init__(self, url, certificate, timeout=60):
         self._url = url
@@ -45,18 +46,18 @@ class Deliverer:
         logger.info('Invio a WEB: %s' % self._url)
         logger.info('Del file ZIP: %s' % filename)
         try:
-            with open(filename, 'rb') as file:
-                body = file.read()
+            with open(filename, 'rb') as myfile:
+                body = myfile.read()
             
             url = urlparse(self._url)
-            response = post_multipart(url, fields=None, files=[('myfile', path.basename(filename), body)], certificate=self._certificate, timeout=self._timeout)
+            response = post_multipart(url, fields=None, files=[('myfile', os.path.basename(filename), body)], certificate=self._certificate, timeout=self._timeout)
 
         except HTTPException as e:
-            remove(file.name)
+            os.remove(myfile.name)
             logger.error('Impossibile effettuare l\'invio del file delle misure. Errore: %s' % e)
 
         except SSLError as e:
-            remove(file.name)
+            os.remove(myfile.name)
             logger.error('Errore SSL durante l\'invio del file delle misure: %s' % e)
 
         return response
@@ -68,12 +69,12 @@ class Deliverer:
         '''
 
         # Aggiungi la data di invio in fondo al file
-        with open(filename, 'a') as file:
-            file.write('\n<!-- [packed] %s -->' % datetime.datetime.fromtimestamp(timestampNtp()).isoformat())            
+        with open(filename, 'a') as myfile:
+            myfile.write('\n<!-- [packed] %s -->' % datetime.datetime.fromtimestamp(timestampNtp()).isoformat())            
 
         # Gestione della firma del file
         sign = None
-        if self._certificate != None and path.exists(self._certificate):
+        if self._certificate != None and os.path.exists(self._certificate):
             # Crea il file della firma
             signature = self.sign(filename)
             if signature == None:
@@ -84,25 +85,23 @@ class Deliverer:
 
         # Creazione del file zip
         zipname = '%s.zip' % filename[0:-4]
-        zip = zipfile.ZipFile(zipname, 'a', zipfile.ZIP_DEFLATED)
-        zip.write(file.name, path.basename(file.name))
+        zip_file = zipfile.ZipFile(zipname, 'a', zipfile.ZIP_DEFLATED)
+        zip_file.write(myfile.name, os.path.basename(myfile.name))
 
         # Sposto la firma nello zip
-        if sign != None and path.exists(sign.name):
-                zip.write(sign.name, path.basename(sign.name))
-                remove(sign.name)
+        if sign != None and os.path.exists(sign.name):
+                zip_file.write(sign.name, os.path.basename(sign.name))
+                os.remove(sign.name)
 
         # Controllo lo zip
-        if zip.testzip() != None:
-            zip.close()
+        if zip_file.testzip() != None:
+            zip_file.close()
             logger.error("Lo zip %s è corrotto. Lo elimino." % zipname)
-            remove(zipname)
+            os.remove(zipname)
             zipname = None
         else:
-            zip.close()
-            logger.info("XML: %s" % filename)
-            logger.info("Compresso correttamente in")
-            logger.info("ZIP: %s" % zipname)
+            zip_file.close()
+            logger.debug("File %s compresso correttamente in %s" % (filename, zipname))
 
         # A questo punto ho un xml e uno zip
         return zipname

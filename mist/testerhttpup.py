@@ -30,7 +30,6 @@ import netstat
 
 TOTAL_MEASURE_TIME = 10
 MAX_TRANSFERED_BYTES = 100 * 1000000 * 15 / 8 # 100 Mbps for 15 seconds
-END_STRING = '_ThisIsTheEnd_'
 
 logger = logging.getLogger(__name__)
 
@@ -60,17 +59,17 @@ class HttpTesterUp:
             self._measure_count += 1
             measuring_time = time.time()
             elapsed = (measuring_time - self._last_measured_time)*1000.0
-            
             new_tx_bytes = self._netstat.get_tx_bytes()
             tx_diff = new_tx_bytes - self._last_tx_bytes
             rate_tot = float(tx_diff * 8)/float(elapsed) 
+            self._last_tx_bytes = new_tx_bytes
+            self._last_measured_time = measuring_time
+
             logger.debug("[HTTP] Reading... count = %d, speed = %d" 
                   % (self._measure_count, int(rate_tot)))
             if self.callback_update_speed:
                 self.callback_update_speed(second=self._measure_count, speed=rate_tot)
         
-            self._last_tx_bytes = new_tx_bytes
-            self._last_measured_time = measuring_time
             read_thread = threading.Timer(1.0, self._read_up_measure)
             self._read_measure_threads.append(read_thread)
             read_thread.start()
@@ -91,9 +90,7 @@ class HttpTesterUp:
                 url, 
                 callback_update_speed = None, 
                 total_test_time_secs = TOTAL_MEASURE_TIME, 
-#                 file_size = MAX_TRANSFERED_BYTES, 
                 recv_bufsize = 8 * 1024, 
-#                 is_first_try = True, 
                 num_sessions = 1,
                 tcp_window_size = -1):
         
@@ -179,7 +176,7 @@ def _test_from_server_response(response):
                 test['rate_secs'] = [ b * 8 / 1000 for b in partial_bytes ]
         else:
             test['rate_max'] = 0
-        test['bytes'] = sum(partial_bytes)
+        test['bytes'] = int(sum(partial_bytes))
     return test
 
 class UploadThread(threading.Thread):
@@ -270,22 +267,6 @@ if __name__ == '__main__':
     import iptools
     dev = iptools.get_dev()
     http_tester = HttpTesterUp(dev)
-#     print "\n------ DOWNLOAD -------\n"
-#     for _ in range(0, 10):
-#         res = http_tester.test_down("http://%s:80" % host, num_sessions=7)
-#         print res
     print "\n------ UPLOAD ---------\n"
     res = http_tester.test_up("http://%s:8080/file.rnd" % host)#, num_sessions=1, tcp_window_size=8192)
     print res
-#     print "\n------ UPLOAD ---------\n"
-#     res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=2)
-#     print res
-#     print "\n------ UPLOAD ---------\n"
-#     res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=3)
-#     print res
-#     print "\n------ UPLOAD ---------\n"
-#     res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=4)
-#     print res
-#     print "\n------ UPLOAD ---------\n"
-#     res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=5)
-#     print res

@@ -27,6 +27,8 @@ import urlparse
 from optparse import OptionParser
 import logging
 
+END_STRING = '_ThisIsTheEnd_'
+
 logger = logging.getLogger(__name__)
 
 class HttpException(Exception):
@@ -80,6 +82,7 @@ class HttpClient():
             for data_chunk in data_source:
                 if self._response_received:
                     logger.debug("Received response, stop sending")
+                    s.send(END_STRING*2) #Tell server it is ok to close the connection
                     s.shutdown(socket.SHUT_RDWR)
                     s.close()
                     break
@@ -119,9 +122,6 @@ class HttpClient():
                 if ']' in data and start_body_found:
                     logging.debug("Found end of data")
                     self._response_received = True
-#                     sock.close()
-                    sock.shutdown(socket.SHUT_RDWR)
-                    sock.close()
                     break
                 'TODO: min length'
                 if not data and len(all_data) > 10:
@@ -133,9 +133,9 @@ class HttpClient():
         if all_data and '\n' in all_data:
             lines = all_data.split('\n')
             try:
-                response = lines[0].strip("HTTP/1.1").strip()
-                response_code = int(response.split()[0])
-                response_cause = response.split()[1]
+                response = lines[0].strip().split()
+                response_code = int(response[1])
+                response_cause = ' '.join(response[2:])
             except:
                 logger.error("Could not parse response %s" % all_data)
                 response_code = 999
@@ -188,9 +188,6 @@ class HttpResponse(object):
         return self._content
 
     def close(self):
-#         try:
-#             self.recv_socket.close()
-#         except:
             pass
 
 def _do_one_upload(window_size):
@@ -203,7 +200,6 @@ def _do_one_upload(window_size):
     headers = {"X-requested-measurement-time" : "12",
                 "X-measurement-id" : measurement_id,
                 "Transfer-Encoding": "chunked"}
-#           "Accept": "*/*"}
     client = HttpClient()
     response = client.post("http://rambo.fub.it:8080", data_source=chunk_generator.gen_chunk(), headers=headers, tcp_window_size = window_size)
     print "Response content: ", response.content

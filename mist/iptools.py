@@ -21,7 +21,7 @@ def getipaddr(host = 'finaluser.agcom244.fub.it', port = 443):
         s.connect((host, port))
         ipaddr = s.getsockname()[0]
         'TODO:'
-        #if not _checkipsyntax(value):
+        #if not checkipsyntax(value):
     except socket.gaierror:
         ipaddr = ""
     return ipaddr
@@ -109,7 +109,7 @@ def get_network_mask(ip):
 def is_public_ip(ip):
     return (bool(re.search('^10\.|^172\.(1[6-9]|2[0-9]|3[01])\.|^192\.168\.', ip)) == False)
    
-def _checkipsyntax(ip):
+def checkipsyntax(ip):
 
     try:
         socket.inet_aton(ip)

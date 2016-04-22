@@ -17,9 +17,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-class Client:
+class Client(object):
     
-    'TODO: Spostare il certificato dal ISP al Client'
+    # TODO: Spostare il certificato dall'ISP al Client 
 
     def __init__(self, client_id, profile, isp, geocode, username='anonymous', password='anonymous@'):
         self._id = client_id

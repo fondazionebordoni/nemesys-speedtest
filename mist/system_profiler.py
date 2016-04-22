@@ -84,7 +84,7 @@ class SystemProfiler(object):
     def _do_background_profile(self, resources = set(ALL_RES), callback = None):
         while not self._stop:
             self._do_profile(resources, callback, is_background=True)
-            time.sleep(1)
+            time.sleep(1.0)
     
     def _do_profile(self, resources = set(ALL_RES), callback = None, is_background = False, report_progress = False):
         with self._lock:   
