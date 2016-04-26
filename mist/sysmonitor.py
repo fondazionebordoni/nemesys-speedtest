@@ -262,6 +262,9 @@ class SysMonitor():
                             raise SysmonitorException(sysmonitorexception.BADHOST, 'impossibile determinare il numero di host in rete.')
                     elif value > thres:
                         raise SysmonitorException(sysmonitorexception.TOOHOST, 'Presenza altri host in rete.')
+                    else:
+                        status = True
+                        info = 'Trovati %d host in rete.' % value
                 else:
                     raise SysmonitorException(sysmonitorexception.BADMASK, 'Impossibile recuperare il valore della maschera dell\'IP: %s' % ip)
         except Exception as e:
