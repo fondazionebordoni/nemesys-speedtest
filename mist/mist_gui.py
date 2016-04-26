@@ -18,25 +18,23 @@ Created on 12/ott/2015
 
 @author: ewedlund
 '''
-import gui_event
-import mist_messages
-import os
-import paths
-import test_type
-import wx
 
 from collections import deque
 from datetime import datetime
 import logging
-"TODO: move from sysmonitor"
+import os
+import threading
+import wx
+
+import gui_event
+import mist_messages
+import paths
 from system_resource import SystemResource, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HOSTS, RES_TRAFFIC
-from threading import Event#, enumerate
+import test_type
+
 
 TOTAL_STEPS = 1000
 MY_BLUE = (0x13, 0x45, 0x8f)
-# LABEL_MESSAGE = \
-# '''In quest'area saranno riportati i risultati della misura
-# espressi attraverso i valori di ping, download e upload.'''
 
 logger = logging.getLogger(__name__)
 
@@ -46,13 +44,14 @@ class mistGUI(wx.Frame):
         wx.Frame.__init__(self, *args, **kwds)
         self._busy = False
         self._can_measure = True
+        self._writer_lock = threading.Lock()
 
     def make_left_header_panel(self, panel_header):
         dc = wx.ScreenDC()
         result_font = wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         dc.SetFont(result_font) 
         w,h = dc.GetTextExtent('X') 
-        panel_header_left = wx.Panel(panel_header, -1) #, pos=(0,0),size=(600,122))
+        panel_header_left = wx.Panel(panel_header, -1)
         panel_header_left.SetBackgroundColour((0x13, 0x45, 0x8f))
         bitmap_header_left = wx.StaticBitmap(panel_header_left, -1, wx.Bitmap(os.path.join(paths.ICONS, u"logo_mist.png"), wx.BITMAP_TYPE_ANY), style = wx.NO_BORDER)
         label_ping = wx.StaticText(panel_header_left, -1, "Ping", style=wx.ALIGN_LEFT)
@@ -76,7 +75,7 @@ class mistGUI(wx.Frame):
         self.label_http_up_res = wx.StaticText(panel_header_left, -1, "- - - -", style=wx.ALIGN_LEFT)
         self.label_http_up_res.SetForegroundColour('white')
         self.label_http_up_res.SetFont(result_font)
-        grid_sizer_results = wx.FlexGridSizer(2, 3, 0, 0) # Ping and Download
+        grid_sizer_results = wx.FlexGridSizer(2, 3, 0, 0)
         grid_sizer_results.Add(label_ping, 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 20)
         grid_sizer_results.Add(label_http_down, 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 20)
         grid_sizer_results.Add(label_http_up, 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 20)
@@ -92,7 +91,7 @@ class mistGUI(wx.Frame):
 
 
     def make_right_header_panel(self, panel_header):
-        panel_header_right = wx.Panel(panel_header, -1) #, pos=(600,0),size=(200,122))
+        panel_header_right = wx.Panel(panel_header, -1)
         panel_header_right.SetBackgroundColour('white')
         bitmap_header_right = wx.StaticBitmap(panel_header_right, -1, wx.Bitmap(os.path.join(paths.ICONS, u"logo_mist_end.png"), wx.BITMAP_TYPE_ANY))
         self.button_play = wx.Button(panel_header_right, -1, label="TEST")
@@ -157,7 +156,6 @@ class mistGUI(wx.Frame):
         self._event_dispatcher = event_dispatcher
         self._tester = None
         self._stream = deque([], maxlen=800)
-        self._stream_flag = Event()
 
         window_panel = wx.Panel(self)
         
@@ -195,7 +193,6 @@ class mistGUI(wx.Frame):
         self.Bind(gui_event.EVT_AFTER_CHECK, self._on_after_check)
 
         self._initial_message()
-
         self.Layout()
         
     def _on_close(self, event):
@@ -250,16 +247,6 @@ class mistGUI(wx.Frame):
         self.label_http_up_res.SetLabel("%.0f kbps" % upwidth)
         self.Layout()
 
-    def _update_ftp_down(self, downwidth):
-            pass
-#         self.label_ftp_down_res.SetLabel("%.0f kbps" % downwidth)
-#         self.Layout()
-
-    def _update_ftp_up(self, upwidth):
-            pass
-#         self.label_ftp_up_res.SetLabel("%.0f kbps" % upwidth)
-#         self.Layout()
-
     def _update_ping(self, rtt):
         self.label_ping_res.SetLabel("%.1f ms" % rtt)
         self.Layout()
@@ -269,7 +256,7 @@ class mistGUI(wx.Frame):
         checkable_set = set([RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HOSTS, RES_TRAFFIC])
 
         for resource in checkable_set:
-            self._set_resource_info(resource, SystemResource(None, None, None, None))#{'status': None, 'info': None, 'value': None})
+            self._set_resource_info(resource, SystemResource(None, None, None, None))
 
         self.label_http_up_res.SetLabel("- - - -")
         self.label_http_down_res.SetLabel("- - - -")
@@ -371,12 +358,11 @@ class mistGUI(wx.Frame):
     def _update_messages(self, message, colour='black', font=None, fill=False):
         logger.info('Messaggio all\'utente: "%s"' % message)
         self._stream.append((str(message), colour, font, fill))
-        if (not self._stream_flag.isSet()):
 #            if (system().lower().startswith('win')):
 #                writer = Thread(target = self._writer)
 #                writer.start()
 #            else:
-            self._writer()
+        self._writer()
 
 
     def _on_result(self, result_event):
@@ -390,12 +376,6 @@ class mistGUI(wx.Frame):
             if result_test_type == test_type.PING:
                 message = mist_messages.PING_RESULT % result_value
                 update_method = self._update_ping
-            elif result_test_type == test_type.FTP_DOWN:
-                message = mist_messages.FTP_DOWN_RESULT % result_value
-                update_method = self._update_ftp_down
-            elif result_test_type == test_type.FTP_UP:
-                message = mist_messages.FTP_UP_RESULT % result_value
-                update_method = self._update_ftp_up
             elif test_type.is_http_down(result_test_type):
                 message = "Download (HTTP): %.0f kbps" % result_value
                 update_method = self._update_http_down
@@ -426,58 +406,40 @@ class mistGUI(wx.Frame):
                 self._listener.kill_test()
             self._update_messages("Misura terminata\n", 'medium forest green', (12, 93, 92, 1), True)
             if (stop_event.isOneShot()):
-    #             self._update_interface(">> MISURA TERMINATA <<\nPer la versione completa iscriviti su misurainternet.it", font=(12, 93, 92, 0))
                 self._update_messages("Per effettuare altre misure e conservare i tuoi risultati nell'area riservata effettua l'iscrizione su misurainternet.it\n", 'black', (12, 90, 92, 0), True)
             else:
-    #             self._update_interface(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura", font=(12, 93, 92, 0))
                 self._update_messages("Sistema pronto per una nuova misura", 'black', (12, 90, 92, 0), True)
             self.set_busy(False, stop_event.isOneShot())
             self._update_gauge(1)
 
-    'TODO: simplify'
+    #TODO: simplify
     def _writer(self):
-        self._stream_flag.set()
-        while (len(self._stream) > 0):
-            
-            basic_font = wx.Font(pointSize = 10, 
-                                 family = wx.FONTFAMILY_DEFAULT, 
-                                 style = wx.NORMAL, 
-                                 weight = wx.NORMAL, 
-                                 underline = 0,
-                                 face = "")
-            words = {}
-            
-            (message, colour, font, fill) = self._stream.popleft()
-            date = datetime.today().strftime('%a %d/%m/%Y %H:%M:%S')
-            
-            last_pos = self.messages_area.GetLastPosition()
-#             if (last_pos != 0):
-#                 text = "\n"
-#             else:
-            self.messages_area.SetWindowStyleFlag(self.messages_area_style)
-# #                 self.messages_area.SetFont(basic_font)
-#                 text = ""
-#             
-            date = date + "    "
-#             text = text + date
-            text = "" + date
-            words[date] = (colour, wx.NullColour, basic_font)
-            
-            text = text + message
-                        
-            if fill:
-                textcolour = colour
-            else:
-                textcolour = 'black'
-            
-            words[message] = (textcolour, wx.NullColour, basic_font)
-                
-            self.messages_area.AppendText(text + '\n')
-            self.messages_area.SetInsertionPoint(last_pos + 1)
-#             self._set_style(text, words, last_pos)
-                
-            self.messages_area.ScrollLines(-1)
-        self._stream_flag.clear()
+        with self._writer_lock:
+            while (len(self._stream) > 0):
+                basic_font = wx.Font(pointSize = 10, 
+                                     family = wx.FONTFAMILY_DEFAULT, 
+                                     style = wx.NORMAL, 
+                                     weight = wx.NORMAL, 
+                                     underline = 0,
+                                     face = "")
+                words = {}
+                (message, colour, font, fill) = self._stream.popleft()
+                date = datetime.today().strftime('%a %d/%m/%Y %H:%M:%S')
+                last_pos = self.messages_area.GetLastPosition()
+                self.messages_area.SetWindowStyleFlag(self.messages_area_style)
+                date = date + "    "
+                text = "" + date
+                words[date] = (colour, wx.NullColour, basic_font)
+                text = text + message
+                if fill:
+                    textcolour = colour
+                else:
+                    textcolour = 'black'
+                words[message] = (textcolour, wx.NullColour, basic_font)
+                self.messages_area.AppendText(text + '\n')
+                self.messages_area.SetInsertionPoint(last_pos + 1)
+                self.messages_area.ScrollLines(-1)
+
         
     def _initial_message(self):
 
@@ -490,17 +452,11 @@ Premendo il tasto TEST avvierai una profilazione e il test di misura completo.''
 
         self.messages_area.SetWindowStyleFlag(self.messages_area_style + wx.TE_CENTER)
 
-#         self.messages_area.SetFont(wx.Font(10, wx.ROMAN, wx.NORMAL, wx.NORMAL, 0, ""))
-        
         self.messages_area.AppendText(message)
         self.messages_area.ScrollLines(-1)
         
-        font1 = wx.Font(14, wx.DECORATIVE, wx.ITALIC, wx.BOLD)#12, wx.ROMAN, wx.ITALIC, wx.BOLD, 0, "")
-        #font1.SetPixelSize(12)
-        #font1.SetWeight(wx.BOLD)
+        font1 = wx.Font(14, wx.DECORATIVE, wx.ITALIC, wx.BOLD)
         font2 = wx.Font(10, wx.DECORATIVE, wx.ITALIC, wx.BOLD, 1, "")
-#         font1 = wx.Font(12, wx.ROMAN, wx.ITALIC, wx.BOLD, 0, "")
-#         font2 = wx.Font(10, wx.ROMAN, wx.ITALIC, wx.BOLD, 1, "")
         word1 = "Benvenuto in %s versione %s" % (mist_messages.SWN, self._version) 
         words = {word1:(wx.NullColour, wx.NullColour, font1), 'CHECK':(MY_BLUE, wx.NullColour, font2), 'TEST':('green', wx.NullColour, font2)}
         

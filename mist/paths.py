@@ -17,12 +17,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-import logging
 from timeNtp import timestampNtp
 from os import mkdir, path, sep
 import sys
-
-logger = logging.getLogger(__name__)
 
 DATE = datetime.fromtimestamp(timestampNtp())
 
@@ -73,4 +70,3 @@ def check_paths():
     for d in dirs:
         if not path.exists(d):
             mkdir(d)
-            logger.debug('Creata la cartella "%s".' % d)

@@ -48,7 +48,7 @@ def main(argv=None):
         parser = OptionParser(version=program_version_string, epilog=program_longdesc)#, description=program_license)
 #         parser.add_option("--task-file", dest="task_file", help="read task from file [default: %default]", metavar="FILE")
 #         parser.add_option("-c", "--check", dest="check", action="store_true", help="Fare solo la verifica del sistema, senza misura [default: %default]")
-#         parser.add_option("-t", "--text", dest="text_based", action="store_true", help="Senza interfaccia grafica [default: %default]")
+        parser.add_option("-t", "--text", dest="text_based", action="store_true", help="Senza interfaccia grafica [default: %default]")
 #         parser.add_option("--no-profile", dest="no_profile", action="store_true", help="Non profilare il sistema durante la misura [default: %default]")
 #         parser.add_option("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %default]")
 
@@ -80,7 +80,6 @@ def main(argv=None):
 
 
 def mist(text_based, file_opts, md5conf):
-    paths.check_paths()
     version = __version__
     if not text_based:
         app = wx.App(False)
@@ -119,6 +118,7 @@ def sleeper():
   
 if __name__ == "__main__":
     try:
+        paths.check_paths()
         import log_conf
         log_conf.init_log()
     except IOError as e:
