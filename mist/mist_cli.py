@@ -1,6 +1,4 @@
 # encoding: utf-8
-from sys import exc_info
-
 # Copyright (c) 2016 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -23,7 +21,7 @@ mist.mist_cli is a network speed test
 
 @author:     ewedlund
 
-@copyright:  2015 Fondazione Ugo Bordoni. All rights reserved.
+@copyright:  2015-2016 Fondazione Ugo Bordoni. All rights reserved.
 
 @license:    GNU General Public License
 
@@ -200,7 +198,7 @@ class MistCli(Thread):
             self._update_messages(">> MISURA TERMINATA <<\nPer la versione completa iscriviti su misurainternet.it", color = bcolors.GREEN)
             self._update_messages("Per effettuare altre misure e conservare i tuoi risultati nell'area riservata effettua l'iscrizione su misurainternet.it\n")
         else:
-            self._update_messages(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura", color = bcolors.GREEN)
+            self._update_messages(">> MISURA TERMINATA <<", color = bcolors.GREEN)
             self._update_messages("Sistema pronto per una nuova misura")
         self.set_busy(False)
 

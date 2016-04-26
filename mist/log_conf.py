@@ -87,9 +87,8 @@ datefmt=%b %d %H:%M:%S
 '''
 
 def init_log(level=logging.INFO, use_name='MIST'):
-    if not os.path.isfile(configfile):
-        with open(configfile, 'w') as f:
-            s = str(default_no_stdout)
-            f.write(s) 
+    with open(configfile, 'w') as f:
+        s = str(default_no_stdout)
+        f.write(s) 
 
     logging.config.fileConfig(configfile, disable_existing_loggers=False)
