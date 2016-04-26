@@ -58,24 +58,12 @@ class Proof:
     def bytesTot(self):
         return self._test.get('bytes_total',0)
 
-    'TODO: remove'
-    @property
-    def errorcode(self, errorcode=None):
-        if (errorcode != None):
-            if errorcode > 99999 or errorcode < 0:
-                errorcode = (errorcode - 90000) % 99999
-                # Faccio rimanere nelle ultime 4 cifre l'errore del test #
-            self._test['errorcode'] = errorcode
-        else:
-            return self._test.get('errorcode',0)
-
-
     def __str__(self):
-        return '|Type:%s|Done:%s|Time:%1.3f|Bytes:%d|BytesOth:%d|Errorcode:%d|' \
-                        % (self.type, self.done, self.time, self.bytes, self.bytesOth, self.errorcode)
+        return '|Type:%s|Done:%s|Time:%1.3f|Bytes:%d|BytesOth:%d|' \
+                        % (self.type, self.done, self.time, self.bytes, self.bytesOth)
 
 if __name__ == '__main__':
-        test = Proof()
-        test.update({'type':'download','time':10,'bytes':30000, 'bytes_total':51000, 'errorcode':0})
+    test = Proof()
+    test.update({'type':'download','time':10,'bytes':30000, 'bytes_total':51000})
         
         

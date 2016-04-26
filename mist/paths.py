@@ -63,7 +63,6 @@ LOG_FILE = path.join(LOG_DIR, 'misurainternet-'+DAY+'.log')
 _CONF_DIR = path.join(_APP_PATH, 'config')
 CONF_LOG = path.join(_CONF_DIR, 'log.conf')
 CONF_MAIN = path.join(_CONF_DIR, 'client.conf')
-CONF_ERRORS = path.join(_CONF_DIR, 'errorcodes.conf')
 
 # THRESHOLD = path.join(_CONF_DIR, 'threshold.xml')
 # RESULTS = path.join(_CONF_DIR, 'result.xml')

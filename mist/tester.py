@@ -23,7 +23,6 @@ from host import Host
 import iptools
 from measurementexception import MeasurementException
 import ping
-# from testerftp import FtpTester
 from testerhttpdown import HttpTesterDown
 from testerhttpup import HttpTesterUp
 
@@ -53,7 +52,6 @@ class Tester:
         
         self._testerhttpup = HttpTesterUp(dev, HTTP_BUFF)
         self._testerhttpdown = HttpTesterDown(dev, HTTP_BUFF)
-#         self._testerftp = FtpTester(dev, timeout, HTTP_BUFF)
         
         
 
@@ -74,15 +72,7 @@ class Tester:
             tcp_window_size = 65 * 1024
         return self._testerhttpup.test_up(url, callback_update_speed, num_sessions=num_sessions, tcp_window_size=tcp_window_size)        
          
-#     def testftpdown(self, num_bytes, filename):
-#         return self._testerftp.testftpdown(self._host.ip, filename, num_bytes, self._username, self._password)
-# 
-#     def testftpup(self, num_bytes, filename):
-#         return self._testerftp.testftpup(self._host.ip, filename, num_bytes, self._username, self._password)
-
     def testping(self, timeout = 10):
-        'TODO: remove errorcode and verify that it does not create problems'
-        # si utilizza funzione ping.py
         test = {}
         test['type'] = 'ping'
         test['time'] = 0
@@ -98,8 +88,6 @@ class Tester:
             raise MeasurementException('Impossibile eseguire il ping: %s' % e)
 
         return test
-    
-    
 
 
 def main():
