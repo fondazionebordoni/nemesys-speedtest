@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import ctypes
 import logging
 import os
 import platform
@@ -17,22 +18,40 @@ import mist_options
 from optionParser import OptionParser
 import paths
 import sysmonitor
-# from system_profiler import SystemProfiler
 
 
-# from optparse import OptionParser
 logger = logging.getLogger(__name__)
 
 
 def main(argv=None):
-    ''' Check for sudo on linux'''
+    ''' Check for sudo on linux and Administrator on Windows'''
     current_os = platform.system().lower()
     if current_os.startswith('lin') or current_os.startswith('darwin'):
         if (os.getenv('SUDO_USER') == None) and (os.getenv('USER') != 'root'):
-            logger.error('Speedtest avviato senza privilegi di root - chiusura tester')
-            sys.stderr.write('Speedtest avviato senza privilegi di root - chiusura tester\n')
-            sys.stderr.write('Avviare con \'sudo\'\n')
-            sys.exit()
+            is_admin = False
+        else:
+            is_admin = True
+    else:
+        is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
+    if not is_admin:
+        sys.stderr.write('Speedtest avviato senza permessi di amministratore - chiusura tester\n')
+        sys.exit()
+    try:
+        paths.check_paths()
+        import log_conf
+        log_conf.init_log()
+    except IOError as e:
+        print "Impossibile inizializzare il logging, assicurarsi che il programma stia girando con i permessi di amministratore."
+        sys.exit()
+
+    try:
+        sysmonitor.SysMonitor().log_interfaces()
+    except Exception as e:
+        print "Impossibile trovare un interfaccia di rete attiva, verificare la connessione alla rete."
+        print "Speedtest non si avvia in assenza di connessione alla rete."
+        logger.error("Impossibile trovare interfaccia attiva: %s" % e)
+        sys.exit()
+
     '''Command line options.'''
     program_name = os.path.basename(sys.argv[0])
     program_version = __version__
@@ -62,20 +81,11 @@ def main(argv=None):
         SWN = 'MisuraInternet Speed Test'
         logger.info('Starting %s v.%s' % (SWN, FULL_VERSION)) 
         mist(args_opts.text_based, file_opts, md5conf)
-        # MAIN BODY #
-#        mist_cli = MistCli()
-        # Register for events
-        # Do profile
-        # Do tests
-        # (Send results?)
-        # Ask if user wants to repeat
 
 
     except Exception, e:
-#         indent = len(program_name) * " "
         logging.critical("Impossibile avviare il programma", exc_info=True)
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
-#         sys.stderr.write(indent + "  for help use --help\n")
         return 2
 
 
@@ -90,11 +100,9 @@ def mist(text_based, file_opts, md5conf):
         if not version_ok:
             return
     mist_opts = mist_options.MistOptions(file_opts, md5conf)
-    sysmonitor.SysMonitor().log_interfaces()
     if text_based:
         event_dispatcher = gui_event.CliEventDispatcher()
         GUI = mist_cli.MistCli(event_dispatcher)
-#         profiler = SystemProfiler(event_dispatcher)
         controller = MistController(GUI, version, event_dispatcher, mist_opts)
         GUI.set_listener(controller)
         GUI.start()
@@ -103,7 +111,6 @@ def mist(text_based, file_opts, md5conf):
             wx.CallLater(200, sleeper)
         GUI = mist_gui.mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE)# ^ wx.RESIZE_BORDER) #& ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
         event_dispatcher = gui_event.WxGuiEventDispatcher(GUI)
-#         profiler = SystemProfiler(event_dispatcher)
         controller = MistController(GUI, version, event_dispatcher, mist_opts)
         GUI.init_frame(version, event_dispatcher)
         GUI.set_listener(controller)
@@ -117,11 +124,4 @@ def sleeper():
   
   
 if __name__ == "__main__":
-    try:
-        paths.check_paths()
-        import log_conf
-        log_conf.init_log()
-    except IOError as e:
-        print "Impossibile inizializzare il logging, assicurarsi che il programma stia girando con i permessi di amministratore."
-        sys.exit()
     main()

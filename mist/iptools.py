@@ -12,6 +12,7 @@ import netifaces
 import re
 import socket
 
+import sysmonitorexception
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +21,7 @@ def getipaddr(host = 'finaluser.agcom244.fub.it', port = 443):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect((host, port))
         ipaddr = s.getsockname()[0]
-        'TODO:'
-        #if not checkipsyntax(value):
+        #TODO: if not checkipsyntax(value):
     except socket.gaierror:
         ipaddr = ""
     return ipaddr
@@ -77,10 +77,7 @@ def get_dev(host = 'finaluser.agcom244.fub.it', port = 443, ip = None):
             for address in ip_addresses:
                 if ('addr' in address) and (address['addr'] == local_ip_address):
                     return ifName
-    return None
-#     if not found:
-#         raise SysmonitorException(sysmonitorexception.UNKDEV, 'Impossibile ottenere il dettaglio dell\'interfaccia di rete')
-#     return ifName
+    raise sysmonitorexception.SysmonitorException(sysmonitorexception.UNKDEV, 'Impossibile ottenere il dettaglio dell\'interfaccia di rete')
     
 def get_network_mask(ip):
     '''

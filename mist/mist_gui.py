@@ -304,8 +304,9 @@ class mistGUI(wx.Frame):
                 colour = 'green'
             else:
                 colour = 'red'
-        except:
+        except AttributeError:
             logger.critical("res %s" % info, exc_info = True)
+            colour = 'gray'
         if resource == RES_CPU:
             res_bitmap = self.bitmap_cpu
             res_label = self.label_cpu

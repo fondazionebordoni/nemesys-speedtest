@@ -61,9 +61,7 @@ class MistController():
 
     def measure(self, profiler_result = None):
         '''Callback to continue with measurement after profiling'''
-        "TODO: Start background profiler here?"
-#        speed_tester = SpeedTester(self._version, self._event_dispatcher, do_profile = self._do_profile, task_file=self._task_file)
-        self._speed_tester = SpeedTester(self._version, self._event_dispatcher, self._tester_profiler, self._mist_opts) #do_profile = True)
+        self._speed_tester = SpeedTester(self._version, self._event_dispatcher, self._tester_profiler, self._mist_opts)
         self._speed_tester.start()
 
     def kill_test(self):

@@ -228,9 +228,9 @@ class SysMonitor():
         return system_resource.SystemResource(system_resource.RES_WIFI, status, value, info)
                 
     
-    'TODO ma che fa questo?'
     def checkhosts(self, bandwidth_up=2048, bandwidth_down=2048, arping=1):
         call_ping = False
+        value = None
         try:
             ip = iptools.getipaddr()
             mask = iptools.get_network_mask(ip)

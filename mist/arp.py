@@ -193,9 +193,6 @@ def do_linux_arping(if_dev_name, IPsrc, NETmask, realSubnet = True, timeout = 1,
             except Exception as e:
                 logger.error("Errore durante la ricezione degli arping: %s" % e)
 
-        #TODO: why this?
-#        if(nHosts > threshold):
-#            break
     my_socket.close()
     return IPtable
 
@@ -235,7 +232,7 @@ def receive_arp_response(mac_addr, my_socket, timeout):
     IPtable = {}
 
     '''Wait for response'''
-    timeLeft = timeout*1000
+#     timeLeft = timeout*1000
     stopTime = time.time() + timeout*1;
 
     while True:
@@ -284,7 +281,7 @@ def receive_arp_response(mac_addr, my_socket, timeout):
 
 
 ###########################
-## Parte Darwin, woks also for linux
+## Parte Darwin, works also for linux
 ##
 ## Not very pretty, but works...
 ###########################

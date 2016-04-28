@@ -22,13 +22,10 @@ import re
 from string import join
 from xml.dom import Node
 from xml.dom.minidom import parseString
-from xml.etree import ElementTree as ET
 from xml.parsers.expat import ExpatError
 
 from server import Server
-import sysmonitorexception
 from task import Task
-from timeNtp import timestampNtp
 
 
 tag_task = 'task'
@@ -158,7 +155,6 @@ def xml2task(data):
     except Exception:
         raise Exception('Le informazioni per la programmazione delle misure sono errate.')
 
-    # Date
     try:
         start = datetime.strptime(start, startformat)
     except ValueError:

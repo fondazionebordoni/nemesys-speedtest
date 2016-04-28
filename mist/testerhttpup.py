@@ -1,7 +1,7 @@
 # httptester.py
 # -*- coding: utf8 -*-
 
-# Copyright (c) 2015 Fondazione Ugo Bordoni.
+# Copyright (c) 2015-2016 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,9 +42,8 @@ class HttpTesterUp:
 
     def __init__(self, dev, bufsize = 8 * 1024, rampup_secs = 2):
         self._num_bytes = bufsize
-        self._rampup_secs = rampup_secs
         self._netstat = netstat.get_netstat(dev)
-        self._fakefile = None
+
     
     def _init_counters(self):
         self._time_to_stop = False
@@ -98,8 +97,6 @@ class HttpTesterUp:
         measurement_id = "sess-%d" % random.randint(0, 100000)
         self.callback_update_speed = callback_update_speed
         upload_threads = []
-        'TODO: not needed?'
-        self._upload_sending_timeout = total_test_time_secs * 2 + self._rampup_secs + 1
         self._init_counters()
         # Read progress each second, just for display
         read_thread = threading.Timer(1.0, self._read_up_measure)
@@ -111,7 +108,7 @@ class HttpTesterUp:
             upload_thread = UploadThread(httptester = self, 
                                          fakefile = Fakefile(MAX_TRANSFERED_BYTES), 
                                          url=url, 
-                                         upload_sending_timeout = self._upload_sending_timeout, #TODO not needed?
+                                         upload_sending_timeout = total_test_time_secs * 2, #TODO not needed?
                                          measurement_id=measurement_id, 
                                          recv_bufsize=recv_bufsize, 
                                          num_bytes=self._num_bytes,
@@ -199,7 +196,7 @@ class UploadThread(threading.Thread):
         response = None
         my_http_client = httpclient.HttpClient()
         try:
-            logger.info("Connecting to server, sending time is %d" % self._upload_sending_timeout)
+            logger.info("Connecting to server")
             headers = {"X-measurement-id" : self._measurement_id}
             response = my_http_client.post(self._url, 
                                            data_source=chunk_generator.gen_chunk(), 
@@ -222,7 +219,7 @@ class UploadThread(threading.Thread):
                 self._error = "Nessuna risposta dal server" 
         elif response.status_code != 200:
             if not self._error:
-                self._error = "Ricevuto risposta %d dal server" % response.status_code
+                self._error = "Errore: %s" % response.status
         self._response = response
 
     def get_bytes_read(self):

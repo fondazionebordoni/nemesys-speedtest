@@ -283,12 +283,17 @@ class SpeedTester(Thread):
         self._event_dispatcher.postEvent(gui_event.UpdateEvent("Inizio dei test di misura", gui_event.UpdateEvent.MAJOR_IMPORTANCE))
         self._progress = 0.01
         self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
-
-        ip = iptools.getipaddr()
-        dev = iptools.get_dev(ip = ip)
-        mac = iptools.get_mac_address(ip)
+        try:
+            ip = iptools.getipaddr()
+            dev = iptools.get_dev(ip = ip)
+            mac = iptools.get_mac_address(ip)
+        except Exception as e:
+            self._event_dispatcher.postEvent(gui_event.ErrorEvent("Impossibile ottenere il dettaglio dell\'interfaccia di rete. Assicurarsi di essere connesso alla rete."))
+            self._event_dispatcher.postEvent(gui_event.StopEvent(is_oneshot=self.is_oneshot()))
+            self._running = False
+            return
+        
         os = self._profiler.get_os()
-#         profiler_result = self._profiler.profile_once(set([RES_IP, RES_DEV, RES_OS, RES_MAC]))
         self._profiler.profile_in_background(set([system_resource.RES_CPU, system_resource.RES_RAM, system_resource.RES_ETH, system_resource.RES_WIFI]))
         self._progress += 0.01
         self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
@@ -377,6 +382,7 @@ class SpeedTester(Thread):
                 
         self._profiler.stop_background_profiling()
         self._event_dispatcher.postEvent(gui_event.StopEvent(is_oneshot=self.is_oneshot()))
+        self._running = False
     
   
     def _save_measure(self, measure):

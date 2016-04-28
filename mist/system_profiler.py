@@ -1,7 +1,19 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# encoding: utf-8
+# Copyright (c) 2016 Fondazione Ugo Bordoni.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# from sysMonitor import SysMonitor, RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HSPA, RES_DEV, RES_MAC, RES_IP, RES_MASK, RES_HOSTS, RES_TRAFFIC
 from collections import OrderedDict
 import logging
 import threading
@@ -11,6 +23,7 @@ import gui_event
 import iptools
 from sysmonitor import SysMonitor
 from system_resource import RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HOSTS, RES_TRAFFIC
+
 
 logger = logging.getLogger(__name__)
 
@@ -36,16 +49,11 @@ class SystemProfiler(object):
         self._bw_down = bandwidth_down
         self._available_check = OrderedDict \
         ([ \
-#         (RES_DEV, None),\
-#         (RES_MAC, None),\
-#         (RES_IP, None),\
-#         (RES_MASK, None),\
         (RES_OS, None),\
         (RES_CPU, None),\
         (RES_RAM, None),\
         (RES_ETH, None),\
         (RES_WIFI, None),\
-#         (RES_HSPA, None),\
         (RES_HOSTS, None),\
         (RES_TRAFFIC, None) \
         ])
@@ -54,8 +62,6 @@ class SystemProfiler(object):
         
         self._sys_monitor = SysMonitor()
         self._lock = threading.Lock()
-#         self._profiler_idle = Event()
-#         self._profiler_idle.set()
 
     def get_os(self):
         return self._sys_monitor.check_os(RES_OS).value
@@ -99,7 +105,7 @@ class SystemProfiler(object):
                         result = self._sys_monitor.checkres(res, self._bw_up, self._bw_down)
                     else:
                         result = self._sys_monitor.checkres(res)
-                    sysmon_results[res] = result#self._sys_monitor.checkres(res).get('value', None)
+                    sysmon_results[res] = result
                     if report_progress:
                         i += 1
                         self._event_dispatcher.postEvent(gui_event.ProgressEvent(float(i)/len(resources)))
@@ -117,24 +123,22 @@ class SystemProfiler(object):
     
     def _check_device(self):
         try:
-            ip = iptools.getipaddr()#self._sys_monitor.checkres(RES_IP)['value']
-            dev = iptools.get_dev()#self._sys_monitor.checkres(RES_DEV, ip)['value']
+            ip = iptools.getipaddr()
+            dev = iptools.get_dev()
         except Exception as e:
             logger.error("Impossibile ottenere ip e device", exc_info=True)
-            info = {'status':False, 'value':-1, 'info':e}
-            self._event_dispatcher.postEvent(gui_event.ResourceEvent(RES_ETH, info, False))
-            self._event_dispatcher.postEvent(gui_event.ResourceEvent(RES_WIFI, info, False))
-            self._event_dispatcher.postEvent(gui_event.ErrorEvent(e))
+            if self._message_flag:
+                self._event_dispatcher.postEvent(gui_event.ErrorEvent(e))
             return
-            
+
         if (self._device == None):
             self._device = dev
             if self._report_device:
                 self._event_dispatcher.postEvent(gui_event.UpdateEvent("Indirizzo IP di rete: %s" % ip))
                 self._event_dispatcher.postEvent(gui_event.UpdateEvent("Interfaccia di rete in esame: %s" % dev))
-                
+
         elif (dev != self._device):
-            "TODO: handle at higher level"
+            #TODO: handle at higher level
             self._event_dispatcher.postEvent(gui_event.ErrorEvent("Test interrotto per variazione interfaccia di rete di riferimento."))         
             self._event_dispatcher.postEvent(gui_event.StopEvent()) 
     
