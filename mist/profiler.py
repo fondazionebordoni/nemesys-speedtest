@@ -407,7 +407,7 @@ class ProfilerDarwin(Profiler):
 
     def get_all_devices(self):
         cmdline = 'system_profiler SPNetworkDataType -xml -detailLevel full'
-        xml_from_system_profiler = os.popen(cmdline).decode('ascii')
+        xml_from_system_profiler = os.popen(cmdline)
         return self.get_all_devices_from_xml(xml_from_system_profiler)
 
     def is_wireless_active(self):
