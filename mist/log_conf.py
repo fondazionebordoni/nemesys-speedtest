@@ -86,7 +86,7 @@ datefmt=%b %d %H:%M:%S
 '''
 
 def init_log(level=logging.INFO, use_name='MIST'):
-    with open(configfile, 'w') as f:
+    with open(configfile, 'w+') as f:
         s = str(default_no_stdout)
         f.write(s) 
 

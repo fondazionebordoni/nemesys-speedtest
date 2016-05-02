@@ -40,6 +40,13 @@ class Device(object):
         self._is_enabled = False 
         self._guid = None
     
+    def __str__(self, *args, **kwargs):
+        d = self.dict()
+        s = ''
+        for key in d: 
+            s += "%s : %s\n" % (key, d[key])
+        return s
+
     def dict(self):
         return OrderedDict([('Name', self._name),\
 #TODO:        ('Descr',self._description),\
@@ -192,7 +199,7 @@ class ProfilerLinux(Profiler):
                 ipdev = iptools.get_if_ipaddress(dev)
                 device.set_ipaddr(ipdev)
                 device.set_active(ipdev == self.ipaddr)
-                device.set_enabled(val['operstate'] == "up")
+                device.set_enabled(val['operstate'] != "down") # Can be 'unknown'
                     
                 if (val['type'] == '1'):
                     device.set_type('Ethernet 802.3')
@@ -294,7 +301,7 @@ class ProfilerWindows(Profiler):
                 devType = features['AdapterTypeId']  
                 device.set_type(ProfilerWindows.NIC_TYPE[devType])
             if (features['NetConnectionStatus'] != None):
-                device.set_enabled(features['NetConnectionStatus'])
+                device.set_enabled(features['NetConnectionStatus'] == 'Enabled')
             devices.append(device)
         self._exit_query()
         return devices
@@ -350,8 +357,6 @@ class ProfilerWindows(Profiler):
                     is_enabled = self._getSingleInfo(device,'IPEnabled')
                     if str(is_enabled).lower() == 'true':
                         mac_enabled_devices.append(mac_address)
-#                         if ipaddr in ipaddrlist:
-#                             self._activeMAC = mac_address
         else:
             raise ProfilerException(ERROR_NET_IF)
         return mac_enabled_devices 
@@ -400,19 +405,23 @@ class ProfilerDarwin(Profiler):
     def __init__(self):
         super(ProfilerDarwin, self).__init__()
 
+    def get_all_devices(self):
+        cmdline = 'system_profiler SPNetworkDataType -xml -detailLevel full'
+        xml_from_system_profiler = os.popen(cmdline).decode('ascii')
+        return self.get_all_devices_from_xml(xml_from_system_profiler)
 
     def is_wireless_active(self):
         cmdline = 'system_profiler SPNetworkDataType -xml -detailLevel full'
         xml_from_system_profiler = os.popen(cmdline)
         return self.is_wireless_active_from_xml(xml_from_system_profiler)
 
-    def is_wireless_active_from_xml(self, xml_text):
+    def is_wireless_active_from_xml(self, xml_file):
         import xml.etree.ElementTree as ET
         
         wireless_is_active = False
         descriptors = {}
         try:
-            spxml = ET.parse(xml_text)
+            spxml = ET.parse(xml_file)
             devices = spxml.findall('array/dict/array/dict')
         except:
             raise ProfilerException(ERROR_NET_IF)
@@ -436,4 +445,57 @@ class ProfilerDarwin(Profiler):
                     wireless_is_active = True
 
         return wireless_is_active
+
+    def get_all_devices_from_xml(self, xml_file):
+        import xml.etree.ElementTree as ET
+        descriptors = {}
+        self.ipaddr = iptools.getipaddr()
+        try:
+            spxml = ET.parse(xml_file)
+            xmldevices = spxml.findall('array/dict/array/dict')
+        except Exception:
+            raise ProfilerException(ERROR_NET_IF)
+        
+        devices = []
+        for dev in xmldevices:
+            descriptors = {}
+            isActive = False
+            isEnabled = False
+            app = spxml
+            app._setroot(dev)
+            allnodes = list(app.iter())
+            for n in allnodes:
+                capture = 1
+                if n.tag == 'key':
+                    capture = 0
+                    prev_key = n.text     
+                if capture and (n.tag == 'string' or n.tag == 'integer'):
+                    descriptors[prev_key] = n.text
+                            
+            if 'Addresses' in descriptors:
+                isEnabled = True
+            if 'NetworkSignature' in descriptors:
+                isActive = True
+
+            if descriptors['type'].lower() == 'ethernet':
+                devType = 'Ethernet 802.3'
+                if descriptors['_name'].lower() == 'mbbethernet':
+                    devType = 'WWAN'
+            elif descriptors['type'].lower() == 'airport':
+                devType = 'Wireless'
+            elif descriptors['type'].lower() == 'ppp (pppserial)':
+                devType = 'WWAN'
+            else:
+                devType = 'Other'
+            
+            device = Device(descriptors['interface'])
+            device.set_active(isActive)
+            device.set_enabled(isEnabled)
+            device.set_ipaddr(descriptors.get('Addresses','unknown'))
+            device.set_type(devType)
+            device.set_macaddr(descriptors.get('MAC Address','unknown'))
+            devices.append(device)
+
+        return devices
+    
 
