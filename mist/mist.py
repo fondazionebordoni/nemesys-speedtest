@@ -24,6 +24,22 @@ logger = logging.getLogger(__name__)
 
 
 def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+    '''Command line options.'''
+    program_name = os.path.basename(sys.argv[0])
+    program_version = __version__
+    program_build_date = "%s" % __updated__
+    program_version_string = '%%prog %s (%s)' % (program_version, program_build_date)
+    program_longdesc = '''''' 
+
+    #TODO: Needs fixing, mixup with optionParser.OptionParser
+    parser = OptionParser(version=program_version_string, epilog=program_longdesc)#, description=program_license)
+    parser.add_option("-t", "--text", dest="text_based", action="store_true", help="Senza interfaccia grafica [default: %default]")
+    parser.set_defaults(text_based = False)
+    (args_opts, _) = parser.parse_args(argv)
+
+    
     ''' Check for sudo on linux and Administrator on Windows'''
     current_os = platform.system().lower()
     if current_os.startswith('lin') or current_os.startswith('darwin'):
@@ -33,9 +49,21 @@ def main(argv=None):
             is_admin = True
     else:
         is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
+    # TODO: Avoid need for admin for creation of log files etc.
+    # So we can move this check to later
     if not is_admin:
         sys.stderr.write('Speedtest avviato senza permessi di amministratore - chiusura tester\n')
+        if not args_opts.text_based:
+            #Display window with message
+            app = wx.App(False)
+            msgBox = wx.MessageDialog(None, 
+                                      "\nSpeedtest e' stato avviato senza i permessi di amministratore.\n\nSu sistemi Linux e MacOS va avviato da linea di comando con 'sudo'", 
+                                      "Attenzione: Speedtest non puo' essere avviato", 
+                                      style = wx.OK)
+            msgBox.ShowModal()
+            msgBox.Destroy()
         sys.exit()
+
     try:
         paths.check_paths()
         import log_conf
@@ -52,31 +80,7 @@ def main(argv=None):
         logger.error("Impossibile trovare interfaccia attiva: %s" % e)
         sys.exit()
 
-    '''Command line options.'''
-    program_name = os.path.basename(sys.argv[0])
-    program_version = __version__
-    program_build_date = "%s" % __updated__
-
-    program_version_string = '%%prog %s (%s)' % (program_version, program_build_date)
-    program_longdesc = '''''' 
-
-    if argv is None:
-        argv = sys.argv[1:]
     try:
-        'TODO: Needs fixing, mixup with optionParser.OptionParser'
-        parser = OptionParser(version=program_version_string, epilog=program_longdesc)#, description=program_license)
-#         parser.add_option("--task-file", dest="task_file", help="read task from file [default: %default]", metavar="FILE")
-#         parser.add_option("-c", "--check", dest="check", action="store_true", help="Fare solo la verifica del sistema, senza misura [default: %default]")
-        parser.add_option("-t", "--text", dest="text_based", action="store_true", help="Senza interfaccia grafica [default: %default]")
-#         parser.add_option("--no-profile", dest="no_profile", action="store_true", help="Non profilare il sistema durante la misura [default: %default]")
-#         parser.add_option("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %default]")
-
-        # set defaults
-#         parser.set_defaults(check = False, measure = False, text_based = False, task_file = None)
-        parser.set_defaults(text_based = False)
-
-        # process options
-        (args_opts, _) = parser.parse_args(argv)
         (file_opts, _, md5conf) = parser.parse()
         SWN = 'MisuraInternet Speed Test'
         logger.info('Starting %s v.%s' % (SWN, FULL_VERSION)) 
