@@ -99,8 +99,8 @@ class mistGUI(wx.Frame):
         self.button_play.SetToolTip(wx.ToolTip("Avvia la profilazione e una misura completa"))
         self.button_check.SetToolTip(wx.ToolTip("Avvia la profilazione della macchina"))
         box_sizer_buttons = wx.BoxSizer(wx.VERTICAL)
-        box_sizer_buttons.Add(self.button_check, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL)
-        box_sizer_buttons.Add(self.button_play, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL)
+        box_sizer_buttons.Add(self.button_check, 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
+        box_sizer_buttons.Add(self.button_play, 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 2)
         sizer_header_right = wx.BoxSizer(wx.HORIZONTAL)
         sizer_header_right.Add(bitmap_header_right, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL)
         sizer_header_right.Add(box_sizer_buttons, 0, wx.RIGHT | wx.ALIGN_CENTER, 10)
@@ -126,29 +126,29 @@ class mistGUI(wx.Frame):
         self.label_wifi = wx.StaticText(panel_main, -1, "%s\n- - - -" % RES_WIFI, style=wx.ALIGN_CENTRE)
         self.label_hosts = wx.StaticText(panel_main, -1, "%s\n- - - -" % RES_HOSTS, style=wx.ALIGN_CENTRE)
         self.label_traffic = wx.StaticText(panel_main, -1, "%s\n- - - -" % RES_TRAFFIC, style=wx.ALIGN_CENTRE)
-        self.grid_sizer_system_indicators = wx.FlexGridSizer(2, 6, 0, 0)
-        self.grid_sizer_system_indicators.Add(self.bitmap_cpu, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
-        self.grid_sizer_system_indicators.Add(self.bitmap_ram, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
-        self.grid_sizer_system_indicators.Add(self.bitmap_eth, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
-        self.grid_sizer_system_indicators.Add(self.bitmap_wifi, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
-        self.grid_sizer_system_indicators.Add(self.bitmap_hosts, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
-        self.grid_sizer_system_indicators.Add(self.bitmap_traffic, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
-        self.grid_sizer_system_indicators.Add(self.label_cpu, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
-        self.grid_sizer_system_indicators.Add(self.label_ram, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
-        self.grid_sizer_system_indicators.Add(self.label_eth, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
-        self.grid_sizer_system_indicators.Add(self.label_wifi, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
-        self.grid_sizer_system_indicators.Add(self.label_hosts, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
-        self.grid_sizer_system_indicators.Add(self.label_traffic, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
-        self.messages_area = wx.TextCtrl(panel_main, -1, "", style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP | wx.BORDER_NONE)
-        self.sizer_main_window = wx.BoxSizer(wx.VERTICAL)
-        self.sizer_messages_area = wx.StaticBoxSizer(wx.StaticBox(panel_main, -1, "Messaggi"), wx.VERTICAL)
-        self.sizer_system_status = wx.BoxSizer(wx.VERTICAL)
-        self.sizer_messages_area.Add(self.messages_area, 90, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 4)
-        self.sizer_system_status.Add(self.grid_sizer_system_indicators, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
-        self.sizer_main_window.Add(self.gauge, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 2)
-        self.sizer_main_window.Add(self.sizer_messages_area, 90, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 4)
-        self.sizer_main_window.Add(self.sizer_system_status, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 4)
-        panel_main.SetSizer(self.sizer_main_window)
+        grid_sizer_system_indicators = wx.FlexGridSizer(2, 6, 0, 0)
+        grid_sizer_system_indicators.Add(self.bitmap_cpu, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+        grid_sizer_system_indicators.Add(self.bitmap_ram, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+        grid_sizer_system_indicators.Add(self.bitmap_eth, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+        grid_sizer_system_indicators.Add(self.bitmap_wifi, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+        grid_sizer_system_indicators.Add(self.bitmap_hosts, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+        grid_sizer_system_indicators.Add(self.bitmap_traffic, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+        grid_sizer_system_indicators.Add(self.label_cpu, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+        grid_sizer_system_indicators.Add(self.label_ram, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+        grid_sizer_system_indicators.Add(self.label_eth, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+        grid_sizer_system_indicators.Add(self.label_wifi, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+        grid_sizer_system_indicators.Add(self.label_hosts, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+        grid_sizer_system_indicators.Add(self.label_traffic, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 24)
+        self.messages_text = wx.TextCtrl(panel_main, -1, "", style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP | wx.BORDER_NONE)
+        sizer_main_window = wx.BoxSizer(wx.VERTICAL)
+        sizer_messages_area = wx.StaticBoxSizer(wx.StaticBox(panel_main, -1, "Messaggi"), wx.VERTICAL)
+        sizer_system_status = wx.BoxSizer(wx.VERTICAL)
+        sizer_messages_area.Add(self.messages_text, 90, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 4)
+        sizer_system_status.Add(grid_sizer_system_indicators, 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 8)
+        sizer_main_window.Add(self.gauge, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 2)
+        sizer_main_window.Add(sizer_messages_area, 90, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 4)
+        sizer_main_window.Add(sizer_system_status, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 4)
+        panel_main.SetSizer(sizer_main_window)
         return panel_main
 
     def init_frame(self, version, event_dispatcher):
@@ -158,6 +158,7 @@ class mistGUI(wx.Frame):
         self._stream = deque([], maxlen=800)
 
         window_panel = wx.Panel(self)
+        window_panel.SetBackgroundColour('white')
         
         panel_header = wx.Panel(window_panel, -1)     
         panel_header_left = self.make_left_header_panel(panel_header)
@@ -175,10 +176,11 @@ class mistGUI(wx.Frame):
         sizer.Add(panel_main, 90, wx.EXPAND)
 
         window_panel.SetSizerAndFit(sizer)
-        self.SetSize((800, 460))
+        #TODO: find out why sizer_main_window ends up being 808 pixels wide
+        self.SetSize((810, 460))
 
         self.SetTitle("%s - versione %s" % (mist_messages.SWN, self._version))
-        self.messages_area_style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP | wx.BORDER_NONE
+        self.messages_text_style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_BESTWRAP | wx.BORDER_NONE
         
         self.Bind(wx.EVT_CLOSE, self._on_close)
         self.Bind(wx.EVT_BUTTON, self._on_play, self.button_play)
@@ -190,7 +192,6 @@ class mistGUI(wx.Frame):
         self.Bind(gui_event.EVT_ERROR, self._on_error)
         self.Bind(gui_event.EVT_RESOURCE, self._on_resource)
         self.Bind(gui_event.EVT_STOP, self._on_stop)
-        self.Bind(gui_event.EVT_AFTER_CHECK, self._on_after_check)
 
         self._initial_message()
         self.Layout()
@@ -212,7 +213,6 @@ class mistGUI(wx.Frame):
             self.Unbind(gui_event.EVT_ERROR)
             self.Unbind(gui_event.EVT_RESOURCE)
             self.Unbind(gui_event.EVT_STOP)
-            self.Unbind(gui_event.EVT_AFTER_CHECK)
 
         self.Destroy()
             
@@ -230,14 +230,6 @@ class mistGUI(wx.Frame):
             self._listener.check()
         except AttributeError:
             logger.error("Nessun listener adatto configurato, impossibile procedere")
-
-    def _on_after_check(self, gui_event):
-        pass
-
-    def _enable_button(self):
-        self.button_check.Enable()
-        if (self._tester is None or not self._tester.is_oneshot()):
-            self.button_play.Enable()
 
     def _update_http_down(self, downwidth):
         self.label_http_down_res.SetLabel("%.0f kbps" % downwidth)
@@ -262,7 +254,7 @@ class mistGUI(wx.Frame):
         self.label_http_down_res.SetLabel("- - - -")
         self.label_ping_res.SetLabel("- - - -")
 
-        self.messages_area.Clear()
+        self.messages_text.Clear()
         self._update_gauge(0)
         self.Layout()
 
@@ -426,8 +418,8 @@ class mistGUI(wx.Frame):
                 words = {}
                 (message, colour, font, fill) = self._stream.popleft()
                 date = datetime.today().strftime('%a %d/%m/%Y %H:%M:%S')
-                last_pos = self.messages_area.GetLastPosition()
-                self.messages_area.SetWindowStyleFlag(self.messages_area_style)
+                last_pos = self.messages_text.GetLastPosition()
+                self.messages_text.SetWindowStyleFlag(self.messages_text_style)
                 date = date + "    "
                 text = "" + date
                 words[date] = (colour, wx.NullColour, basic_font)
@@ -437,9 +429,9 @@ class mistGUI(wx.Frame):
                 else:
                     textcolour = 'black'
                 words[message] = (textcolour, wx.NullColour, basic_font)
-                self.messages_area.AppendText(text + '\n')
-                self.messages_area.SetInsertionPoint(last_pos + 1)
-                self.messages_area.ScrollLines(-1)
+                self.messages_text.AppendText(text + '\n')
+                self.messages_text.SetInsertionPoint(last_pos + 1)
+                self.messages_text.ScrollLines(-1)
 
         
     def _initial_message(self):
@@ -451,10 +443,10 @@ Premendo il tasto CHECK avvierai la profilazione della macchina per la misura.
 
 Premendo il tasto TEST avvierai una profilazione e il test di misura completo.''' % (mist_messages.SWN, self._version)
 
-        self.messages_area.SetWindowStyleFlag(self.messages_area_style + wx.TE_CENTER)
+        self.messages_text.SetWindowStyleFlag(self.messages_text_style + wx.TE_CENTER)
 
-        self.messages_area.AppendText(message)
-        self.messages_area.ScrollLines(-1)
+        self.messages_text.AppendText(message)
+        self.messages_text.ScrollLines(-1)
         
         font1 = wx.Font(14, wx.DECORATIVE, wx.ITALIC, wx.BOLD)
         font2 = wx.Font(10, wx.DECORATIVE, wx.ITALIC, wx.BOLD, 1, "")
@@ -471,7 +463,7 @@ Premendo il tasto TEST avvierai una profilazione e il test di misura completo.''
             start = message.find(word) + offset
             end = start + len(word)
             style = words[word]
-            self.messages_area.SetStyle(start, end, wx.TextAttr(*style))
+            self.messages_text.SetStyle(start, end, wx.TextAttr(*style))
 
     def set_listener(self, listener):
         self._listener = listener
