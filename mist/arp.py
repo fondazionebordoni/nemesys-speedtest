@@ -307,7 +307,7 @@ def do_unix_arping(IPsrc = None, NETmask=24, realSubnet=True, timeout=0.01):
 
 def _send_one_mac_arp(IPdst, timeout=0.01):
     # Remove any existing entry
-    pid = Popen(["arp", "-d", IPdst], stdout=PIPE)
+    pid = Popen(["arp", "-d", IPdst], stdout=PIPE, stderr=PIPE)
     pid.communicate()[0]
     # Check output? should be none
     # Now ping the destination
