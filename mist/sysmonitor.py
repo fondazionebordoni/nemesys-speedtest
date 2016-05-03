@@ -191,17 +191,19 @@ class SysMonitor():
     def checkmem(self):
         try:
             avMem = self._profiler.total_memory()
-            logger.debug("Memoria disponibile: %2f" % avMem)
-            if avMem < 0:
-                raise SysmonitorException(sysmonitorexception.BADMEM, 'Valore di memoria disponibile non conforme.')
             if avMem < th_avMem:
-                raise SysmonitorException(sysmonitorexception.LOWMEM, 'Memoria disponibile non sufficiente.')
+                logger.debug("Memoria disponibile: %2f" % avMem)
+                if avMem < 0:
+                    raise SysmonitorException(sysmonitorexception.BADMEM, 'Valore di memoria disponibile non conforme.')
+                else:
+                    raise SysmonitorException(sysmonitorexception.LOWMEM, 'Memoria disponibile non sufficiente.')
             
             memLoad = self._profiler.percentage_ram_usage()
-            logger.debug("Memoria occupata: %d%%" % memLoad)
             if memLoad < 0 or memLoad > 100:
+                logger.debug("Memoria occupata: %d%%" % memLoad)
                 raise SysmonitorException(sysmonitorexception.INVALIDMEM, 'Valore di occupazione della memoria non conforme.')
             if memLoad > th_memLoad:
+                logger.debug("Memoria occupata: %d%%" % memLoad)
                 raise SysmonitorException(sysmonitorexception.OVERMEM, 'Memoria occupata.')
         
             info = 'Utilizzato il %s%% di %d GB della memoria' % (memLoad, avMem / (1000*1000*1000))
@@ -320,7 +322,7 @@ class SysMonitor():
         
         try:
             value = 'unknown'
-            'TODO check for modified ip or dev'
+            #TODO: check for modified ip or dev
             ip = iptools.getipaddr()
             dev = iptools.get_dev(ip = ip)
             logger.debug("getting stats from dev " + dev)
