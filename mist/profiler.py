@@ -267,7 +267,7 @@ class ProfilerWindows(Profiler):
         return is_active
 
     def get_all_devices(self):
-        features = {'Name':None, 'NetConnectionID':None, 'AdapterTypeId':None, 'NetConnectionStatus':None}
+        features = {'Name':None, 'NetConnectionID':None, 'AdapterTypeId':None, 'NetConnectionStatus':None, 'NetEnabled':None}
         devices = []
         self._init_query()
         items = self._executeQuery('Win32_NetworkAdapter', " WHERE Manufacturer != 'Microsoft' ")
