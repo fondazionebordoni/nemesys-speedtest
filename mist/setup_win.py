@@ -1,18 +1,11 @@
 from distutils.core import setup
 import py2exe
-import re, sys, os
-from SysProf.windows import profiler
-from xml.etree import ElementTree as ET
-import modulefinder
+import re, sys
 from glob import glob
 
 sys.path.append("C:\\Microsoft.VC90.CRT")
 
 data_files = [("Microsoft.VC90.CRT", glob(r'C:\Microsoft.VC90.CRT\*.*'))]
-
-profiler = profiler.Profiler()
-data = profiler.profile({'CPU'})
-print ET.tostring(data)
 
 def get_version():
     try:
@@ -27,17 +20,16 @@ def get_version():
             break
 
     # Fix version in Inno Setup file too!
-    filedata = None
-    with open('../mist.iss', 'r') as file :
-      filedata = file.read()
+    with open('../mist.iss', 'r') as f :
+        filedata = f.read()
     
     # Replace the target string
     if '@version@' in filedata:
         filedata = filedata.replace('@version@', ver)
     
     # Write the file out again
-    with open('../mist.iss', 'w') as file:
-      file.write(filedata)
+    with open('../mist.iss', 'w') as f:
+        f.write(filedata)
 
     return ver
 
@@ -56,7 +48,6 @@ setup(
 		'py2exe': {
 			'packages': 'encodings',
             'optimize': 2,
-            'includes': ['SysProf.windows.profiler']
  		}
 	},
 	name = 'mist',
