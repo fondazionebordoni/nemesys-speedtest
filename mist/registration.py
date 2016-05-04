@@ -42,20 +42,6 @@ il programma per procedere nuovamente all'inserimento.\n
 Al momento dell'inserimento si prega di avere accesso alla rete.''' % (SWN, MAXretry)
 }
 
-RegSuccess = \
-{ \
-"style":wx.OK | wx.ICON_EXCLAMATION, \
-"title":"%s Success" % SWN, \
-"message":"\nUsername e password corrette e verificate." \
-}
-
-RegSuccessOneShot = \
-{ \
-"style":wx.OK | wx.ICON_EXCLAMATION, \
-"title":"%s Success" % SWN, \
-"message":"\nL'installazione e' andata a buon fine." \
-}
-
 ErrorCode = \
 { \
 "style":wx.OK | wx.ICON_ERROR, \
@@ -245,10 +231,6 @@ def registration(code):
                     regOK = getconf(code, filepath, configurationServer)
                     if (regOK == True):
                         logger.info('Configuration file successfully downloaded and saved')
-                        if ('|' in code):
-                            showDialog(RegSuccessOneShot)
-                        else:
-                            showDialog(RegSuccess)
                         break
                     else:
                         logger.error('Configuration file not correctly saved')
