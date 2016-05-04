@@ -81,10 +81,37 @@ def main(argv=None):
         sys.exit()
 
     try:
-        (file_opts, _, md5conf) = parser.parse()
         SWN = 'MisuraInternet Speed Test'
         logger.info('Starting %s v.%s' % (SWN, FULL_VERSION)) 
-        mist(args_opts.text_based, file_opts, md5conf)
+#         mist(args_opts.text_based, file_opts, md5conf)
+        version = __version__
+        if not args_opts.text_based:
+            app = wx.App(False)
+        
+            # Check if this is the last version
+            version_ok = CheckSoftware(version).checkIT()
+            
+            if not version_ok:
+                return
+        (file_opts, _, md5conf) = parser.parse()
+        mist_opts = mist_options.MistOptions(file_opts, md5conf)
+        if args_opts.text_based:
+            event_dispatcher = gui_event.CliEventDispatcher()
+            GUI = mist_cli.MistCli(event_dispatcher)
+            controller = MistController(GUI, version, event_dispatcher, mist_opts)
+            GUI.set_listener(controller)
+            GUI.start()
+        else:
+            if (platform.system().lower().startswith('win')):
+                wx.CallLater(200, sleeper)
+            GUI = mist_gui.mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE)# ^ wx.RESIZE_BORDER) #& ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
+            event_dispatcher = gui_event.WxGuiEventDispatcher(GUI)
+            controller = MistController(GUI, version, event_dispatcher, mist_opts)
+            GUI.init_frame(version, event_dispatcher)
+            GUI.set_listener(controller)
+            app.SetTopWindow(GUI)
+            GUI.Show()
+            app.MainLoop()
 
 
     except Exception, e:
