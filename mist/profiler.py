@@ -300,8 +300,8 @@ class ProfilerWindows(Profiler):
             if (features['AdapterTypeId'] != None):
                 devType = features['AdapterTypeId']  
                 device.set_type(ProfilerWindows.NIC_TYPE[devType])
-            if (features['NetConnectionStatus'] != None):
-                device.set_enabled(features['NetConnectionStatus'] == 'Enabled')
+            device.set_active(features['NetConnectionStatus'] == 2)
+            device.set_enabled(features['NetEnabled'] == True)
             devices.append(device)
         self._exit_query()
         return devices
