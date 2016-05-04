@@ -140,12 +140,12 @@ class SpeedTester(Thread):
             traffic_ratio = float(byte_all - byte_nem) / float(byte_all)
             value1 = "%.2f%%" % (traffic_ratio * 100)
 #             logger.info('Traffico MIST: [ %d pacchetti di %d totali e %.1f Kbyte di %.1f totali ]' % (packet_nem, packet_all, byte_nem / 1024.0, byte_all / 1024.0))
-            if (0 <= traffic_ratio <= TH_TRAFFIC):
+            if (abs(traffic_ratio) <= TH_TRAFFIC):
                 test_status = True
                 info = 'Traffico internet non legato alla misura: percentuale %s' % value1
                 self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC, 
                                                                          system_resource.SystemResource(status=True, info=info, value=value1), False))
-            elif (traffic_ratio > TH_TRAFFIC):
+            elif (abs(traffic_ratio) > TH_TRAFFIC):
                 info = 'Eccessiva presenza di traffico internet non legato alla misura: percentuale %s' % value1
                 self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC, 
                                                                          system_resource.SystemResource(status=False, info=info, value=value1), True))
@@ -387,7 +387,8 @@ class SpeedTester(Thread):
   
     def _save_measure(self, measure):
         # Salva il file con le misure
-        f = open('%s/measure_%s.xml' % (paths.OUTBOX_DAY_DIR, measure.id), 'w')
+#         f = open('%s/measure_%s.xml' % (paths.OUTBOX_DAY_DIR, measure.id), 'w')
+        f = open(os.path.join(paths.OUTBOX_DAY_DIR, 'measure_%s.xml' % measure.id), 'w')
         f.write(str(measure))
         # Aggiungi la data di fine in fondo al file
         f.write('\n<!-- [finished] %s -->' % datetime.fromtimestamp(timestampNtp()).isoformat())
