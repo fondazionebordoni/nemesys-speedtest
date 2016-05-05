@@ -213,7 +213,8 @@ class mistGUI(wx.Frame):
             self.Unbind(gui_event.EVT_ERROR)
             self.Unbind(gui_event.EVT_RESOURCE)
             self.Unbind(gui_event.EVT_STOP)
-
+        if self._listener:
+            self._listener.exit()
         self.Destroy()
             
     def _on_play(self, gui_event):

@@ -257,6 +257,8 @@ class MistCli(Thread):
                 print ''
                 break
             if 'q' in line:
+                if self._listener:
+                    self._listener.exit()
                 break
             elif 'c' in line:
                 self._on_check()

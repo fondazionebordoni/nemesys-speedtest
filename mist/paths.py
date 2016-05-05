@@ -17,9 +17,12 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from timeNtp import timestampNtp
 from os import mkdir, path, sep
+import os
 import sys
+
+from timeNtp import timestampNtp
+
 
 DATE = datetime.fromtimestamp(timestampNtp())
 
@@ -70,3 +73,19 @@ def check_paths():
     for d in dirs:
         if not path.exists(d):
             mkdir(d)
+
+def remove_temp_dirs():
+    remove_empty_dir(OUTBOX_DIR)
+    remove_empty_dir(SENT_DIR)
+
+def remove_empty_dir(topdir):
+    subdirs = os.walk(topdir, topdown=False)
+    for root, dirs, _ in subdirs:
+        for filedir in range(len(dirs)):
+            dirs[filedir] = os.path.join(root, dirs[filedir])
+            dirs.append(root)
+        for filedir in dirs:    
+            if os.path.exists(filedir):
+                if not os.listdir(filedir):    # to check wither the dir is empty
+                    os.removedirs(filedir)
+

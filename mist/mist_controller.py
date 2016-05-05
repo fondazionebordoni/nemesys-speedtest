@@ -1,5 +1,4 @@
 # encoding: utf-8
-
 # Copyright (c) 2016 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -19,10 +18,14 @@ Created on 13/ott/2015
 
 @author: ewedlund
 '''
-import gui_event
+
 import threading
+
+import gui_event
+import paths
 from speedTester import SpeedTester
 from system_profiler import SystemProfiler
+
 
 class MistController():
     
@@ -73,3 +76,6 @@ class MistController():
                         thread._Thread__stop()
                     except:
                         self._event_dispatcher.postEvent(gui_event.ErrorEvent("Impossibile terminare il processo di misura %s" % str(thread.getName())))
+    
+    def exit(self):
+        paths.remove_temp_dirs()

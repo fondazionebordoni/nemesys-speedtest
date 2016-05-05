@@ -108,10 +108,7 @@ def upload(event_dispatcher, deliverer, fname=None, delete=True):
         else:
             logger.info('Nessun file di misura ancora da spedire.') 
             break
-            
-    remEmptyDir(paths.OUTBOX_DIR)
-    remEmptyDir(paths.SENT_DIR)
-    
+
     return num_sent_files
 
 
@@ -134,16 +131,3 @@ def parserepositorydata(data):
     code = xmlutils.getvalues(node, 'code')
     message = xmlutils.getvalues(node, 'message')
     return (code, message)
-
-
-def remEmptyDir(topdir):
-    for root, dirs, _ in os.walk(topdir, topdown=False):
-        for filedir in range(len(dirs)):
-            dirs[filedir] = os.path.join(root, dirs[filedir])
-            dirs.append(root)
-        for filedir in dirs:    
-            if os.path.exists(filedir):
-                if not os.listdir(filedir):    # to check wither the dir is empty
-                    logger.info("Elimino la directory vuota: %s" % filedir)
-                    os.removedirs(filedir)
-
