@@ -3,12 +3,10 @@
 
 from ConfigParser import ConfigParser, NoOptionError
 from optparse import OptionParser
-import logging
 from os import path
 import hashlib
 import paths
 
-logger = logging.getLogger(__name__)
 
 class OptionParser(OptionParser):
 
@@ -30,12 +28,12 @@ class OptionParser(OptionParser):
     
         'TODO: remove when fixed'
         self.add_option("--task-file", dest="task_file", help="read task from file [default: %default]", metavar="FILE")
-        self.add_option("-t", "--text", dest="text_based", action="store_true", help="Senza interfaccia grafica [default: %default]")
+#         self.add_option("-t", "--text", dest="text_based", action="store_true", help="Senza interfaccia grafica [default: %default]")
         self.add_option("--no-profile", dest="no_profile", action="store_true", help="Non profilare il sistema durante la misura [default: %default]")
 
         if (path.exists(paths.CONF_MAIN)):
             config.read(paths.CONF_MAIN)
-            logger.info('Caricata configurazione da %s' % paths.CONF_MAIN)
+#             logger.info('Caricata configurazione da %s' % paths.CONF_MAIN)
     
         # Task options
         # --------------------------------------------------------------------------
@@ -154,8 +152,8 @@ class OptionParser(OptionParser):
         self.add_option('--down', dest = option, default = value, type = 'int',
                                             help = 'download bandwidth [%s]' % value)
     
-        with open(paths.CONF_MAIN, 'w') as file:
-            config.write(file)
+        with open(paths.CONF_MAIN, 'w') as f:
+            config.write(f)
     
         (options, args) = self.parse_args()
         #logger.debug(options)
@@ -175,11 +173,11 @@ class OptionParser(OptionParser):
                 config.set('profile', 'bandwidthdown', options.bandwidthdown)
     
         finally:
-            with open(paths.CONF_MAIN, 'w') as file:
-                config.write(file)
+            with open(paths.CONF_MAIN, 'w') as f:
+                config.write(f)
     
-        with open(paths.CONF_MAIN, 'r') as file:
-            md5 = hashlib.md5(file.read()).hexdigest()
+        with open(paths.CONF_MAIN, 'r') as f:
+            md5 = hashlib.md5(f.read()).hexdigest()
     
         return (options, args, md5)
     

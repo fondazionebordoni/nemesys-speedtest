@@ -1,7 +1,7 @@
 # httptester.py
 # -*- coding: utf8 -*-
 
-# Copyright (c) 2015 Fondazione Ugo Bordoni.
+# Copyright (c) 2015-2016 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ import netstat
 
 TOTAL_MEASURE_TIME = 10
 MAX_TRANSFERED_BYTES = 100 * 1000000 * 15 / 8 # 100 Mbps for 15 seconds
-END_STRING = '_ThisIsTheEnd_'
 
 logger = logging.getLogger(__name__)
 
@@ -43,9 +42,8 @@ class HttpTesterUp:
 
     def __init__(self, dev, bufsize = 8 * 1024, rampup_secs = 2):
         self._num_bytes = bufsize
-        self._rampup_secs = rampup_secs
         self._netstat = netstat.get_netstat(dev)
-        self._fakefile = None
+
     
     def _init_counters(self):
         self._time_to_stop = False
@@ -60,17 +58,17 @@ class HttpTesterUp:
             self._measure_count += 1
             measuring_time = time.time()
             elapsed = (measuring_time - self._last_measured_time)*1000.0
-            
             new_tx_bytes = self._netstat.get_tx_bytes()
             tx_diff = new_tx_bytes - self._last_tx_bytes
             rate_tot = float(tx_diff * 8)/float(elapsed) 
+            self._last_tx_bytes = new_tx_bytes
+            self._last_measured_time = measuring_time
+
             logger.debug("[HTTP] Reading... count = %d, speed = %d" 
                   % (self._measure_count, int(rate_tot)))
             if self.callback_update_speed:
                 self.callback_update_speed(second=self._measure_count, speed=rate_tot)
         
-            self._last_tx_bytes = new_tx_bytes
-            self._last_measured_time = measuring_time
             read_thread = threading.Timer(1.0, self._read_up_measure)
             self._read_measure_threads.append(read_thread)
             read_thread.start()
@@ -91,9 +89,7 @@ class HttpTesterUp:
                 url, 
                 callback_update_speed = None, 
                 total_test_time_secs = TOTAL_MEASURE_TIME, 
-#                 file_size = MAX_TRANSFERED_BYTES, 
                 recv_bufsize = 8 * 1024, 
-#                 is_first_try = True, 
                 num_sessions = 1,
                 tcp_window_size = -1):
         
@@ -101,8 +97,6 @@ class HttpTesterUp:
         measurement_id = "sess-%d" % random.randint(0, 100000)
         self.callback_update_speed = callback_update_speed
         upload_threads = []
-        'TODO: not needed?'
-        self._upload_sending_timeout = total_test_time_secs * 2 + self._rampup_secs + 1
         self._init_counters()
         # Read progress each second, just for display
         read_thread = threading.Timer(1.0, self._read_up_measure)
@@ -114,7 +108,7 @@ class HttpTesterUp:
             upload_thread = UploadThread(httptester = self, 
                                          fakefile = Fakefile(MAX_TRANSFERED_BYTES), 
                                          url=url, 
-                                         upload_sending_timeout = self._upload_sending_timeout, #TODO not needed?
+                                         upload_sending_timeout = total_test_time_secs * 2, #TODO not needed?
                                          measurement_id=measurement_id, 
                                          recv_bufsize=recv_bufsize, 
                                          num_bytes=self._num_bytes,
@@ -141,6 +135,8 @@ class HttpTesterUp:
         tx_diff = self._netstat.get_tx_bytes() - start_tx_bytes
         if (tx_diff < 0):
             raise MeasurementException("Ottenuto banda negativa, possibile azzeramento dei contatori.")
+        if (bytes_read == 0) or (tx_diff == 0):
+            raise MeasurementException("Test non risucito - connessione interrotta")
         spurious = (float(tx_diff - bytes_read)/float(tx_diff))
         logger.info("Traffico spurio: %0.4f" % spurious)
         test['bytes_total'] = int(test['bytes'] * (1 + spurious))
@@ -177,7 +173,7 @@ def _test_from_server_response(response):
                 test['rate_secs'] = [ b * 8 / 1000 for b in partial_bytes ]
         else:
             test['rate_max'] = 0
-        test['bytes'] = sum(partial_bytes)
+        test['bytes'] = int(sum(partial_bytes))
     return test
 
 class UploadThread(threading.Thread):
@@ -200,7 +196,7 @@ class UploadThread(threading.Thread):
         response = None
         my_http_client = httpclient.HttpClient()
         try:
-            logger.info("Connecting to server, sending time is %d" % self._upload_sending_timeout)
+            logger.info("Connecting to server")
             headers = {"X-measurement-id" : self._measurement_id}
             response = my_http_client.post(self._url, 
                                            data_source=chunk_generator.gen_chunk(), 
@@ -223,7 +219,7 @@ class UploadThread(threading.Thread):
                 self._error = "Nessuna risposta dal server" 
         elif response.status_code != 200:
             if not self._error:
-                self._error = "Ricevuto risposta %d dal server" % response.status_code
+                self._error = "Errore: %s" % response.status
         self._response = response
 
     def get_bytes_read(self):
@@ -260,30 +256,14 @@ if __name__ == '__main__':
 #    host = "10.80.1.1"
 #    host = "193.104.137.133"
 #    host = "regopptest6.fub.it"
-#     host = "eagle2.fub.it"
-    host = "rambo.fub.it"
+    host = "eagle2.fub.it"
+#     host = "rambo.fub.it"
 #     host = "regoppwebtest.fub.it"
 #    host = "rocky.fub.it"
 #    host = "billia.fub.it"
-    import sysMonitor
-    dev = sysMonitor.getDev()
+    import iptools
+    dev = iptools.get_dev()
     http_tester = HttpTesterUp(dev)
-#     print "\n------ DOWNLOAD -------\n"
-#     for _ in range(0, 10):
-#         res = http_tester.test_down("http://%s:80" % host, num_sessions=7)
-#         print res
     print "\n------ UPLOAD ---------\n"
     res = http_tester.test_up("http://%s:8080/file.rnd" % host)#, num_sessions=1, tcp_window_size=8192)
     print res
-#     print "\n------ UPLOAD ---------\n"
-#     res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=2)
-#     print res
-#     print "\n------ UPLOAD ---------\n"
-#     res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=3)
-#     print res
-#     print "\n------ UPLOAD ---------\n"
-#     res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=4)
-#     print res
-#     print "\n------ UPLOAD ---------\n"
-#     res = http_tester.test_up("http://%s:80/file.rnd" % host, num_sessions=5)
-#     print res

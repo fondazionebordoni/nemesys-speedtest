@@ -1,5 +1,4 @@
 # encoding: utf-8
-
 # Copyright (c) 2016 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -19,21 +18,27 @@ Created on 13/ott/2015
 
 @author: ewedlund
 '''
-import gui_event
+
 import threading
+
+import gui_event
+import paths
 from speedTester import SpeedTester
+from system_profiler import SystemProfiler
+
 
 class MistController():
     
-    def __init__(self, gui, version, profiler, event_dispatcher, task_file = None, no_profile = False, auto = False):
+    def __init__(self, gui, version, event_dispatcher, mist_opts, task_file = None):
         self._gui = gui
         self._version = version
-        self._profiler = profiler
+        self._profiler = SystemProfiler(event_dispatcher, bandwidth_up=mist_opts.client.profile.upload, bandwidth_down=mist_opts.client.profile.download)
+        self._tester_profiler = SystemProfiler(event_dispatcher, bandwidth_up=mist_opts.client.profile.upload, bandwidth_down=mist_opts.client.profile.download, from_tester=True)
         self._event_dispatcher = event_dispatcher
         self._task_file = task_file
-        self._do_profile = (no_profile == False)
-        self._auto = auto
+#         self._do_profile = (no_profile == False)
         self._speed_tester = None
+        self._mist_opts = mist_opts
 
  
     def play(self):
@@ -59,9 +64,7 @@ class MistController():
 
     def measure(self, profiler_result = None):
         '''Callback to continue with measurement after profiling'''
-        "TODO: Start background profiler here?"
-#        speed_tester = SpeedTester(self._version, self._event_dispatcher, do_profile = self._do_profile, task_file=self._task_file)
-        self._speed_tester = SpeedTester(self._version, self._event_dispatcher, do_profile = True)
+        self._speed_tester = SpeedTester(self._version, self._event_dispatcher, self._tester_profiler, self._mist_opts)
         self._speed_tester.start()
 
     def kill_test(self):
@@ -73,3 +76,6 @@ class MistController():
                         thread._Thread__stop()
                     except:
                         self._event_dispatcher.postEvent(gui_event.ErrorEvent("Impossibile terminare il processo di misura %s" % str(thread.getName())))
+    
+    def exit(self):
+        paths.remove_temp_dirs()

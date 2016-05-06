@@ -17,8 +17,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging.config
+
 import paths
-#import re
 
 configfile = paths.CONF_LOG
 logfile = paths.LOG_FILE
@@ -85,16 +85,9 @@ format=%(asctime)s MIST %(filename)s.%(funcName)s():%(lineno)d [%(levelname)s] %
 datefmt=%b %d %H:%M:%S
 '''
 
-def init_log():
+def init_log(level=logging.INFO, use_name='MIST'):
     with open(configfile, 'w') as f:
-        'TODO: choose which one to use'
         s = str(default_no_stdout)
         f.write(s) 
 
     logging.config.fileConfig(configfile, disable_existing_loggers=False)
-    
-# create logger
-# class Logger(logging.getLoggerClass()):
-# 
-#     def __init__(self):
-#         init_log()

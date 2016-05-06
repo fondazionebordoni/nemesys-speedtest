@@ -1,5 +1,4 @@
 # encoding: utf-8
-
 # Copyright (c) 2016 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -22,7 +21,7 @@ mist.mist_cli is a network speed test
 
 @author:     ewedlund
 
-@copyright:  2015 Fondazione Ugo Bordoni. All rights reserved.
+@copyright:  2015-2016 Fondazione Ugo Bordoni. All rights reserved.
 
 @license:    GNU General Public License
 
@@ -150,8 +149,8 @@ class MistCli(Thread):
     def _on_resource(self, resource_event):
         if resource_event.getMessageFlag():
             try:
-                info_string = str(resource_event.getValue().get('info'))
-                status = resource_event.getValue().get('status')
+                info_string = str(resource_event.getValue().info)
+                status = resource_event.getValue().status
                 if status == None:
                     color = None
                     info_string = '\t' + info_string
@@ -199,7 +198,7 @@ class MistCli(Thread):
             self._update_messages(">> MISURA TERMINATA <<\nPer la versione completa iscriviti su misurainternet.it", color = bcolors.GREEN)
             self._update_messages("Per effettuare altre misure e conservare i tuoi risultati nell'area riservata effettua l'iscrizione su misurainternet.it\n")
         else:
-            self._update_messages(">> MISURA TERMINATA <<\nSistema pronto per una nuova misura", color = bcolors.GREEN)
+            self._update_messages(">> MISURA TERMINATA <<", color = bcolors.GREEN)
             self._update_messages("Sistema pronto per una nuova misura")
         self.set_busy(False)
 
@@ -219,7 +218,7 @@ class MistCli(Thread):
         try:
             self._listener.play()
         except AttributeError:
-            logger.error("Nessun listener adatto configurato, impossibile procedere")
+            logger.error("Nessun listener adatto configurato, impossibile procedere", exc_info = True)
 
 
     def _print_greeting(self):
@@ -258,6 +257,8 @@ class MistCli(Thread):
                 print ''
                 break
             if 'q' in line:
+                if self._listener:
+                    self._listener.exit()
                 break
             elif 'c' in line:
                 self._on_check()

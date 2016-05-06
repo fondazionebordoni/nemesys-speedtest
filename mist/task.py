@@ -18,22 +18,18 @@
 
 from collections import OrderedDict
 import logging
-from server import Server
+
 import httputils
+from server import Server
 import xmlutils
 
-DEFAULT_TASK_FILE = '40000'
 
-BANDS = [128, 256, 384, 400, 512, 640, 704, 768, 832, 1000, 1200, 1250, 1280, 1500, 1600, 1750, 2000, 2250, 2500, 2750, 3000, 3250, 3500, 4000, 4096, 4500, 5000, 5500, 6000, 6122, 6500, 7000, 7168, 7500, 8000, 8500, 8192, 9000, 9500, 10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 20480, 22000, 24000, 26000, 28000, 30000, 32000, 34000, 36000, 38000, 40000, 80000, 90000, 100000]
 logger = logging.getLogger(__name__)
 
 def download_task(url, certificate, client_id, version, md5conf, timeout, server=None):
     '''Scarica il prossimo task dallo scheduler'''
 
     try:
-#         url = urlparse(scheduler)
-#         certificate = isp.certificate
-        
         connection = httputils.getverifiedconnection(url=url, certificate=certificate, timeout=timeout)
         if (server != None):
             connection.request('GET', '%s?clientid=%s&version=%s&confid=%s&server=%s' % (url.path, client_id, version, md5conf, server.ip))
@@ -46,38 +42,28 @@ def download_task(url, certificate, client_id, version, md5conf, timeout, server
         if (task == None): 
             logger.info('Lo scheduler ha inviato un task vuoto.')
         else:
-            task.ftpdownpath = '/download/' + DEFAULT_TASK_FILE + '.rnd'
-#             self._client.profile.upload = int(DEFAULT_TASK_FILE)
             logger.info("--------[ TASK ]--------")
             for key, val in task.dict.items():
                 logger.info("%s : %s" % (key, val))
             logger.info("------------------------")
             
     except Exception as e:
-        logger.error('Impossibile scaricare lo scheduling. Errore: %s.' % e)
+        logger.error('Impossibile scaricare lo scheduling. Errore: %s.' % e, exc_info=True)
         return None
     
     return task
 
-    
-
-
 
 class Task:
 
-    def __init__(self, task_id, start, server, ftpdownpath, ftpuppath, upload=4, download=4, multiplier=10, ping=4, nicmp=1, delay=1, now=False, message=None, http_download=4, http_upload=4):
+    def __init__(self, task_id, start, server, ping=4, nicmp=1, delay=1, now=False, message=None, http_download=4, http_upload=4):
         
         self._id = task_id
         self._start = start
         self._server = server
-        self._ftpdownpath = ftpdownpath
-        self._ftpuppath = ftpuppath
         self._ftpup_bytes = 0
-        self._upload = upload
-        self._download = download
         self._http_upload = http_upload
         self._http_download = http_download
-        self._multiplier = multiplier
         self._ping = ping
         self._nicmp = nicmp
         self._delay = delay
@@ -97,28 +83,8 @@ class Task:
         return self._server
 
     @property
-    def ftpdownpath(self):
-        return self._ftpdownpath
-
-    @property
-    def ftpuppath(self):
-        return self._ftpuppath
-
-    @property
-    def download(self):
-        return self._download
-
-    @property
     def http_download(self):
         return self._http_download
-
-    @property
-    def multiplier(self):
-        return self._multiplier
-
-    @property
-    def upload(self):
-        return self._upload
 
     @property
     def http_upload(self):
@@ -151,23 +117,6 @@ class Task:
     def set_ftpup_bytes(self, num_bytes):
         self._ftpup_bytes = num_bytes
 
-    def update_ftpdownpath(self, bandwidth):
-        '''
-        Aggiorna il path del file da scaricare in modo da scaricare un file di
-        dimensioni le più vicine possibili alla banda specificata.
-        '''
-        logger.info('Aggiornamento path per la banda in download FTP')
-        try:
-            BANDS.sort(reverse=True)
-            for band in BANDS:
-                if (band <= bandwidth):
-                    ind = self.ftpdownpath.rfind('/')
-                    self.ftpdownpath = "%s/%d.rnd" % (self.ftpdownpath[0:ind], band)
-                    logger.info("Aggiornato percorso del file da scaricare: %s" % self.ftpdownpath)
-                    break 
-        except Exception as e:
-            logger.warning("Errore durante la modifica del percorso del file di download da scaricare. %s" % e)
-    
     @property
     def dict(self):
         task = OrderedDict \
@@ -181,11 +130,6 @@ class Task:
         ('Ping number',self.ping),\
         ('Ping repeat',self.nicmp),\
         ('Ping delay',self.delay),\
-        ('Download number',self.download),\
-        ('Download file',self.ftpdownpath),\
-        ('Upload number',self.upload),\
-        ('Upload file',self.ftpuppath),\
-        ('Multiplier',self.multiplier),\
         ('Download HTTP number',self.http_download),\
         ('Upload HTTP number',self.http_upload),\
         ('Now parameter',self.now),\
@@ -194,8 +138,8 @@ class Task:
         return task 
             
     def __str__(self):
-        return 'id: %s; start: %s; serverip: %s; ftpdownpath: %s; ftpuppath: %s; upload: %d; download: %d; multiplier %d; ping %d; ncimp: %d; delay: %d; now %d; message: %s; http_download: %d; http_upload: %d' % \
-            (self.id, self.start, self.server.ip, self.ftpdownpath, self.ftpuppath, self.upload, self.download, self.multiplier, self.ping, self.nicmp, self.delay, self.now, self.message, self.http_download, self.http_upload)
+        return 'id: %s; start: %s; serverip: %s; ping %d; ncimp: %d; delay: %d; now %d; message: %s; http_download: %d; http_upload: %d' % \
+            (self.id, self.start, self.server.ip, self.ping, self.nicmp, self.delay, self.now, self.message, self.http_download, self.http_upload)
 
 if __name__ == '__main__':
     import log_conf

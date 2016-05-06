@@ -17,28 +17,31 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from timeNtp import timestampNtp
 from os import mkdir, path, sep
+import os
 import sys
+
+from timeNtp import timestampNtp
+
 
 DATE = datetime.fromtimestamp(timestampNtp())
 
 def formatdate(mode='sec'):
-  if mode == 'day':
-    format_date = str(DATE.strftime('%Y%m%d'))
-  elif mode == 'sec':
-    format_date = str(DATE.strftime('%Y%m%d_%H%M%S'))
-  return format_date
+    if mode == 'day':
+        format_date = str(DATE.strftime('%Y%m%d'))
+    elif mode == 'sec':
+        format_date = str(DATE.strftime('%Y%m%d_%H%M%S'))
+    return format_date
 
 DAY = formatdate('day')
 SEC = formatdate('sec')
 
 if hasattr(sys, 'frozen'):
-  # Dovrebbe darmi il percorso in cui sta eseguendo l'applicazione
-  _APP_PATH = path.dirname(sys.executable) + sep + '..'
+    # Dovrebbe darmi il percorso in cui sta eseguendo l'applicazione
+    _APP_PATH = path.dirname(sys.executable) + sep + '..'
 else:
-  _APP_PATH = path.abspath(path.dirname(__file__)) + sep + '..'
-  
+    _APP_PATH = path.abspath(path.dirname(__file__)) + sep + '..'
+
 _APP_PATH = path.normpath(_APP_PATH)
 
 # Resources path
@@ -54,36 +57,35 @@ OUTBOX_DAY_DIR = path.join(OUTBOX_DIR, DAY)
 
 #LOG
 LOG_DIR = path.join(_APP_PATH, 'logs')
-# LOG_DAY_DIR = path.join(LOG_DIR, DAY)
-# LOG_FILE = path.join(LOG_DAY_DIR, SEC+'.log')
 LOG_FILE = path.join(LOG_DIR, 'misurainternet-'+DAY+'.log')
 
 # Configuration dirs and files
 _CONF_DIR = path.join(_APP_PATH, 'config')
 CONF_LOG = path.join(_CONF_DIR, 'log.conf')
 CONF_MAIN = path.join(_CONF_DIR, 'client.conf')
-CONF_ERRORS = path.join(_CONF_DIR, 'errorcodes.conf')
 
 # THRESHOLD = path.join(_CONF_DIR, 'threshold.xml')
 # RESULTS = path.join(_CONF_DIR, 'result.xml')
 # MEASURE_STATUS = path.join(_CONF_DIR, 'progress.xml')
 # MEASURE_PROSPECT = path.join(OUTBOX_DIR, 'prospect.xml')
-
 def check_paths():
+    dirs = [LOG_DIR, OUTBOX_DIR, OUTBOX_DAY_DIR, SENT_DIR, SENT_DAY_DIR, _CONF_DIR]
+    for d in dirs:
+        if not path.exists(d):
+            mkdir(d)
 
-  check = []
+def remove_temp_dirs():
+    remove_empty_dir(OUTBOX_DIR)
+    remove_empty_dir(SENT_DIR)
 
-#   dirs = [LOG_DIR, LOG_DAY_DIR, OUTBOX_DIR, OUTBOX_DAY_DIR, SENT_DIR, SENT_DAY_DIR, _CONF_DIR]
-  dirs = [LOG_DIR, OUTBOX_DIR, OUTBOX_DAY_DIR, SENT_DIR, SENT_DAY_DIR, _CONF_DIR]
+def remove_empty_dir(topdir):
+    subdirs = os.walk(topdir, topdown=False)
+    for root, dirs, _ in subdirs:
+        for filedir in range(len(dirs)):
+            dirs[filedir] = os.path.join(root, dirs[filedir])
+            dirs.append(root)
+        for filedir in dirs:    
+            if os.path.exists(filedir):
+                if not os.listdir(filedir):    # to check wither the dir is empty
+                    os.removedirs(filedir)
 
-  for dir in dirs:
-    if not path.exists(dir):
-      mkdir(dir)
-      check.append('Creata la cartella %s' % dir)
-  
-  if (len(check)<1):
-    check.append("Tutte le cartelle utili al programma sono gia' esistenti.")
-    
-  return check
-  
-check_paths()    

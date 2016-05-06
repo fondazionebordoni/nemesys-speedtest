@@ -20,6 +20,9 @@
 # Licensed under the GNU General Public License version 2,
 # Original version:
 #   -> http://www.g-loaded.eu/2009/10/30/python-ping/
+#TODO: use the source! https://github.com/l4m3rx/python-ping/blob/master/ping.py
+# Not possible at the moment since it is not thread safe, using pid to 
+# identify packets
 
 from exceptions import Exception
 import random
