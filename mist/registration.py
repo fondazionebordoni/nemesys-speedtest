@@ -204,7 +204,7 @@ def getconf(code, filepath, url):
     return os.path.exists(filepath)
     
 def registration(code):
-    if len(code) < 4:
+    if (len(code) < 4) or '|' in code:
         regOK = False
         logger.error("ClientID assente o di errata lunghezza")
         retry = 0
