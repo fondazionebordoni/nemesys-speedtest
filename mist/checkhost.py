@@ -46,7 +46,7 @@ class sendit(threading.Thread):
             pass
 
 
-def countHosts(ipAddress, netMask, bandwidthup, bandwidthdown, threshold = 4, arping = 0):
+def countHosts(ipAddress, netMask, bandwidthup, bandwidthdown, arping = 0):
     if not bool(re.search('^192\.168\.', ipAddress)):
         realSubnet = False
         if bandwidthup == bandwidthdown and not bool(re.search('^10\.', ipAddress)):
@@ -58,19 +58,19 @@ def countHosts(ipAddress, netMask, bandwidthup, bandwidthdown, threshold = 4, ar
             netmask_to_use = 30
             logger.debug("Sospetto profilo Fastweb ADSL o Fibra con indirizzo 10.*. Modificata sottorete in %d" % netmask_to_use)
 
-        logger.info("Indirizzo: %s/%d; Realsubnet: %s; Threshold: %d" % (ipAddress, netMask, realSubnet, threshold))
-        n_host = _countNetHosts(ipAddress, netmask_to_use, realSubnet, threshold, arping)
+        logger.info("Indirizzo: %s/%d; Realsubnet: %s" % (ipAddress, netMask, realSubnet))
+        n_host = _countNetHosts(ipAddress, netmask_to_use, realSubnet, arping)
         if n_host > 0:
             return n_host
         
     realSubnet = True
     netmask_to_use = netMask
-    logger.info("Indirizzo: %s/%d; Realsubnet: %s; Threshold: %d" % (ipAddress, netMask, realSubnet, threshold))
-    n_host = _countNetHosts(ipAddress, netmask_to_use, realSubnet, threshold, arping)
+    logger.info("Indirizzo: %s/%d; Realsubnet: %s" % (ipAddress, netMask, realSubnet))
+    n_host = _countNetHosts(ipAddress, netmask_to_use, realSubnet, arping)
     return n_host
 
 
-def _countNetHosts(ipAddress, netMask, realSubnet = True, threshold = 4, arping = 0):
+def _countNetHosts(ipAddress, netMask, realSubnet = True, arping = 0):
     '''
     Ritorna il numero di host che rispondono al ping nella sottorete ipAddress/net_mask.
     Di default effettua i ping dei soli host appartenenti alla sottorete indicata (escludendo il 
@@ -122,5 +122,5 @@ if __name__ == '__main__':
     log_conf.init_log()
     ip = iptools.getipaddr('www.fub.it', 80)
 
-#     print countHosts(ip, 24, 200, 2000, 4, 1)
+    print countHosts(ip, 24, 200, 2000, 4, 1)
     print countHosts(ip, 24, 200, 2000, 4, 0)

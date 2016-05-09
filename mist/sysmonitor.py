@@ -41,7 +41,7 @@ CHECK_MEDIUM = "MEDIUM"
 # Soglie di sistema
 # ------------------------------------------------------------------------------
 # Massima quantità di host in rete
-th_host = 1
+TH_HOST = 1
 # Minima memoria disponibile
 th_avMem = 134217728
 # Massimo carico percentuale sulla memoria
@@ -244,15 +244,9 @@ class SysMonitor():
                 value = 1
                 info = 'La scheda di rete in uso ha un IP pubblico. Non controllo il numero degli altri host in rete.'
             else:
-                if (arping == 0):
-                    thres = th_host + 1
-                else:
-                    thres = th_host
-                
                 if (mask != 0):
-                    value = checkhost.countHosts(ip, mask, bandwidth_up, bandwidth_down, thres, 1)
+                    value = checkhost.countHosts(ip, mask, bandwidth_up, bandwidth_down, arping)
                     logger.info('Trovati %d host in rete.' % value)
-                    
                     if value < 0:
                         raise SysmonitorException(sysmonitorexception.BADHOST, 'impossibile determinare il numero di host in rete.')
                     elif (value == 0):
@@ -262,7 +256,7 @@ class SysMonitor():
                             return self.checkhosts(bandwidth_up, bandwidth_down, 0)
                         else:
                             raise SysmonitorException(sysmonitorexception.BADHOST, 'impossibile determinare il numero di host in rete.')
-                    elif value > thres:
+                    elif value > TH_HOST:
                         raise SysmonitorException(sysmonitorexception.TOOHOST, 'Presenza altri host in rete.')
                     else:
                         status = True

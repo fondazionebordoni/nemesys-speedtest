@@ -120,35 +120,6 @@ def main(argv=None):
         return 2
 
 
-def mist(text_based, file_opts, md5conf):
-    version = __version__
-    if not text_based:
-        app = wx.App(False)
-    
-        # Check if this is the last version
-        version_ok = CheckSoftware(version).checkIT()
-        
-        if not version_ok:
-            return
-    mist_opts = mist_options.MistOptions(file_opts, md5conf)
-    if text_based:
-        event_dispatcher = gui_event.CliEventDispatcher()
-        GUI = mist_cli.MistCli(event_dispatcher)
-        controller = MistController(GUI, version, event_dispatcher, mist_opts)
-        GUI.set_listener(controller)
-        GUI.start()
-    else:
-        if (platform.system().lower().startswith('win')):
-            wx.CallLater(200, sleeper)
-        GUI = mist_gui.mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE)# ^ wx.RESIZE_BORDER) #& ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
-        event_dispatcher = gui_event.WxGuiEventDispatcher(GUI)
-        controller = MistController(GUI, version, event_dispatcher, mist_opts)
-        GUI.init_frame(version, event_dispatcher)
-        GUI.set_listener(controller)
-        app.SetTopWindow(GUI)
-        GUI.Show()
-        app.MainLoop()
- 
 def sleeper():
     sleep(.001)
     return 1 # don't forget this otherwise the timeout will be removed
