@@ -51,6 +51,8 @@ def getverifiedconnection(url, certificate=None, timeout=60):
             try:
                 '''python >= 2.7.9'''
                 context = ssl.create_default_context()
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
                 connection = httplib.HTTPSConnection(host=url.hostname, key_file=certificate, cert_file=certificate, timeout=timeout, context=context)
             except AttributeError:
                 '''python < 2.7.9'''
@@ -59,6 +61,8 @@ def getverifiedconnection(url, certificate=None, timeout=60):
             try:
                 '''python >= 2.7.9'''
                 context = ssl.create_default_context()
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
                 connection = httplib.HTTPSConnection(host=url.hostname, timeout=timeout, context=context)
             except AttributeError:
                 '''python < 2.7.9'''

@@ -7,6 +7,7 @@ import hashlib
 import httplib
 import logging
 import os
+import ssl
 import urlparse
 import wx
 
@@ -183,8 +184,16 @@ def getconf(code, filepath, url):
     
     url = urlparse.urlparse(url)
     try:
-        connection = httplib.HTTPSConnection(host=url.hostname)
-        # Warning This does not do any verification of the server's certificate. #
+        # TODO: This does not do any verification of the server's certificate. #
+        try:
+            '''python >= 2.7.9'''
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            connection = httplib.HTTPSConnection(host=url.hostname, context=context)
+        except AttributeError:
+            '''python < 2.7.9'''
+            connection = httplib.HTTPSConnection(host=url.hostname)
     
         connection.request('GET', '%s?clientid=%s' % (url.path, code))
         logger.debug("Dati inviati: %s" % code)
