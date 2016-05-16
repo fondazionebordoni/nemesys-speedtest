@@ -9,7 +9,7 @@ data_files = [("Microsoft.VC90.CRT", glob(r'C:\Microsoft.VC90.CRT\*.*'))]
 
 def get_version():
     try:
-        f = open("_generated_version.py")
+        f = open("mist/_generated_version.py")
     except EnvironmentError:
         return None
     ver = None
@@ -20,7 +20,7 @@ def get_version():
             break
 
     # Fix version in Inno Setup file too!
-    with open('../mist.iss', 'r') as f :
+    with open('mist.iss', 'r') as f :
         filedata = f.read()
     
     # Replace the target string
@@ -28,7 +28,7 @@ def get_version():
         filedata = filedata.replace('@version@', ver)
     
     # Write the file out again
-    with open('../mist.iss', 'w') as f:
+    with open('mist.iss', 'w') as f:
         f.write(filedata)
 
     return ver
@@ -39,21 +39,21 @@ class Target:
         # for the versioninfo resources
         self.version = get_version()
         self.company_name = "Fondazione Ugo Bordoni"
-        self.copyright = "(c)2010-2015 Fondazione Ugo Bordoni"
+        self.copyright = "(c)2010-2016 Fondazione Ugo Bordoni"
         self.name = "MisuraInternet Speed Test"
 
 setup(
   data_files=data_files,
-	options = {
-		'py2exe': {
-			'packages': 'encodings',
+    options = {
+        'py2exe': {
+            'packages': 'encodings',
             'optimize': 2,
- 		}
-	},
-	name = 'mist',
-	version = get_version(),
-	windows = [
-		{"script": "mist.py", 'uac_info': "requireAdministrator", "icon_resources": [(1, "..\\mist.ico")]},
-	],
-	#packages = ['mist'],
+         }
+    },
+    name = 'mist',
+    version = get_version(),
+    windows = [
+        {"script": "mist/mist.py", 'uac_info': "requireAdministrator", "icon_resources": [(1, "mist.ico")]},
+    ],
+    #packages = ['mist'],
 )

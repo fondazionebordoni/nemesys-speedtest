@@ -10,7 +10,7 @@
 #define MyAppDir MyRoot + ""
 
 ; Read the previuos build number. If there is none take 0 instead.
-#define BuildNum Int(ReadIni(SourcePath	+ "\\buildinfo.ini","Info","Build","0"))
+#define BuildNum Int(ReadIni(SourcePath + "\\buildinfo.ini","Info","Build","0"))
 ; Increment the build number by one.
 #expr BuildNum = BuildNum + 1
 ; Store the number in the ini file for the next build
@@ -33,7 +33,7 @@ LicenseFile={#MyAppDir}\LICENSE
 OutputDir={#MyAppDir}
 OutputBaseFilename={#MyAppExeName}_v.{#myAppVersion}-{#BuildNum}
 SolidCompression=true
-VersionInfoCopyright=(c) 2010-2015 Fondazione Ugo Bordoni
+VersionInfoCopyright=(c) 2010-2016 Fondazione Ugo Bordoni
 PrivilegesRequired=admin
 SetupIconFile={#MyAppDir}\mist.ico
 WizardSmallImageFile={#MyAppDir}\mist_55.bmp
@@ -50,7 +50,7 @@ Name: italian; MessagesFile: compiler:Languages\Italian.isl
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1; Languages: italian
 
 [Files]
-Source: {#MyAppDir}\mist\dist\*; DestDir: {app}\dist; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: {#MyAppDir}\dist\*; DestDir: {app}\dist; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: {#MyAppDir}\ABOUT; DestDir: {app}; Flags: ignoreversion
 Source: {#MyAppDir}\mist.ico; DestDir: {app}; Flags: ignoreversion
 Source: {#MyAppDir}\COPYING; DestDir: {app}; Flags: ignoreversion
