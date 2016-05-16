@@ -35,9 +35,6 @@ platform_name = platform.system().lower()
 # Decidere se, quando non riesco a determinare i valori, sollevo eccezione
 STRICT_CHECK = True
 
-CHECK_ALL = "ALL"
-CHECK_MEDIUM = "MEDIUM"
-
 # Soglie di sistema
 # ------------------------------------------------------------------------------
 # Massima quantità di host in rete

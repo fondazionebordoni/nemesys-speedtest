@@ -18,26 +18,25 @@
 
 class Host(object):
 
-  def __init__(self, ip, name = None):
-    self._ip = ip
-    self._name = name
+    def __init__(self, ip, name = None):
+        self._ip = ip
+        self._name = name
 
-  @property
-  def ip(self):
-    return self._ip
+    @property
+    def ip(self):
+        return self._ip
 
-  @property
-  def name(self):
-    return self._name
+    @property
+    def name(self):
+        return self._name
 
-  def __str__(self):
-    return 'ip: %s; name: %s' % (self.ip, self.name)
+    def __str__(self):
+        return 'ip: %s; name: %s' % (self.ip, self.name)
 
 if __name__ == '__main__':
-  h1 = Host('192.168.131.1', 'h1')
-  h2 = Host(name = 'h2', ip = "192.168.21.2")
-  h3 = Host(ip = '192.168.140.21')
-  print h1
-  print h2
-  print h3
-
+    h1 = Host('192.168.131.1', 'h1')
+    h2 = Host(name = 'h2', ip = "192.168.21.2")
+    h3 = Host(ip = '192.168.140.21')
+    print h1
+    print h2
+    print h3

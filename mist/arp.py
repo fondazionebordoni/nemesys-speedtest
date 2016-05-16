@@ -20,24 +20,24 @@
 # Original version:
 #   -> https://pypi.python.org/pypi/arprequest
 
+import Queue
 import ipcalc
 import logging
+import ping
 import platform
-import Queue
 import re
 import select
 import socket
 import string
 import struct
-import time
 from subprocess import Popen, PIPE
 from threading import Thread
+import time
 
-import ping
 
+logger = logging.getLogger(__name__)
 
 is_windows = (platform.system().startswith("Windows"))
-logger = logging.getLogger(__name__)
 
 if (is_windows):
     import ctypes

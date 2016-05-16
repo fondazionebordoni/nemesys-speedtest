@@ -227,7 +227,7 @@ class SpeedTester(Thread):
                 elif t_type == test_type.HTTP_DOWN:
                     testres = tester.testhttpdown(self.receive_partial_results_down)
                 elif t_type == test_type.HTTP_UP:
-                    testres = tester.testhttpup(self.receive_partial_results_up, bw=self._client.profile.upload)
+                    testres = tester.testhttpup(self.receive_partial_results_up, bw=self._client.profile.upload*1000)
                 else:
                     logger.warn("Tipo di test da effettuare non definito: %s" % test_type.get_string_type(t_type))
 
