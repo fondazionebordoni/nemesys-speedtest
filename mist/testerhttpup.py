@@ -61,7 +61,7 @@ class HttpTesterUp:
             elapsed = (measuring_time - self._last_measured_time)*1000.0
             new_tx_bytes = self._netstat.get_tx_bytes()
             tx_diff = new_tx_bytes - self._last_tx_bytes
-            if (self._measure_count > 2) and (self._measure_count <= 12):
+            if (self._measure_count >= 2) and (self._measure_count < 12):
                 self._partial_tx_bytes += tx_diff 
             rate_tot = float(tx_diff * 8)/float(elapsed) 
             self._last_tx_bytes = new_tx_bytes
