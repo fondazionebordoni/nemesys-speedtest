@@ -85,7 +85,7 @@ class NetstatWindows(Netstat):
         if (if_device_guid != None):
             self.device_id,self.if_device = self._get_psutil_device_from_guid(if_device_guid)
         else:
-			raise NetstatException("Nessun device identificato!")
+            raise NetstatException("Nessun device identificato!")
 
 
     def is_device_active(self, if_device_guid=None):
@@ -97,7 +97,7 @@ class NetstatWindows(Netstat):
         else:
             index = self.device_id
         if index == None:
-			raise NetstatException("Non trovo l'indice dell'interfaccia, impossibile verificare lo stato")
+            raise NetstatException("Non trovo l'indice dell'interfaccia, impossibile verificare lo stato")
         whereCondition = " WHERE DeviceId = \"" + str(index) + "\""
         entry_name = "NetConnectionStatus"
         status = self._get_entry_generic("Win32_NetworkAdapter", whereCondition, entry_name)
