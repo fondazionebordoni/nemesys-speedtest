@@ -29,7 +29,7 @@ import netstat
 
 
 TOTAL_MEASURE_TIME = 10
-MAX_TRANSFERED_BYTES = 100 * 1000000 * 15 / 8 # 100 Mbps for 15 seconds
+MAX_TRANSFERED_BYTES = 1000 * 1000000 * 15 / 8 # 1 Gbps for 15 seconds
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +48,7 @@ class HttpTesterUp:
     def _init_counters(self):
         self._time_to_stop = False
         self._last_tx_bytes = self._netstat.get_tx_bytes()
+        self._partial_tx_bytes = 0
         self._measure_count = 0
         self._read_measure_threads = []
         self._last_measured_time = time.time()
@@ -60,6 +61,8 @@ class HttpTesterUp:
             elapsed = (measuring_time - self._last_measured_time)*1000.0
             new_tx_bytes = self._netstat.get_tx_bytes()
             tx_diff = new_tx_bytes - self._last_tx_bytes
+            if (self._measure_count > 2) and (self._measure_count <= 12):
+                self._partial_tx_bytes += tx_diff 
             rate_tot = float(tx_diff * 8)/float(elapsed) 
             self._last_tx_bytes = new_tx_bytes
             self._last_measured_time = measuring_time
@@ -137,7 +140,13 @@ class HttpTesterUp:
             raise MeasurementException("Ottenuto banda negativa, possibile azzeramento dei contatori.")
         if (bytes_read == 0) or (tx_diff == 0):
             raise MeasurementException("Test non risucito - connessione interrotta")
-        spurious = (float(tx_diff - bytes_read)/float(tx_diff))
+        if tx_diff > bytes_read:
+            spurious = (float(tx_diff - bytes_read)/float(tx_diff))
+        else:
+            logger.warn("Bytes read from file > tx_diff, alternative calculation of spurious traffic")
+            for thread in self._read_measure_threads:
+                thread.join()
+            spurious = float(self._partial_tx_bytes - test['bytes'])/float(self._partial_tx_bytes)
         logger.info("Traffico spurio: %0.4f" % spurious)
         test['bytes_total'] = int(test['bytes'] * (1 + spurious))
         test['rate_tot_secs'] = [x * (1 + spurious) for x in test['rate_secs']]
@@ -246,7 +255,6 @@ class ChunkGenerator:
     def gen_chunk(self):
         while not self._time_to_stop:
             yield self._fakefile.read(self._num_bytes)
-        yield ""
 
         
 if __name__ == '__main__':
