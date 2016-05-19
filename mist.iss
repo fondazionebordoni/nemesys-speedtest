@@ -50,7 +50,7 @@ Name: italian; MessagesFile: compiler:Languages\Italian.isl
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1; Languages: italian
 
 [Files]
-Source: {#MyAppDir}\dist\*; DestDir: {app}\dist; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: {#MyAppDir}\mist\dist\*; DestDir: {app}\dist; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: {#MyAppDir}\ABOUT; DestDir: {app}; Flags: ignoreversion
 Source: {#MyAppDir}\mist.ico; DestDir: {app}; Flags: ignoreversion
 Source: {#MyAppDir}\COPYING; DestDir: {app}; Flags: ignoreversion
