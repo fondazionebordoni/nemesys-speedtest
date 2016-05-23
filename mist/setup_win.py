@@ -9,7 +9,7 @@ data_files = [("Microsoft.VC90.CRT", glob(r'C:\Microsoft.VC90.CRT\*.*'))]
 
 def get_version():
     try:
-        f = open("mist/_generated_version.py")
+        f = open("_generated_version.py")
     except EnvironmentError:
         return None
     ver = None
@@ -20,7 +20,7 @@ def get_version():
             break
 
     # Fix version in Inno Setup file too!
-    with open('mist.iss', 'r') as f :
+    with open('../mist.iss', 'r') as f :
         filedata = f.read()
     
     # Replace the target string
@@ -28,7 +28,7 @@ def get_version():
         filedata = filedata.replace('@version@', ver)
     
     # Write the file out again
-    with open('mist.iss', 'w') as f:
+    with open('../mist.iss', 'w') as f:
         f.write(filedata)
 
     return ver
@@ -53,7 +53,7 @@ setup(
     name = 'mist',
     version = get_version(),
     windows = [
-        {"script": "mist/mist.py", 'uac_info': "requireAdministrator", "icon_resources": [(1, "mist.ico")]},
+        {"script": "mist.py", 'uac_info': "requireAdministrator", "icon_resources": [(1, "..\\mist.ico")]},
     ],
     #packages = ['mist'],
 )
