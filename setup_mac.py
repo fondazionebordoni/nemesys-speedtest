@@ -26,7 +26,7 @@ def get_version():
 version = get_version()
 print "version: ", version
 APP = ['mist/mist.py']
-APP_NAME = 'MisuraInternetSpeedtest'
+APP_NAME = 'Mist'
 DATA_FILES = ['mist/mist.py']
 OPTIONS = {'argv_emulation': True,
 # 'plist': 'Info_mist.plist',
