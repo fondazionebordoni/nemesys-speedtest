@@ -17,8 +17,10 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging.config
+import os
 
 import paths
+
 
 configfile = paths.CONF_LOG
 logfile = paths.LOG_FILE
