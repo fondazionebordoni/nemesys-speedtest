@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
 import logging
 import random
 import socket
@@ -25,6 +26,8 @@ import time
 from fakefile import Fakefile
 import httpclient
 from measurementexception import MeasurementException
+import timeNtp
+from proof import Proof
 import netstat
 
 
@@ -97,6 +100,7 @@ class HttpTesterUp:
                 tcp_window_size = -1):
         
         logger.info("HTTP upload, %d sessions, TCP window size = %d" % (num_sessions, tcp_window_size))
+        start_timestamp = datetime.datetime.fromtimestamp(timeNtp.timestampNtp())
         measurement_id = "sess-%d" % random.randint(0, 100000)
         self.callback_update_speed = callback_update_speed
         upload_threads = []
@@ -128,9 +132,9 @@ class HttpTesterUp:
         self._time_to_stop = True
         if thread_error:
             raise MeasurementException(thread_error)
-        test = _test_from_server_response(response_content)
+        (duration, bytes_received) = _test_from_server_response(response_content)
         
-        if test['time'] < (total_test_time_secs * 1000) - 1:
+        if duration < (total_test_time_secs * 1000) - 1:
             raise MeasurementException("Test non risucito - tempo ritornato dal server non corrisponde al tempo richiesto.")
         bytes_read = 0
         for upload_thread in upload_threads:
@@ -146,12 +150,15 @@ class HttpTesterUp:
             logger.warn("Bytes read from file > tx_diff, alternative calculation of spurious traffic")
             for thread in self._read_measure_threads:
                 thread.join()
-            spurious = float(self._partial_tx_bytes - test['bytes'])/float(self._partial_tx_bytes)
+            spurious = float(self._partial_tx_bytes - bytes_received)/float(self._partial_tx_bytes)
         logger.info("Traffico spurio: %0.4f" % spurious)
-        test['bytes_total'] = int(test['bytes'] * (1 + spurious))
-        test['rate_tot_secs'] = [x * (1 + spurious) for x in test['rate_secs']]
-        test['spurious'] = spurious
-        return test
+        bytes_total = int(bytes_received * (1 + spurious))
+        return Proof(test_type='upload_http', 
+                     start_time=start_timestamp, 
+                     duration=duration, 
+                     bytes_nem=bytes_received, 
+                     bytes_tot=bytes_total,
+                     spurious=spurious)
     
 
 def _test_from_server_response(response):
@@ -159,31 +166,18 @@ def _test_from_server_response(response):
     Server response is a comma separated string containing:
     <total_bytes received 10th second>, <total_bytes received 9th second>, ... 
     '''
-    logger.info("Ricevuto risposta dal server: %s" % str(response))
-    test = {}
-    test['type'] = 'upload_http'
+    logger.debug("Ricevuto risposta dal server: %s" % str(response))
     if not response or len(response) == 0:
-        logger.error("Got empty response from server")
-        test['rate_medium'] = -1
-        test['rate_max'] = -1
-        test['rate_secs'] = -1
+        MeasurementException("Ricevuto risposta vuota dal server")
     else:
         try:
             results = map(int, response.strip(']').strip('[').split(', '))
         except:
             raise MeasurementException("Ricevuto risposta errata dal server")
-        test['time'] = len(results) * 1000
+        time = len(results) * 1000
         partial_bytes = [float(x) for x in results] 
-        test['rate_secs'] = []
-        if partial_bytes:
-            bytes_max = max(partial_bytes)
-            test['rate_max'] = bytes_max * 8 / 1000 # Bytes in one second
-            if test['time'] > 0:
-                test['rate_secs'] = [ b * 8 / 1000 for b in partial_bytes ]
-        else:
-            test['rate_max'] = 0
-        test['bytes'] = int(sum(partial_bytes))
-    return test
+        bytes_received = int(sum(partial_bytes))
+    return (time, bytes_received)
 
 class UploadThread(threading.Thread):
     

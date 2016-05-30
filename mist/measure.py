@@ -145,40 +145,40 @@ class Measure:
         
     def savetest(self, test):
         '''
-        Salva l'oggetto Test ricevuto nel file XML interno.
+        Salva l'oggetto BestTest ricevuto nel file XML interno.
         '''
-     
-        test_results = test.dict()
+        profiler_info = test.profiler_info
+        proof = test.proof
         
         status = {-1:"none", 0:"false", 1:"true"}
         
-        wireless = {'ID':{'tag':'interface'}, 'attr':{'type':'wireless'}, 'val':[status[test_results['Wireless']]]}
-        ethernet = {'ID':{'tag':'interface'}, 'attr':{'type':'ethernet'}, 'val':[status[test_results['Ethernet']]]}
+        wireless_dict = {'ID':{'tag':'interface'}, 'attr':{'type':'wireless'}, 'val':[status[profiler_info['Wireless']]]}
+        ethernet_dict = {'ID':{'tag':'interface'}, 'attr':{'type':'ethernet'}, 'val':[status[profiler_info['Ethernet']]]}
         interfaces = {'ID':{'tag':'interfaces'}, 'val':[]}
         
-        for interface in [ethernet, wireless]:
+        for interface in [ethernet_dict, wireless_dict]:
             if interface['val'][0] != 'none':
                 interfaces['val'].append(interface)
 
-        traffic = {'ID':{'tag':'traffic'}, 'val':[test_results['Traffic']]}
-        hosts = {'ID':{'tag':'hosts'}, 'val':[test_results['Hosts']]}        
+        traffic_dict = {'ID':{'tag':'traffic'}, 'val':[profiler_info['Traffic']]}
+        hosts_dict = {'ID':{'tag':'hosts'}, 'val':[profiler_info['Hosts']]}        
         
-        ram = {'ID':{'tag':'ram'}, 'val':[test_results['RAM']]}
-        cpu = {'ID':{'tag':'cpu'}, 'val':[test_results['CPU']]}
+        ram_dict = {'ID':{'tag':'ram'}, 'val':[profiler_info['RAM']]}
+        cpu_dict = {'ID':{'tag':'cpu'}, 'val':[profiler_info['CPU']]}
         
-        bytesOth = {'ID':{'tag':'byte'}, 'attr':{'type':'other'}, 'val':[test.bytesOth]}
-        bytesNem = {'ID':{'tag':'byte'}, 'attr':{'type':'nemesys'}, 'val':[test.bytes]}
+        bytes_oth_dict = {'ID':{'tag':'byte'}, 'attr':{'type':'other'}, 'val':[proof.bytes_tot - proof.bytes_nem]}
+        bytes_nem_dict = {'ID':{'tag':'byte'}, 'attr':{'type':'nemesys'}, 'val':[proof.bytes_nem]}
 
-        bytes = {'ID':{'tag':'bytes'}, 'val':[bytesNem, bytesOth]}
-        time = {'ID':{'tag':'time'}, 'val':[test.time]}
-        done = {'ID':{'tag':'done'}, 'val':[test.done]}
+        test_bytes_dict = {'ID':{'tag':'bytes'}, 'val':[bytes_nem_dict, bytes_oth_dict]}
+        time_dict = {'ID':{'tag':'time'}, 'val':[proof.duration]}
+        done_dict = {'ID':{'tag':'done'}, 'val':[test.n_tests_done]}
 
-        value = {'ID':{'tag':'value'}, 'val':[done, time, bytes]}
-        profiler = {'ID':{'tag':'profiler'}, 'val':[cpu, ram, interfaces, hosts, traffic]}
+        proof_dict = {'ID':{'tag':'value'}, 'val':[done_dict, time_dict, test_bytes_dict]}
+        profiler_dict = {'ID':{'tag':'profiler'}, 'val':[cpu_dict, ram_dict, interfaces, hosts_dict, traffic_dict]}
         
-        test = {'ID':{'tag':'test'}, 'attr':{'type':test.type}, 'val':[profiler, value]}
+        test_dict = {'ID':{'tag':'test'}, 'attr':{'type':proof.type}, 'val':[profiler_dict, proof_dict]}
         
-        body = {'ID':{'tag':'body'}, 'val':[test]}
+        body = {'ID':{'tag':'body'}, 'val':[test_dict]}
         
         self.dict2node(body, self._root)
         

@@ -16,13 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
 import logging
 from optparse import OptionParser
+import ping
 
 from host import Host
 import iptools
 from measurementexception import MeasurementException
-import ping
+from proof import Proof
+from timeNtp import timestampNtp
 from testerhttpdown import HttpTesterDown
 from testerhttpup import HttpTesterUp
 
@@ -73,21 +76,22 @@ class Tester:
         return self._testerhttpup.test_up(url, callback_update_speed, num_sessions=num_sessions, tcp_window_size=tcp_window_size)        
          
     def testping(self, timeout = 10):
-        test = {}
-        test['type'] = 'ping'
-        test['time'] = 0
+        # si utilizza funzione ping.py
+        test_type = 'ping'
+        start = datetime.fromtimestamp(timestampNtp())
+        elapsed = 0
 
         try:
             # Il risultato deve essere espresso in millisecondi
             RTT = ping.do_one(self._host.ip, timeout)
             if RTT != None:
-                test['time'] = RTT * 1000
+                elapsed = RTT * 1000
             else:
                 raise Exception("Ping timeout")
         except Exception as e:
             raise MeasurementException('Impossibile eseguire il ping: %s' % e)
 
-        return test
+        return Proof(test_type=test_type, start_time=start, duration=elapsed, bytes_nem=0)
 
 
 def main():

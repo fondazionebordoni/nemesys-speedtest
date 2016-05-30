@@ -18,21 +18,19 @@
 
 from datetime import datetime
 import logging
-import os
-import ping
 from threading import Thread
 from time import sleep
 from urlparse import urlparse
 
+from best_test import BestTest
 from deliverer import Deliverer
 import gui_event
 import iptools
 from measure import Measure
 from measurementexception import MeasurementException
+import server
 import paths
-from proof import Proof
 import result_sender
-from server import Server
 import system_resource
 import task
 import test_type
@@ -42,28 +40,22 @@ from timeNtp import timestampNtp
 
 logger = logging.getLogger(__name__)
 
-TASK_FILE = '40000'
-
-TH_PACKETDROP = 0.05    # Soglia per numero di pacchetti persi #
 TH_TRAFFIC = 0.1    # Soglia per il rapporto tra traffico 'spurio' e traffico totale #
-TH_INVERTED = 0.9    # Soglia per il rapporto tra traffico 'spurio' e traffico totale nella direzione opposta a quella di test #
-
 TIME_LAG = 5    # Tempo di attesa tra una misura e la successiva in caso di misura fallita #
 MAX_TEST_RETRY = 3
 
 
 class SpeedTester(Thread):
 
-    def __init__(self, version, event_dispatcher, system_profiler, mist_options):#do_profile = True):
+    def __init__(self, version, event_dispatcher, system_profiler, mist_options):
         Thread.__init__(self)
         
         self._version = version
         self._event_dispatcher = event_dispatcher
-#         self._do_profile = do_profile
-        self._profiler = system_profiler #sysProfiler(event_dispatcher, 'tester')
+        self._profiler = system_profiler 
         self._client = mist_options.client
         self._scheduler = mist_options.scheduler
-        self._tasktimeout = mist_options.tasktimeout
+#         self._tasktimeout = mist_options.tasktimeout
         self._httptimeout = mist_options.httptimeout
         self._testtimeout = mist_options.testtimeout
         self._md5conf = mist_options.md5conf
@@ -81,99 +73,6 @@ class SpeedTester(Thread):
         return self._running
 
     
-    def _get_server(self, servers=set([Server('NAMEX', '193.104.137.133', 'NAP di Roma'), Server('MIX', '193.104.137.4', 'NAP di Milano')])):
-
-        maxREP = 4
-        best = {}
-        best['start'] = None
-        best['delay'] = 8000
-        best['server'] = None
-        RTT = {}
-
-        self._event_dispatcher.postEvent(gui_event.UpdateEvent("Scelta del server di misura in corso"))
-
-        for server in servers:
-            RTT[server.name] = best['delay']
-
-        for _ in range(maxREP):
-            sleep(1)
-            for server in servers:
-                try:
-                    start = None
-                    delay = 0
-                    start = datetime.fromtimestamp(timestampNtp())
-                    delay = ping.do_one("%s" % server.ip, 1) * 1000
-                    if (delay < RTT[server.name]):
-                        RTT[server.name] = delay
-                    if (delay < best['delay']):
-                        best['start'] = start
-                        best['delay'] = delay
-                        best['server'] = server
-                except Exception as e:
-                    logger.info('Errore durante il ping dell\'host %s: %s' % (server.ip, e))
-                    pass
-
-        if best['server'] != None:
-            for server in servers:
-                if (RTT[server.name] != 8000):
-                    self._event_dispatcher.postEvent(gui_event.UpdateEvent("Distanza dal %s: %.1f ms" % (server.name, RTT[server.name])))
-                else:
-                    self._event_dispatcher.postEvent(gui_event.UpdateEvent("Distanza dal %s: TimeOut" % (server.name)))
-            self._event_dispatcher.postEvent(gui_event.UpdateEvent("Scelto il server di misura %s" % best['server'].name, gui_event.UpdateEvent.MAJOR_IMPORTANCE))
-        else:
-            self._event_dispatcher.postEvent(gui_event.ErrorEvent("Impossibile eseguire i test poiche' i server risultano irragiungibili da questa linea. Contattare l'helpdesk del progetto Misurainternet per avere informazioni sulla risoluzione del problema."))
-
-        return best['server']
-    
-        
-    def _test_gating(self, test, testtype):
-        '''
-        Funzione per l'analisi del contabit ed eventuale gating dei risultati del test
-        '''
-        test_status = False
-
-        byte_nem = test['bytes']
-        byte_all = test['bytes_total']
-        logger.info('Analisi dei rapporti di traffico')
-        logger.debug('Dati per la soglia: byte_nem: %d | byte_all: %d' % (byte_nem, byte_all))
-        if byte_all > 0:
-            traffic_ratio = float(byte_all - byte_nem) / float(byte_all)
-            value1 = "%.2f%%" % (traffic_ratio * 100)
-#             logger.info('Traffico MIST: [ %d pacchetti di %d totali e %.1f Kbyte di %.1f totali ]' % (packet_nem, packet_all, byte_nem / 1024.0, byte_all / 1024.0))
-            if (abs(traffic_ratio) <= TH_TRAFFIC):
-                test_status = True
-                info = 'Traffico internet non legato alla misura: percentuale %s' % value1
-                self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC, 
-                                                                         system_resource.SystemResource(status=True, info=info, value=value1), False))
-            elif (abs(traffic_ratio) > TH_TRAFFIC):
-                info = 'Eccessiva presenza di traffico internet non legato alla misura: percentuale %s' % value1
-                self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC, 
-                                                                         system_resource.SystemResource(status=False, info=info, value=value1), True))
-            else:
-                self._event_dispatcher.postEvent(gui_event.ErrorEvent('Errore durante la verifica del traffico di misura: impossibile salvare i dati.'))
-        else:
-            info = 'Errore durante la misura, impossibile analizzare i dati di test'
-            self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC, 
-                                                                     system_resource.SystemResource(status=False, info=info, value='error'), True))
-        
-        return test_status
-    
-    
-    def _get_partial_bandwidth(self, secs):         
-        return float(sum(secs))/len(secs)
-
-
-    def _get_bandwidth_from_test(self, test):
-
-        try:
-            return self._get_partial_bandwidth(test['rate_tot_secs'])
-        except KeyError:
-            if test['time'] > 0:
-                return float( test['bytes_total'] * 8 )/ test['time'] 
-            else:
-                raise Exception("Errore durante la valutazione del test")
-    
-
     def receive_partial_results_up(self, **args):
         '''Intermediate results from tester'''
         speed = args['speed']
@@ -191,17 +90,18 @@ class SpeedTester(Thread):
     def _do_test(self, tester, t_type, my_task, previous_profiler_result):
         test_done = 0
         test_good = 0
-        test_todo = 0
         retry = 0
-        best_value = None
-        myProof = None
-        
+        best_value = 4444
+
         if t_type == test_type.PING:
             test_todo = my_task.ping
         elif test_type.is_http_down(t_type):
             test_todo = my_task.http_download
         elif test_type.is_http_up(t_type):
             test_todo = my_task.http_upload
+        else:
+            logger.warn("Tipo di test da effettuare non definito: %s" % test_type.get_string_type(t_type))
+            test_todo = 0
 
         while (test_good < test_todo) and self._running:
             self._progress += self._progress_step
@@ -211,11 +111,6 @@ class SpeedTester(Thread):
             sleep(1)
             
             self._event_dispatcher.postEvent(gui_event.UpdateEvent("Test %d di %d di %s" % (test_good + 1, test_todo, test_type.get_string_type(t_type ).upper())))
-            
-            myProof = Proof()
-            myProof.update(previous_profiler_result)
-            myProof.update(profiler_result)
-            
             try:
                 test_done += 1
                 message = "Tentativo numero %s con %s riusciti su %s da collezionare" % (test_done, test_good, test_todo)
@@ -224,41 +119,39 @@ class SpeedTester(Thread):
                 logger.info("[%s] %s [%s]" % (short_string, message, short_string))
                 if t_type == test_type.PING:
                     testres = tester.testping()
-                elif t_type == test_type.HTTP_DOWN:
-                    testres = tester.testhttpdown(self.receive_partial_results_down)
-                elif t_type == test_type.HTTP_UP:
-                    testres = tester.testhttpup(self.receive_partial_results_up, bw=self._client.profile.upload*1000)
-                else:
-                    logger.warn("Tipo di test da effettuare non definito: %s" % test_type.get_string_type(t_type))
-
-                if t_type == test_type.PING:
-                    logger.info("[ Ping: %s ] [ Actual Best: %s ]" % (testres['time'], best_value))
-                    self._event_dispatcher.postEvent(gui_event.ResultEvent(test_type.PING, testres['time'], is_intermediate = True))
-                    self._event_dispatcher.postEvent(gui_event.UpdateEvent("Risultato %s (%s di %s): %.1f ms" % (test_type.get_string_type(t_type ).upper(), test_good + 1, test_todo, testres['time'])))
-                    if best_value == None:
-                        best_value = 4444
-                    if testres['time'] < best_value:
-                        best_value = testres['time']
-                        myProof.update(testres)
+                    logger.info("[ Ping: %s ] [ Actual Best: %s ]" % (testres.duration, best_value))
+                    self._event_dispatcher.postEvent(gui_event.ResultEvent(test_type.PING, testres.duration, is_intermediate = True))
+                    self._event_dispatcher.postEvent(gui_event.UpdateEvent("Risultato %s (%s di %s): %.1f ms" % (test_type.get_string_type(t_type ).upper(), test_good + 1, test_todo, testres.duration)))
+                    if testres.duration < best_value:
+                        best_value = testres.duration
                         best_testres = testres
-                        
+                        best_testres_profiler = profiler_result
                 else:
-                    bandwidth = self._get_bandwidth_from_test(testres)
+                    if test_type.is_http_down(t_type):
+                        testres = tester.testhttpdown(self.receive_partial_results_down)
+                    elif test_type.is_http_up(t_type):
+                        testres = tester.testhttpup(self.receive_partial_results_up, bw=self._client.profile.upload*1000)
+                    bandwidth = testres.bytes_tot*8/float(testres.duration)
                     self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type, (bandwidth), is_intermediate = True))
                     self._event_dispatcher.postEvent(gui_event.UpdateEvent("Risultato %s (%s di %s): %s" % (test_type.get_string_type(t_type ).upper(), test_good + 1, test_todo, int(bandwidth))))
-                    if test_good >= 0:
-                        if not (self._test_gating(testres, t_type )):
-                            raise Exception("superata la soglia di traffico spurio.")
-                        else:                            
-                            logger.info("[ Bandwidth in %s : %s ] [ Actual Best: %s ]" % (t_type , bandwidth, best_value))
-                            if best_value == None:
-                                best_value = 0
-                            if bandwidth > best_value:
-                                best_value = bandwidth
-                                best_testres = testres
+                    spurious_percent = "%.2f%%" % (testres.spurious * 100)
+                    if testres.spurious > TH_TRAFFIC:
+                        info = 'Eccessiva presenza di traffico internet non legato alla misura: percentuale %s' % spurious_percent
+                        self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC, 
+                                                        system_resource.SystemResource(status=False, info=info, value=spurious_percent), True))
+                        raise Exception("superata la soglia di traffico spurio.")
                     else:
+                        info = 'Traffico internet non legato alla misura: percentuale %s' % spurious_percent
+                        self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC, 
+                                                        system_resource.SystemResource(status=True, info=info, value=spurious_percent), False))
+
+                    logger.info("[ Bandwidth in %s : %s ] [ Actual Best: %s ]" % (t_type , bandwidth, best_value))
+                    if best_value == None:
+                        best_value = 0
+                    if bandwidth > best_value:
+                        best_value = bandwidth
                         best_testres = testres
-                        
+                        best_testres_profiler = profiler_result
                 test_good += 1
                 self._progress += self._progress_step
                 self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
@@ -272,11 +165,10 @@ class SpeedTester(Thread):
                     sleep(TIME_LAG)
                 else:
                     raise Exception("Superato il numero massimo di errori possibili durante una misura.")
-        if self._running:            
-            best_testres['done'] = test_done
-            myProof.update(best_testres)
-        return myProof
+        previous_profiler_result.update(best_testres_profiler)
+        return BestTest(proof=best_testres, profiler_info=previous_profiler_result, n_tests_done=test_done)
     
+
     
     def run(self):
         self._running = True
@@ -298,16 +190,16 @@ class SpeedTester(Thread):
         self._progress += 0.01
         self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
         if (self.is_oneshot()):
-            server = self._get_server()
+            chosen_server = server.get_server(self._event_dispatcher)
         else:
-            server = None        
+            chosen_server = None        
         my_task = task.download_task(url=urlparse(self._scheduler), 
                                      client_id=self._client.id, 
                                      certificate=self._client.isp.certificate, 
                                      version=self._version, 
                                      md5conf=self._md5conf, 
                                      timeout=self._httptimeout, 
-                                     server=server)
+                                     server=chosen_server)
         
         if my_task == None:
             self._event_dispatcher.postEvent(gui_event.ErrorEvent("Impossibile eseguire ora i test di misura. Riprovare tra qualche secondo."))
@@ -343,36 +235,28 @@ class SpeedTester(Thread):
                         # Has been interrupted
                         self._profiler.stop_background_profiling()
                         return
-                    best_bandwidth = 0
                     try:
                         sleep(1)
-                        test = self._do_test(tester, t_type, my_task, profiler_result)
-                        measure.savetest(test) # Saves test in XML file
+                        best_test = self._do_test(tester, t_type, my_task, profiler_result)
+                        measure.savetest(best_test) # Saves test in XML file
                         self._event_dispatcher.postEvent(gui_event.UpdateEvent("Elaborazione dei dati"))
-                        if t_type != test_type.PING:
-                            bandwidth = self._get_bandwidth_from_test(test._test)
-                            if (bandwidth > best_bandwidth):
-                                best_bandwidth = bandwidth
-
                         if t_type == test_type.PING:
-                            self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type, test.time))
+                            self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type, best_test.proof.duration))
                         elif test_type.is_http(t_type):
-                            self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , self._get_partial_bandwidth(test._test['rate_tot_secs'])))
+                            self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type , best_test.proof.bytes_tot*8/float(best_test.proof.duration)))
                     except MeasurementException as e:
                             self._event_dispatcher.postEvent(gui_event.ErrorEvent("Errore durante il test: %s" % e.message))
         
-                
                 stop_time = datetime.fromtimestamp(timestampNtp())
                 measure.savetime(start_time, stop_time)
-                
                 logger.debug(measure)
                 
                 # # Salvataggio della misura ##
-                "TODO: measure.save"
                 self._progress += self._progress_step
                 self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
-                
-                self._save_measure(measure)
+                num_sent_files = result_sender.save_and_send_measure(measure, self._event_dispatcher, self._deliverer)
+                if (num_sent_files > 0) and self._client.is_oneshot():
+                    os.remove(paths.CONF_MAIN)
                 self._event_dispatcher.postEvent(gui_event.ProgressEvent(1))
                 # # Fine Salvataggio ##
                 
@@ -385,17 +269,3 @@ class SpeedTester(Thread):
         self._running = False
     
   
-    def _save_measure(self, measure):
-        # Salva il file con le misure
-#         f = open('%s/measure_%s.xml' % (paths.OUTBOX_DAY_DIR, measure.id), 'w')
-        f = open(os.path.join(paths.OUTBOX_DAY_DIR, 'measure_%s.xml' % measure.id), 'w')
-        f.write(str(measure))
-        # Aggiungi la data di fine in fondo al file
-        f.write('\n<!-- [finished] %s -->' % datetime.fromtimestamp(timestampNtp()).isoformat())
-        f.close()
-
-        num_sent_files = result_sender.upload(self._event_dispatcher, self._deliverer)
-        if (num_sent_files > 0) and self._client.is_oneshot():
-            os.remove(paths.CONF_MAIN)
-        
-        return f.name

@@ -17,6 +17,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import Queue
+import datetime
 import logging
 import random
 import socket
@@ -25,6 +26,8 @@ import time
 import urllib2
 
 from measurementexception import MeasurementException
+import timeNtp
+from proof import Proof
 import netstat
 
 
@@ -58,6 +61,7 @@ class HttpTesterDown:
 
 
     def test_down(self, url, total_test_time_secs = TOTAL_MEASURE_TIME, callback_update_speed = None, num_sessions = 7):
+        start_timestamp = datetime.datetime.fromtimestamp(timeNtp.timestampNtp())
         self._timeout = False
         self._received_end = False
         self.callback_update_speed = callback_update_speed
@@ -70,7 +74,6 @@ class HttpTesterDown:
 
         logger.debug("Starting download test...")
         self._init_counters()
-        test = _init_test('download_http')
         read_thread = threading.Timer(1.0, self._read_down_measure)
         read_thread.start()
         self._read_measure_threads.append(read_thread)
@@ -112,15 +115,14 @@ class HttpTesterDown:
             raise MeasurementException("Ottenuto banda zero")
         spurio = float(total_bytes - filebytes) / float(total_bytes)
         logger.info("Traffico spurio: %f" % spurio)
-
-        # "Trucco" per calcolare i bytes corretti da inviare al backend basato sul traffico spurio
-        test['bytes_total'] = self._bytes_total #sum(self._measures_tot)#total_bytes
-        test['bytes'] = int(round(self._bytes_total * (1 - spurio))) #measured_bytes
-        test['time'] = (self._endtime - self._starttime) * 1000.0
-        test['rate_tot_secs'] = self._measures_tot
-        test['spurious'] = spurio
-
-        return test
+        test_time = (self._endtime - self._starttime) * 1000.0
+        bytes_nem = int(round(self._bytes_total * (1 - spurio)))
+        return Proof(test_type='download_http', 
+                     start_time=start_timestamp, 
+                     duration=test_time, 
+                     bytes_nem=bytes_nem,
+                     bytes_tot=self._bytes_total,
+                     spurious=spurio)
 
         
         
@@ -203,17 +205,7 @@ class HttpTesterDown:
             read_thread = threading.Timer(1.0, self._read_down_measure)
             self._read_measure_threads.append(read_thread)
             read_thread.start()
-            
-           
 
-def _init_test(testtype):
-    test = {}
-    test['type'] = testtype
-    test['time'] = 0
-    test['bytes'] = 0
-    test['bytes_total'] = 0
-    return test
-        
         
 if __name__ == '__main__':
     import log_conf

@@ -1,6 +1,5 @@
 # result_sender.py
 # -*- coding: utf8 -*-
-
 # Copyright (c) 2010 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -20,18 +19,32 @@ Created on 22/apr/2016
 
 @author: ewedlund
 '''
+
+from datetime import datetime
 import logging
 import os
 import re
 import time
 
 import gui_event
+from timeNtp import timestampNtp
 import paths
 import xmlutils
 
 
 logger = logging.getLogger(__name__)
 MAX_SEND_RETRY = 3
+
+def save_and_send_measure(measure, event_dispatcher, deliverer):
+    # Salva il file con le misure
+    f = open(os.path.join(paths.OUTBOX_DAY_DIR, 'measure_%s.xml' % measure.id), 'w')
+    f.write(str(measure))
+    # Aggiungi la data di fine in fondo al file
+    f.write('\n<!-- [finished] %s -->' % datetime.fromtimestamp(timestampNtp()).isoformat())
+    f.close()
+    num_sent_files = upload(event_dispatcher, deliverer)
+    return num_sent_files
+
 
 
 def upload(event_dispatcher, deliverer, fname=None, delete=True):
