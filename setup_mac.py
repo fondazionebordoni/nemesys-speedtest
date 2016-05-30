@@ -47,8 +47,8 @@ OPTIONS = {'argv_emulation': True,
 
 setup(
     app=APP,
-    name='MisuraInternetSpeedtest',
-    version='2.0.1',
+    name='Mist',
+    version='%s' % version,
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
