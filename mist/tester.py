@@ -20,6 +20,7 @@ from datetime import datetime
 import logging
 from optparse import OptionParser
 import ping
+import socket
 
 from host import Host
 import iptools
@@ -52,7 +53,7 @@ class Tester:
         self._username = username
         self._password = password
         self._timeout = timeout
-        
+        socket.setdefaulttimeout(self._timeout)
         self._testerhttpup = HttpTesterUp(dev, HTTP_BUFF)
         self._testerhttpdown = HttpTesterDown(dev, HTTP_BUFF)
         
@@ -149,17 +150,10 @@ def main():
                 printout_http(res)
             except MeasurementException as e:
                 print("Error: %s" % str(e))
-        elif options.testtype == 'ftpup':
-            file_size = bw * 10 / 8
-            try:
-                res = t.testftpup(file_size, '/upload/r.raw')
-            except MeasurementException as e:
-                res = {'errorcode': 1, 'error': str(e)}
-            printout_ftp(res)
         elif options.testtype == 'ping':
             try:
                 res = t.testping()
-                print("Ping: %.2f milliseconds" % res['time'])
+                print("Ping: %.2f milliseconds" % res.duration)
             except Exception as e:
                 print("Error: %s" % str(e))
         else:
@@ -172,17 +166,9 @@ def main():
 
 
 def printout_http(res):
-    print("Medium speed: %d" % (int(sum(res['rate_tot_secs']))/len(res['rate_tot_secs'])))
-#                 print("Spurious traffic: %.2f%%" % float(res['spurious'] * 100))
+    print("Medium speed: %d kbps" % (int(res.bytes_tot*8/float(res.duration))))
+    print("Spurious traffic: %.2f%%" % (res.spurious*100.0))
 
-
-def printout_ftp(res):
-    if res['errorcode'] == 0:
-        speed = float(res['bytes_total'] * 8) / float(res['time'])
-        print("Medium speed: %d" % int(speed))
-#                 print("Spurious traffic: %.2f%%" % float(res['spurious'] * 100))
-    else:
-        print("Error: %s" % res['error'])
 
 
 if __name__ == '__main__':

@@ -55,7 +55,7 @@ class SpeedTester(Thread):
         self._profiler = system_profiler 
         self._client = mist_options.client
         self._scheduler = mist_options.scheduler
-#         self._tasktimeout = mist_options.tasktimeout
+#TODO: serve?         self._tasktimeout = mist_options.tasktimeout
         self._httptimeout = mist_options.httptimeout
         self._testtimeout = mist_options.testtimeout
         self._md5conf = mist_options.md5conf

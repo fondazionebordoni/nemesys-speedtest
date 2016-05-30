@@ -33,7 +33,7 @@ import netstat
 
 TOTAL_MEASURE_TIME = 10
 DOWNLOAD_TIMEOUT_DELAY = 5 #Wait another 5 secs in case end of file has not arrived  
-MAX_TRANSFERED_BYTES = 100 * 1000000 * 11 / 8 # 100 Mbps for 11 seconds
+MAX_TRANSFERED_BYTES = 1000 * 1000000 * 11 / 8 # 1000 Mbps for 11 seconds
 HTTP_TIMEOUT = 10.0 # 10 seconds timeout on open and read operations
 
 logger = logging.getLogger(__name__)
