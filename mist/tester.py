@@ -120,11 +120,17 @@ def main():
                                     help = "An ipaddress or FQDN of server host")
     
     (options, _) = parser.parse_args()
-#        This is for lab environment
-#         ip = iptools.getaddr(host=options.host, port=80)
-#         dev = iptoold.get_dev(host=options.host, port=80)
-    ip = iptools.getipaddr()
-    dev = iptools.get_dev(ip = ip)
+    try:
+        ip = iptools.getipaddr()
+        dev = iptools.get_dev(ip = ip)
+    except Exception:
+        try:
+            ip = iptools.getipaddr(host=options.host, port=80)
+            dev = iptools.get_dev(host=options.host, port=80)
+        except Exception:
+            print "Impossibile ottenere indirizzo e device, verificare la connessione all'host"
+            import sys
+            sys.exit(2)
     t = Tester(dev, ip, Host(options.host), timeout = 10.0, username = 'nemesys', password = '4gc0m244')
     if options.bandwidth.endswith("M"):
         bw = int(options.bandwidth[:-1]) * 1000000
