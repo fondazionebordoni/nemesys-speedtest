@@ -110,23 +110,26 @@ class Dialog(wx.Dialog):
         wx.Dialog.__init__(self, None, -1, title, pos)
         window_panel = wx.Panel(self)
 
-        self.label_info_login = wx.StaticText(window_panel, -1, "\nSe e' stata effettuata l'iscrizione inserire\ni codici di accesso (username e password)\nutilizzati per accedere all'area personale.\n", style=wx.ALIGN_CENTRE)
-        self.label_username = wx.StaticText(window_panel, -1, "Username:", style=wx.ALIGN_RIGHT)
-        self.text_username = wx.TextCtrl(window_panel, -1, default)
-        self.label_password = wx.StaticText(window_panel, -1, "Password:", style=wx.ALIGN_RIGHT)
-        self.text_password = wx.TextCtrl(window_panel, -1, "", style=wx.TE_PASSWORD)
-        self.button_login = wx.Button(window_panel, caption, "Accedi")
-        self.label_info_provincia = wx.StaticText(window_panel, -1, "\nSe NON e' stata effettuata l'iscrizione inserire\nla provincia in cui si sta effettuando\nla misura con MisuraInternet Speed Test.\n", style=wx.ALIGN_CENTRE)
-        self.label_provincia = wx.StaticText(window_panel, -1, "Provincia:", style=wx.ALIGN_RIGHT)
+        label_info_provincia = wx.StaticText(window_panel, -1, "\nSe NON e' stata effettuata l'iscrizione inserire\nla provincia in cui si sta effettuando\nla misura con MisuraInternet Speed Test.\n", style=wx.ALIGN_CENTRE)
+        label_provincia = wx.StaticText(window_panel, -1, "Provincia:", style=wx.ALIGN_RIGHT)
         self.text_provincia = wx.ComboBox(window_panel, choices=provinciaList, style=wx.CB_READONLY)
+        label_info_login = wx.StaticText(window_panel, -1, "\nSe e' stata effettuata l'iscrizione inserire\ni codici di accesso (username e password)\nutilizzati per accedere all'area personale.\n", style=wx.ALIGN_CENTRE)
+        label_username = wx.StaticText(window_panel, -1, "Username:", style=wx.ALIGN_RIGHT)
+        self.text_username = wx.TextCtrl(window_panel, -1, default)
+        label_password = wx.StaticText(window_panel, -1, "Password:", style=wx.ALIGN_RIGHT)
+        self.text_password = wx.TextCtrl(window_panel, -1, "", style=wx.TE_PASSWORD)
+        button_login = wx.Button(window_panel, caption, "Accedi")
 
-        self.SetSize((360, 304))
-        self.label_username.SetMinSize((80, 26))
-        self.text_username.SetMinSize((180, 26))
-        self.label_password.SetMinSize((80, 26))
-        self.text_password.SetMinSize((180, 26))
-        self.label_provincia.SetMinSize((80, 26))
         self.text_provincia.SetMinSize((80, 26))
+        self.text_username.SetMinSize((180, 26))
+        self.text_password.SetMinSize((180, 26))
+        
+        (pw_width, _) = label_password.GetSize().Get()
+        (username_width, _) = label_username.GetSize().Get()
+        if pw_width > username_width:
+            label_username.SetMinSize((pw_width, -1))
+        else:
+            label_password.SetMinSize((username_width, -1))
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_input_username = wx.BoxSizer(wx.HORIZONTAL)
@@ -134,26 +137,27 @@ class Dialog(wx.Dialog):
         sizer_input_provincia = wx.BoxSizer(wx.HORIZONTAL)
 
 
-        sizer_input_provincia.Add(self.label_provincia, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, border=2)
+        sizer_input_provincia.Add(label_provincia, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, border=2)
         sizer_input_provincia.Add(self.text_provincia, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, border=2)
 
-        sizer_input_username.Add(self.label_username, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, border=2)
-        sizer_input_username.Add(self.text_username, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, border=2)
+        sizer_input_username.Add(label_username, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_RIGHT, border=2)
+        sizer_input_username.Add(self.text_username, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_RIGHT, border=2)
 
-        sizer_input_password.Add(self.label_password, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, border=2)
+        sizer_input_password.Add(label_password, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, border=2)
         sizer_input_password.Add(self.text_password, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, border=2)
         
-        sizer_main.Add(self.label_info_provincia, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM, border=2)
-        sizer_main.Add(sizer_input_provincia, flag=wx.ALIGN_CENTER_HORIZONTAL, border=8)
-        sizer_main.Add(self.label_info_login, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM, border=2)
-        sizer_main.Add(sizer_input_username, flag=wx.ALIGN_CENTER_HORIZONTAL, border=8)
-        sizer_main.Add(sizer_input_password, flag=wx.ALIGN_CENTER_HORIZONTAL, border=8)
-        sizer_main.Add(self.button_login, flag=wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, border=8)
+        sizer_main.Add(label_info_provincia, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM | wx.ALL, border=8)
+        sizer_main.Add(sizer_input_provincia, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, border=2)
+        sizer_main.Add(label_info_login, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM | wx.ALL, border=2)
+        sizer_main.Add(sizer_input_username, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, border=2)
+        sizer_main.Add(sizer_input_password, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, border=2)
+        sizer_main.Add(button_login, flag=wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, border=8)
         
         window_panel.SetSizerAndFit(sizer_main)
+        self.Fit()
         self.Layout()
 
-        self.Bind(wx.EVT_BUTTON, self.button_pressed, self.button_login)
+        self.Bind(wx.EVT_BUTTON, self.button_pressed, button_login)
         self.text_password.Bind(wx.EVT_TEXT_PASTE, self._on_pw_paste)
 
 
