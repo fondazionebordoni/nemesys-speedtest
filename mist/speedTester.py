@@ -148,6 +148,7 @@ class SpeedTester(Thread):
                     logger.info("[ Bandwidth in %s : %s ] [ Actual Best: %s ]" % (t_type , bandwidth, best_value))
                     if best_value == None:
                         best_value = 0
+                        best_testres_profiler = profiler_result
                     if bandwidth > best_value:
                         best_value = bandwidth
                         best_testres = testres

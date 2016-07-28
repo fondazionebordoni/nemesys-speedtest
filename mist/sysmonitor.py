@@ -227,8 +227,7 @@ class SysMonitor():
         return system_resource.SystemResource(system_resource.RES_WIFI, status, value, info)
                 
     
-    def checkhosts(self, bandwidth_up=2048, bandwidth_down=2048, arping=1):
-        call_ping = False
+    def checkhosts(self, bandwidth_up=2048, bandwidth_down=2048, use_arp=True):
         value = None
         try:
             ip = iptools.getipaddr()
@@ -242,15 +241,14 @@ class SysMonitor():
                 info = 'La scheda di rete in uso ha un IP pubblico. Non controllo il numero degli altri host in rete.'
             else:
                 if (mask != 0):
-                    value = checkhost.countHosts(ip, mask, bandwidth_up, bandwidth_down, arping)
+                    value = checkhost.countHosts(ip, mask, bandwidth_up, bandwidth_down, use_arp)
                     logger.info('Trovati %d host in rete.' % value)
                     if value < 0:
                         raise SysmonitorException(sysmonitorexception.BADHOST, 'impossibile determinare il numero di host in rete.')
                     elif (value == 0):
-                        if arping == 1:
+                        if use_arp:
                             logger.warning("Passaggio a PING per controllo host in rete")
-                            call_ping = True
-                            return self.checkhosts(bandwidth_up, bandwidth_down, 0)
+                            return self.checkhosts(bandwidth_up, bandwidth_down, False)
                         else:
                             raise SysmonitorException(sysmonitorexception.BADHOST, 'impossibile determinare il numero di host in rete.')
                     elif value > TH_HOST:
@@ -263,8 +261,6 @@ class SysMonitor():
         except Exception as e:
             info = e
             status = False
-        if call_ping:
-            self.checkhosts(bandwidth_up, bandwidth_down, 0)
         return system_resource.SystemResource(system_resource.RES_HOSTS, status, value, info)
 
 
@@ -363,10 +359,10 @@ class SysMonitor():
         self.checkwireless()
     
     
-    def checkall(self, up, down, ispid, arping = 1):
+    def checkall(self, up, down, ispid, use_arp=True):
     
         self.mediumcheck()
-        self.checkhosts(up, down, ispid, arping)
+        self.checkhosts(up, down, ispid, use_arp)
         # TODO: Reinserire questo check quanto corretto il problema di determinazione del dato
         #checkdisk()
     
@@ -398,14 +394,14 @@ if __name__ == '__main__':
 #     except Exception as e:
 #         print 'Errore: %s' % e
     try:
-        print '\ncheckhosts (arping)'
-        print 'Test sysmonitor checkhosts: %s' % sysmonitor.checkhosts(2000, 2000, 1)  #ARPING
+        print '\ncheckhosts (ARP)'
+        print 'Test sysmonitor checkhosts: %s' % sysmonitor.checkhosts(2000, 2000, True)  #ARPING
     except Exception as e:
         print 'Errore: %s' % e
       
     try:
         print '\ncheckhosts (ping)'
-        print 'Test sysmonitor checkhosts: %s' % sysmonitor.checkhosts(2000, 2000, 0)  #PING
+        print 'Test sysmonitor checkhosts: %s' % sysmonitor.checkhosts(2000, 2000, False)  #PING
     except Exception as e:
         print 'Errore: %s' % e
       

@@ -59,11 +59,11 @@ class Tester:
         
         
 
-    def testhttpdown(self, callback_update_speed, num_sessions = 7):
+    def testhttpdown(self, callback_update_speed=None, num_sessions=7):
         url = "http://%s/file.rnd" % self._host.ip
         return self._testerhttpdown.test_down(url, 10, callback_update_speed, num_sessions=num_sessions)        
  
-    def testhttpup(self, callback_update_speed, bw=BW_100M):
+    def testhttpup(self, callback_update_speed=None, bw=BW_100M):
         url = "http://%s:8080/file.rnd" % self._host.ip
         if bw < BW_3M:
             num_sessions = 1
@@ -80,19 +80,16 @@ class Tester:
         # si utilizza funzione ping.py
         test_type = 'ping'
         start = datetime.fromtimestamp(timestampNtp())
-        elapsed = 0
-
+        RTT = None
         try:
-            # Il risultato deve essere espresso in millisecondi
             RTT = ping.do_one(self._host.ip, timeout)
-            if RTT != None:
-                elapsed = RTT * 1000
-            else:
-                raise Exception("Ping timeout")
         except Exception as e:
-            raise MeasurementException('Impossibile eseguire il ping: %s' % e)
+            raise MeasurementException("Impossibile effettuare il ping: %s" % e)
 
-        return Proof(test_type=test_type, start_time=start, duration=elapsed, bytes_nem=0)
+        if RTT == None:
+            raise MeasurementException("Ping timeout")
+
+        return Proof(test_type=test_type, start_time=start, duration=RTT*1000, bytes_nem=0)
 
 
 def main():
