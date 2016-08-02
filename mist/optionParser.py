@@ -152,6 +152,21 @@ class OptionParser(OptionParser):
         self.add_option('--down', dest = option, default = value, type = 'int',
                                             help = 'download bandwidth [%s]' % value)
     
+        # Isp options
+        # --------------------------------------------------------------------------
+        section = 'isp'
+        if (not config.has_section(section)):
+            config.add_section(section)
+    
+        option = 'ispid'
+        value = 'fub001'
+        try:
+            value = config.get(section, option)
+        except (ValueError, NoOptionError):
+            pass
+        self.add_option('--ispid', dest = option, default = value,
+                                            help = 'ISP id [%s]' % value)
+
         with open(paths.CONF_MAIN, 'w') as f:
             config.write(f)
     

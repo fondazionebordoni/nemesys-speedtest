@@ -60,8 +60,7 @@ def _getclient(options):
 
     p = profile.Profile(profile_id=None, upload=options.bandwidthup,
                                         download=options.bandwidthdown)
-    'TODO: fake ISP'
-    i = isp.Isp('fub001')
+    i = isp.Isp(options.ispid)
     return client.Client(client_id=options.clientid, profile=p, isp=i,
                                 geocode=None, username='speedtest',
                                 password=options.password)

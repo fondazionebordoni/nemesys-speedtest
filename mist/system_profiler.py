@@ -32,7 +32,7 @@ MESSAGE = [RES_OS, RES_CPU, RES_RAM, RES_ETH, RES_WIFI, RES_HOSTS, RES_TRAFFIC]
 
 class SystemProfiler(object):
 
-    def __init__(self, event_dispatcher, from_tester = False, checkable_set = set(ALL_RES), bandwidth_up = 2048, bandwidth_down = 2048):
+    def __init__(self, event_dispatcher, from_tester=False, checkable_set=set(ALL_RES), bandwidth_up=2048, bandwidth_down=2048, ispid='fub001'):
         
         self._event_dispatcher = event_dispatcher
         self._stop = False
@@ -47,6 +47,7 @@ class SystemProfiler(object):
         self._checkable_set = checkable_set
         self._bw_up = bandwidth_up
         self._bw_down = bandwidth_down
+        self._ispid = ispid
         self._available_check = OrderedDict \
         ([ \
         (RES_OS, None),\
@@ -102,7 +103,7 @@ class SystemProfiler(object):
             for res in resources:
                 if res in self._available_check:
                     if res == RES_HOSTS:
-                        result = self._sys_monitor.checkres(res, self._bw_up, self._bw_down)
+                        result = self._sys_monitor.checkres(res, self._bw_up, self._bw_down, self._ispid)
                     else:
                         result = self._sys_monitor.checkres(res)
                     sysmon_results[res] = result

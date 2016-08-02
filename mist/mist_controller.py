@@ -32,8 +32,9 @@ class MistController():
     def __init__(self, gui, version, event_dispatcher, mist_opts, task_file = None):
         self._gui = gui
         self._version = version
-        self._profiler = SystemProfiler(event_dispatcher, bandwidth_up=mist_opts.client.profile.upload, bandwidth_down=mist_opts.client.profile.download)
-        self._tester_profiler = SystemProfiler(event_dispatcher, bandwidth_up=mist_opts.client.profile.upload, bandwidth_down=mist_opts.client.profile.download, from_tester=True)
+        #TODO: Should not pass ISP id, invent something else
+        self._profiler = SystemProfiler(event_dispatcher, bandwidth_up=mist_opts.client.profile.upload, bandwidth_down=mist_opts.client.profile.download, ispid=mist_opts.client.isp.id)
+        self._tester_profiler = SystemProfiler(event_dispatcher, bandwidth_up=mist_opts.client.profile.upload, bandwidth_down=mist_opts.client.profile.download, ispid=mist_opts.client.isp.id, from_tester=True)
         self._event_dispatcher = event_dispatcher
         self._task_file = task_file
 #         self._do_profile = (no_profile == False)

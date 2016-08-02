@@ -45,8 +45,8 @@ class sendit(threading.Thread):
             self.status = 0
 
 
-def countHosts(ipAddress, netMask, bandwidthup, bandwidthdown, use_arp=False):
-    if not bool(re.search('^192\.168\.', ipAddress)):
+def countHosts(ipAddress, netMask, bandwidthup, bandwidthdown, provider='fub001', use_arp=False):
+    if ((provider == "fst001") or (provider.startswith('fub0'))) and (not bool(re.search('^192\.168\.', ipAddress))):
         realSubnet = False
         if bandwidthup == bandwidthdown and not bool(re.search('^10\.', ipAddress)):
             #profilo fibra

@@ -227,7 +227,7 @@ class SysMonitor():
         return system_resource.SystemResource(system_resource.RES_WIFI, status, value, info)
                 
     
-    def checkhosts(self, bandwidth_up=2048, bandwidth_down=2048, use_arp=True):
+    def checkhosts(self, bandwidth_up=2048, bandwidth_down=2048, ispid='fub001', use_arp=True):
         value = None
         try:
             ip = iptools.getipaddr()
@@ -241,7 +241,7 @@ class SysMonitor():
                 info = 'La scheda di rete in uso ha un IP pubblico. Non controllo il numero degli altri host in rete.'
             else:
                 if (mask != 0):
-                    value = checkhost.countHosts(ip, mask, bandwidth_up, bandwidth_down, use_arp)
+                    value = checkhost.countHosts(ip, mask, bandwidth_up, bandwidth_down, ispid, use_arp)
                     logger.info('Trovati %d host in rete.' % value)
                     if value < 0:
                         raise SysmonitorException(sysmonitorexception.BADHOST, 'impossibile determinare il numero di host in rete.')
@@ -395,13 +395,13 @@ if __name__ == '__main__':
 #         print 'Errore: %s' % e
     try:
         print '\ncheckhosts (ARP)'
-        print 'Test sysmonitor checkhosts: %s' % sysmonitor.checkhosts(2000, 2000, True)  #ARPING
+        print 'Test sysmonitor checkhosts: %s' % sysmonitor.checkhosts(2000, 2000, 'fst001', True)  #ARPING
     except Exception as e:
         print 'Errore: %s' % e
       
     try:
         print '\ncheckhosts (ping)'
-        print 'Test sysmonitor checkhosts: %s' % sysmonitor.checkhosts(2000, 2000, False)  #PING
+        print 'Test sysmonitor checkhosts: %s' % sysmonitor.checkhosts(2000, 2000, 'fst001', False)  #PING
     except Exception as e:
         print 'Errore: %s' % e
       
