@@ -91,7 +91,8 @@ class SpeedTester(Thread):
         test_done = 0
         test_good = 0
         retry = 0
-        best_value = 4444
+        best_ping_value = 4444
+        best_bw_value = -1
 
         if t_type == test_type.PING:
             test_todo = my_task.ping
@@ -119,11 +120,11 @@ class SpeedTester(Thread):
                 logger.info("[%s] %s [%s]" % (short_string, message, short_string))
                 if t_type == test_type.PING:
                     testres = tester.testping()
-                    logger.info("[ Ping: %s ] [ Actual Best: %s ]" % (testres.duration, best_value))
+                    logger.info("[ Ping: %s ] [ Actual Best: %s ]" % (testres.duration, best_ping_value))
                     self._event_dispatcher.postEvent(gui_event.ResultEvent(test_type.PING, testres.duration, is_intermediate = True))
                     self._event_dispatcher.postEvent(gui_event.UpdateEvent("Risultato %s (%s di %s): %.1f ms" % (test_type.get_string_type(t_type ).upper(), test_good + 1, test_todo, testres.duration)))
-                    if testres.duration < best_value:
-                        best_value = testres.duration
+                    if testres.duration < best_ping_value:
+                        best_ping_value = testres.duration
                         best_testres = testres
                         best_testres_profiler = profiler_result
                 else:
@@ -145,12 +146,9 @@ class SpeedTester(Thread):
                         self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC, 
                                                         system_resource.SystemResource(status=True, info=info, value=spurious_percent), False))
 
-                    logger.info("[ Bandwidth in %s : %s ] [ Actual Best: %s ]" % (t_type , bandwidth, best_value))
-                    if best_value == None:
-                        best_value = 0
-                        best_testres_profiler = profiler_result
-                    if bandwidth > best_value:
-                        best_value = bandwidth
+                    logger.info("[ Bandwidth in %s : %s ] [ Actual Best: %s ]" % (t_type , bandwidth, best_ping_value))
+                    if bandwidth > best_bw_value:
+                        best_bw_value = bandwidth
                         best_testres = testres
                         best_testres_profiler = profiler_result
                 test_good += 1
@@ -175,7 +173,7 @@ class SpeedTester(Thread):
         self._running = True
         self._event_dispatcher.postEvent(gui_event.UpdateEvent("Inizio dei test di misura", gui_event.UpdateEvent.MAJOR_IMPORTANCE))
         self._progress = 0.01
-        self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))        
+        self._event_dispatcher.postEvent(gui_event.ProgressEvent(self._progress))
         try:
             ip = iptools.getipaddr()
             dev = iptools.get_dev(ip = ip)
@@ -185,7 +183,7 @@ class SpeedTester(Thread):
             self._event_dispatcher.postEvent(gui_event.StopEvent(is_oneshot=self.is_oneshot()))
             self._running = False
             return
-        
+
         os = self._profiler.get_os()
         self._profiler.profile_in_background(set([system_resource.RES_CPU, system_resource.RES_RAM, system_resource.RES_ETH, system_resource.RES_WIFI]))
         self._progress += 0.01
@@ -202,7 +200,7 @@ class SpeedTester(Thread):
                                      timeout=self._httptimeout, 
                                      server=chosen_server)
         
-        if my_task == None:
+        if my_task is None:
             self._event_dispatcher.postEvent(gui_event.ErrorEvent("Impossibile eseguire ora i test di misura. Riprovare tra qualche secondo."))
         else:
             self._progress += 0.01
@@ -216,7 +214,7 @@ class SpeedTester(Thread):
                 total_num_tasks += 3 # Two profilations and save test
                 self._progress_step = (1.0 - self._progress)/total_num_tasks
 
-                if (my_task.server.location != None):
+                if (my_task.server.location is not None):
                     self._event_dispatcher.postEvent(gui_event.UpdateEvent("Selezionato il server di misura di %s" % my_task.server.location, gui_event.UpdateEvent.MAJOR_IMPORTANCE))
                 
                 start_time = datetime.fromtimestamp(timestampNtp())
