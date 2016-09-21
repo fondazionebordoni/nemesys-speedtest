@@ -34,19 +34,17 @@ def _ping(server):
 def timestampNtp():
     local = True
     for server in SERVERNTP:
-        delay = None
         timestamp = None
         try:
             delay = _ping(server)
-            if (delay != None):
+            if (delay is not None):
                 timestamp = _timestamp(server)
-                if (timestamp != None):
+                if (timestamp is not None):
                     local = False
                     break
         except Exception:
             pass
     if local:
-        server = 'this computer'
         timestamp = time.time()
     return timestamp
 

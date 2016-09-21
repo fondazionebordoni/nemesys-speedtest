@@ -56,7 +56,7 @@ class CheckSoftware():
             #data = "1.1.1:8"        # FAKE REPLY #
             #logger.debug(data)
             
-            if (re.search('(\.?\d+)+:',data) == None):
+            if (re.search('(\.?\d+)+:', data) is None):
                 logger.warning("Non e' stato possibile controllare la versione per risposta errata del server.")
                 return True
             
@@ -69,7 +69,7 @@ class CheckSoftware():
             ozionalmente preceduta da un punto                                    \.?
             che si ripeta piu' volte                                                        (\.?\d+)+
             '''
-            if (version != None):
+            if (version is not None):
                 self._lastVersion = version.string
                 logger.info("L'ultima versione sul server e' la %s" % self._lastVersion)
                 if (self._thisVersion != self._lastVersion):
@@ -112,7 +112,7 @@ class CheckSoftware():
             ozionalmente preceduta da un segno meno                         -?
             ma che non abbia alcun carattere dopo                             (?!.) 
             '''
-            if (deadline != None):
+            if (deadline is not None):
                 self._stillDay = deadline.string
                 logger.info("Giorni rimasti comunicati dal server: %s" % self._stillDay)
                 if (int(self._stillDay)>=0):

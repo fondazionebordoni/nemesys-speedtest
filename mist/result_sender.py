@@ -57,12 +57,12 @@ def upload(event_dispatcher, deliverer, fname=None, delete=True):
         allOK = True
         
         filenames = []
-        if (fname != None):
+        if (fname is not None):
             filenames.append(fname)
         else:    
             for root, _, files in os.walk(paths.OUTBOX_DIR):
                 for xmlfile in files:
-                    if (re.search('measure_[0-9]{14}.xml', xmlfile) != None):
+                    if (re.search('measure_[0-9]{14}.xml', xmlfile) is not None):
                         filenames.append(os.path.join(root, xmlfile))
         
         len_filenames = len(filenames)
@@ -80,7 +80,7 @@ def upload(event_dispatcher, deliverer, fname=None, delete=True):
                     zipname = deliverer.pack(filename)
                     response = deliverer.upload(zipname)
 
-                    if (response != None):
+                    if (response is not None):
                         (code, message) = parserepositorydata(response)
                         code = int(code)
                         logger.info('Risposta dal server di upload: [%d] %s' % (code, message))
@@ -130,7 +130,7 @@ def parserepositorydata(data):
     Valuta l'XML ricevuto dal repository, restituisce il codice e il messaggio ricevuto
     '''
     xml = xmlutils.getxml(data)
-    if (xml == None):
+    if (xml is None):
         logger.error('Nessuna risposta ricevuta')
         return None
 

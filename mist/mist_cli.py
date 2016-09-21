@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 24
 
-class bcolors:
+class bcolors(object):
     '''
     Add some color to the output,
     disable for Windows
@@ -113,7 +113,7 @@ class MistCli(Thread):
         except Exception:
             print 'Could not get length!'
             return string
-        if color != None:
+        if color is not None:
             string = color + string + bcolors.ENDC
         if (str_length + 4) > width:
             'TODO: split to several rows'
@@ -151,7 +151,7 @@ class MistCli(Thread):
             try:
                 info_string = str(resource_event.getValue().info)
                 status = resource_event.getValue().status
-                if status == None:
+                if status is not None:
                     color = None
                     info_string = '\t' + info_string
                 elif status == True:
@@ -187,6 +187,7 @@ class MistCli(Thread):
             message = "Upload (HTTP): %.0f kbps" % result_value
         else: 
             logger.error("Unknown result %s: %s" % (result_test_type, result_value))
+            message = ""
         self._update_messages(message, color)
 
 

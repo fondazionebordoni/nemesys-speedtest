@@ -76,7 +76,7 @@ def _countNetHosts(ipAddress, netMask, realSubnet=True, use_arp=False):
     Di default effettua i ping dei soli host appartenenti alla sottorete indicata (escludendo il 
     primo e ultimo ip).
     '''
-    nHosts = 0
+    n_hosts = 0
     ips = ipcalc.Network('%s/%d' % (ipAddress, netMask))
     net = ips.network()
     bcast = ips.broadcast()
@@ -84,7 +84,7 @@ def _countNetHosts(ipAddress, netMask, realSubnet=True, use_arp=False):
 
     if use_arp:
         try:
-            nHosts = arp.do_arping(ipAddress, netMask, realSubnet)
+            n_hosts = arp.do_arping(ipAddress, netMask, realSubnet)
         except Exception as e:
             logger.warn('Errore durante la ricerca host con ARP: %s' % e)
 
@@ -112,12 +112,12 @@ def _countNetHosts(ipAddress, netMask, realSubnet=True, use_arp=False):
 
             if(ping_thread.status):
                 logger.debug("Trovato host: %s (in %.2f ms)" % (ping_thread.ip, ping_thread.elapsed * 1000))
-                nHosts = nHosts + 1
+                n_hosts += 1
 
     if not realSubnet:
-        nHosts += 1
+        n_hosts += 1
     
-    return nHosts
+    return n_hosts
 
 
 if __name__ == '__main__':

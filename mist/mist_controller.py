@@ -13,11 +13,6 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-'''
-Created on 13/ott/2015
-
-@author: ewedlund
-'''
 
 import threading
 
@@ -28,55 +23,57 @@ from system_profiler import SystemProfiler
 
 
 class MistController():
-    
-    def __init__(self, gui, version, event_dispatcher, mist_opts, task_file = None):
+    def __init__(self, gui, version, event_dispatcher, mist_opts, task_file=None):
         self._gui = gui
         self._version = version
-        #TODO: Should not pass ISP id, invent something else
-        self._profiler = SystemProfiler(event_dispatcher, bandwidth_up=mist_opts.client.profile.upload, bandwidth_down=mist_opts.client.profile.download, ispid=mist_opts.client.isp.id)
-        self._tester_profiler = SystemProfiler(event_dispatcher, bandwidth_up=mist_opts.client.profile.upload, bandwidth_down=mist_opts.client.profile.download, ispid=mist_opts.client.isp.id, from_tester=True)
+        # TODO: Should not pass ISP id, invent something else
+        self._profiler = SystemProfiler(event_dispatcher, bandwidth_up=mist_opts.client.profile.upload,
+                                        bandwidth_down=mist_opts.client.profile.download, ispid=mist_opts.client.isp.id)
+        self._tester_profiler = SystemProfiler(event_dispatcher, bandwidth_up=mist_opts.client.profile.upload,
+                                               bandwidth_down=mist_opts.client.profile.download,
+                                               ispid=mist_opts.client.isp.id, from_tester=True)
         self._event_dispatcher = event_dispatcher
         self._task_file = task_file
-#         self._do_profile = (no_profile == False)
+        #         self._do_profile = (no_profile == False)
         self._speed_tester = None
         self._mist_opts = mist_opts
 
- 
     def play(self):
         '''Function called from GUI'''
         self._gui.set_busy(True)
-        if False: #self._do_profile:
-            self._profiler.profile_once_and_call_back(callback = self.measure, report_progress = True)
+        if False:  # self._do_profile:
+            self._profiler.profile_once_and_call_back(callback=self.measure, report_progress=True)
         else:
             self.measure(None)
-        #self.measure()
+            # self.measure()
 
     def check(self):
         '''Function called from GUI'''
         self._gui.set_busy(True)
-        self._profiler.profile_once_and_call_back(callback = self.profile_done_callback, report_progress = True)
+        self._profiler.profile_once_and_call_back(callback=self.profile_done_callback, report_progress=True)
 
-    def profile_done_callback(self, profiler_result = None):
-        '''Callback when check is done'''
-        self._event_dispatcher.postEvent(gui_event.UpdateEvent("Profilazione terminata", gui_event.UpdateEvent.MAJOR_IMPORTANCE))
+    def profile_done_callback(self, profiler_result=None):
+        """Callback when check is done"""
+        self._event_dispatcher.postEvent(
+            gui_event.UpdateEvent("Profilazione terminata", gui_event.UpdateEvent.MAJOR_IMPORTANCE))
         self._event_dispatcher.postEvent(gui_event.AfterCheckEvent())
         self._gui.set_busy(False)
 
-
-    def measure(self, profiler_result = None):
+    def measure(self, profiler_result=None):
         '''Callback to continue with measurement after profiling'''
         self._speed_tester = SpeedTester(self._version, self._event_dispatcher, self._tester_profiler, self._mist_opts)
         self._speed_tester.start()
 
     def kill_test(self):
-        if self._speed_tester != None and self._speed_tester.is_running():
+        if self._speed_tester is not None and self._speed_tester.is_running():
             self._speed_tester.stop()
             for thread in threading.enumerate():
                 if thread.isAlive():
                     try:
                         thread._Thread__stop()
                     except:
-                        self._event_dispatcher.postEvent(gui_event.ErrorEvent("Impossibile terminare il processo di misura %s" % str(thread.getName())))
-    
+                        self._event_dispatcher.postEvent(gui_event.ErrorEvent(
+                            "Impossibile terminare il processo di misura %s" % str(thread.getName())))
+
     def exit(self):
         paths.remove_temp_dirs()

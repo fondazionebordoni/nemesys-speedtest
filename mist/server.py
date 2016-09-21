@@ -43,42 +43,40 @@ class Server(Host):
         return 'id: %s; ip: %s; name: %s; location: %s' % (self.id, self.ip, self.name, self.location)
 
 
-def get_server(event_dispatcher, servers=set([Server('NAMEX', '193.104.137.133', 'NAP di Roma'), Server('MIX', '193.104.137.4', 'NAP di Milano')])):
+def get_server(event_dispatcher, servers={Server('NAMEX', '193.104.137.133', 'NAP di Roma'),
+                                          Server('MIX', '193.104.137.4', 'NAP di Milano')}):
 
     maxREP = 4
-    best = {}
-    best['start'] = None
-    best['delay'] = 8000
-    best['server'] = None
-    RTT = {}
+    best = {'start': None,
+            'delay': 8000,
+            'server': None
+            }
+    rtt = {}
 
     event_dispatcher.postEvent(gui_event.UpdateEvent("Scelta del server di misura in corso, attendere..."))
 
     for server in servers:
-        RTT[server.name] = best['delay']
+        rtt[server.name] = best['delay']
 
     for _ in range(maxREP):
         sleep(1.0)
         for server in servers:
             try:
-                start = None
-                delay = 0
                 start = datetime.fromtimestamp(timestampNtp())
                 delay = ping.do_one("%s" % server.ip, 1) * 1000
-                if (delay < RTT[server.name]):
-                    RTT[server.name] = delay
+                if (delay < rtt[server.name]):
+                    rtt[server.name] = delay
                 if (delay < best['delay']):
                     best['start'] = start
                     best['delay'] = delay
                     best['server'] = server
             except Exception:
-#                 logger.info('Errore durante il ping dell\'host %s: %s' % (server.ip, e))
                 pass
 
-    if best['server'] != None:
+    if best['server'] is not None:
         for server in servers:
-            if (RTT[server.name] != 8000):
-                event_dispatcher.postEvent(gui_event.UpdateEvent("Distanza dal %s: %.1f ms" % (server.name, RTT[server.name])))
+            if (rtt[server.name] != 8000):
+                event_dispatcher.postEvent(gui_event.UpdateEvent("Distanza dal %s: %.1f ms" % (server.name, rtt[server.name])))
             else:
                 event_dispatcher.postEvent(gui_event.UpdateEvent("Distanza dal %s: Timeout" % (server.name)))
         event_dispatcher.postEvent(gui_event.UpdateEvent("Scelto il server di misura %s" % best['server'].name, gui_event.UpdateEvent.MAJOR_IMPORTANCE))

@@ -141,7 +141,7 @@ def xml2task(data):
             value = re.sub("\D", "", results[index])
             if (len(value)<=0):
                 logger.error("Il file XML non contiene %s" % strings[index])
-                if (defaults[index] != None):
+                if (defaults[index] is not None):
                     value = defaults[index]
                 else:
                     raise Exception()
@@ -172,7 +172,7 @@ def xml2task(data):
 
 def getvalues(node, tag=None):
 
-    if (tag == None):
+    if (tag is None):
         values = []
         for child in node.childNodes:
             if child.nodeType == Node.TEXT_NODE:

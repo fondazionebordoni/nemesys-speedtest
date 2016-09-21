@@ -28,11 +28,10 @@ import zipfile
 from httputils import post_multipart
 from timeNtp import timestampNtp
 
-
 logger = logging.getLogger(__name__)
 
-class Deliverer(object):
 
+class Deliverer(object):
     def __init__(self, url, certificate, timeout=60):
         self._url = url
         self._certificate = certificate
@@ -48,16 +47,20 @@ class Deliverer(object):
         try:
             with open(filename, 'rb') as myfile:
                 body = myfile.read()
-            
+
             url = urlparse(self._url)
-            response = post_multipart(url, fields=None, files=[('myfile', os.path.basename(filename), body)], certificate=self._certificate, timeout=self._timeout)
+            response = post_multipart(url,
+                                      fields=None,
+                                      files=[('myfile', os.path.basename(filename), body)],
+                                      certificate=self._certificate,
+                                      timeout=self._timeout)
 
         except HTTPException as e:
-            os.remove(myfile.name)
+            os.remove(filename)
             logger.error('Impossibile effettuare l\'invio del file delle misure. Errore: %s' % e)
 
         except SSLError as e:
-            os.remove(myfile.name)
+            os.remove(filename)
             logger.error('Errore SSL durante l\'invio del file delle misure: %s' % e)
 
         return response
@@ -70,15 +73,16 @@ class Deliverer(object):
 
         # Aggiungi la data di invio in fondo al file
         with open(filename, 'a') as myfile:
-            myfile.write('\n<!-- [packed] %s -->' % datetime.datetime.fromtimestamp(timestampNtp()).isoformat())            
+            myfile.write('\n<!-- [packed] %s -->' % datetime.datetime.fromtimestamp(timestampNtp()).isoformat())
 
-        # Gestione della firma del file
+            # Gestione della firma del file
         sign = None
-        if self._certificate != None and os.path.exists(self._certificate):
+        if self._certificate is not None and os.path.exists(self._certificate):
             # Crea il file della firma
             signature = self.sign(filename)
-            if signature == None:
-                logger.error('Impossibile eseguire la firma del file delle misure. Creazione dello zip omettendo il .sign')
+            if signature is None:
+                logger.error('Impossibile eseguire la firma del file delle misure. '
+                             'Creazione dello zip omettendo il .sign')
             else:
                 with open('%s.sign' % filename[0:-4], 'wb') as sign:
                     sign.write(signature)
@@ -89,12 +93,12 @@ class Deliverer(object):
         zip_file.write(myfile.name, os.path.basename(myfile.name))
 
         # Sposto la firma nello zip
-        if sign != None and os.path.exists(sign.name):
-                zip_file.write(sign.name, os.path.basename(sign.name))
-                os.remove(sign.name)
+        if sign is not None and os.path.exists(sign.name):
+            zip_file.write(sign.name, os.path.basename(sign.name))
+            os.remove(sign.name)
 
         # Controllo lo zip
-        if zip_file.testzip() != None:
+        if zip_file.testzip() is not None:
             zip_file.close()
             logger.error("Lo zip %s è corrotto. Lo elimino." % zipname)
             os.remove(zipname)
@@ -106,7 +110,7 @@ class Deliverer(object):
         # A questo punto ho un xml e uno zip
         return zipname
 
-    #restituisce la firma del file da inviare
+    # restituisce la firma del file da inviare
     def sign(self, filename):
         '''
         Restituisce la stringa contenente la firma del digest SHA1 del

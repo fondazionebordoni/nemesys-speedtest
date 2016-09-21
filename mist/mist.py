@@ -19,7 +19,6 @@ from optionParser import OptionParser
 import paths
 import sysmonitor
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -31,19 +30,19 @@ def main(argv=None):
     program_version = __version__
     program_build_date = "%s" % __updated__
     program_version_string = '%%prog %s (%s)' % (program_version, program_build_date)
-    program_longdesc = '''''' 
+    program_longdesc = ''''''
 
-    #TODO: Needs fixing, mixup with optionParser.OptionParser
-    parser = OptionParser(version=program_version_string, epilog=program_longdesc)#, description=program_license)
-    parser.add_option("-t", "--text", dest="text_based", action="store_true", help="Senza interfaccia grafica [default: %default]")
-    parser.set_defaults(text_based = False)
+    # TODO: Needs fixing, mixup with optionParser.OptionParser
+    parser = OptionParser(version=program_version_string, epilog=program_longdesc)  # , description=program_license)
+    parser.add_option("-t", "--text", dest="text_based", action="store_true",
+                      help="Senza interfaccia grafica [default: %default]")
+    parser.set_defaults(text_based=False)
     (args_opts, _) = parser.parse_args(argv)
 
-    
     ''' Check for sudo on linux and Administrator on Windows'''
     current_os = platform.system().lower()
     if current_os.startswith('lin') or current_os.startswith('darwin'):
-        if (os.getenv('SUDO_USER') == None) and (os.getenv('USER') != 'root'):
+        if (os.getenv('SUDO_USER') is None) and (os.getenv('USER') != 'root'):
             is_admin = False
         else:
             is_admin = True
@@ -54,12 +53,13 @@ def main(argv=None):
     if not is_admin:
         sys.stderr.write('Speedtest avviato senza permessi di amministratore - chiusura tester\n')
         if not args_opts.text_based:
-            #Display window with message
+            # Display window with message
             app = wx.App(False)
-            msgBox = wx.MessageDialog(None, 
-                                      "\nSpeedtest e' stato avviato senza i permessi di amministratore.\n\nSu sistemi Linux e MacOS va avviato da linea di comando con 'sudo'", 
-                                      "Attenzione: Speedtest non puo' essere avviato", 
-                                      style = wx.OK)
+            msgBox = wx.MessageDialog(None,
+                                      "\nSpeedtest e' stato avviato senza i permessi di amministratore.\n\n"
+                                      "Su sistemi Linux e MacOS va avviato da linea di comando con 'sudo'",
+                                      "Attenzione: Speedtest non puo' essere avviato",
+                                      style=wx.OK)
             msgBox.ShowModal()
             msgBox.Destroy()
         sys.exit()
@@ -68,8 +68,9 @@ def main(argv=None):
         paths.check_paths()
         import log_conf
         log_conf.init_log()
-    except IOError as e:
-        print "Impossibile inizializzare il logging, assicurarsi che il programma stia girando con i permessi di amministratore."
+    except IOError:
+        print ("Impossibile inizializzare il logging, assicurarsi che il programma stia girando con "
+               "i permessi di amministratore.")
         sys.exit()
 
     try:
@@ -82,15 +83,15 @@ def main(argv=None):
 
     try:
         SWN = 'MisuraInternet Speed Test'
-        logger.info('Starting %s v.%s' % (SWN, FULL_VERSION)) 
-#         mist(args_opts.text_based, file_opts, md5conf)
+        logger.info('Starting %s v.%s' % (SWN, FULL_VERSION))
+        #         mist(args_opts.text_based, file_opts, md5conf)
         version = __version__
         if not args_opts.text_based:
             app = wx.App(False)
-        
+
             # Check if this is the last version
             version_ok = CheckSoftware(version).checkIT()
-            
+
             if not version_ok:
                 return
         (file_opts, _, md5conf) = parser.parse()
@@ -102,9 +103,10 @@ def main(argv=None):
             GUI.set_listener(controller)
             GUI.start()
         else:
-            if (platform.system().lower().startswith('win')):
+            if platform.system().lower().startswith('win'):
                 wx.CallLater(200, sleeper)
-            GUI = mist_gui.mistGUI(None, -1, "", style = wx.DEFAULT_FRAME_STYLE)# ^ wx.RESIZE_BORDER) #& ~(wx.RESIZE_BORDER | wx.RESIZE_BOX))
+            GUI = mist_gui.mistGUI(None, -1, "",
+                                   style=wx.DEFAULT_FRAME_STYLE)
             event_dispatcher = gui_event.WxGuiEventDispatcher(GUI)
             controller = MistController(GUI, version, event_dispatcher, mist_opts)
             GUI.init_frame(version, event_dispatcher)
@@ -112,8 +114,6 @@ def main(argv=None):
             app.SetTopWindow(GUI)
             GUI.Show()
             app.MainLoop()
-
-
     except Exception, e:
         logging.critical("Impossibile avviare il programma", exc_info=True)
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
@@ -122,8 +122,8 @@ def main(argv=None):
 
 def sleeper():
     sleep(.001)
-    return 1 # don't forget this otherwise the timeout will be removed
-  
-  
+    return 1  # don't forget this otherwise the timeout will be removed
+
+
 if __name__ == "__main__":
     main()

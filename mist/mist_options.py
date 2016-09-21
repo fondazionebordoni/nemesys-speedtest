@@ -5,13 +5,11 @@ Created on 14/apr/2016
 '''
 
 import client
-import isp
-import profile
 
 class MistOptions(object):
     
     def __init__(self, options, md5conf):
-        self._client = _getclient(options)
+        self._client = client.getclient(options)
         self._scheduler = options.scheduler
         self._repository = options.repository
         self._tasktimeout = options.tasktimeout
@@ -55,12 +53,3 @@ class MistOptions(object):
     @property
     def md5conf(self):
         return self._md5conf
-
-def _getclient(options):
-
-    p = profile.Profile(profile_id=None, upload=options.bandwidthup,
-                                        download=options.bandwidthdown)
-    i = isp.Isp(options.ispid)
-    return client.Client(client_id=options.clientid, profile=p, isp=i,
-                                geocode=None, username='speedtest',
-                                password=options.password)
