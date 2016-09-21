@@ -82,6 +82,7 @@ class SysMonitor(object):
         return system_resource.SystemResource(system_resource.RES_OS, status, value, info)
 
     def checkcpu(self):
+        value = -1
         try:
             value = self._profiler.cpuLoad()
             if value < 0 or value > 100:
@@ -92,7 +93,6 @@ class SysMonitor(object):
             info = 'Utilizzato il %s%% del processore' % value
             status = True
         except Exception as e:
-            value = -1
             info = e
             status = False
         return system_resource.SystemResource(system_resource.RES_CPU, status, value, info)
