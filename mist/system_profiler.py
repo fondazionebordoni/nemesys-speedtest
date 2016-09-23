@@ -31,8 +31,7 @@ MESSAGE = ALL_RES
 
 
 class SystemProfiler(object):
-    def __init__(self, event_dispatcher, from_tester=False,
-                 bandwidth_up=2048, bandwidth_down=2048, ispid='fub001'):
+    def __init__(self, event_dispatcher, client, from_tester=False):
 
         self._event_dispatcher = event_dispatcher
         self._stop = False
@@ -42,11 +41,11 @@ class SystemProfiler(object):
         else:
             self._message_flag = True
             self._report_device = True
-        self._bw_up = bandwidth_up
-        self._bw_down = bandwidth_down
-        self._ispid = ispid
         self._device = None
-        self._sys_monitor = SysMonitor()
+        self._sys_monitor = SysMonitor(check_speed=(not client.is_oneshot()),
+                                       bw_up=client.profile.upload,
+                                       bw_down=client.profile.download,
+                                       ispid=client.isp.id)
         self._lock = threading.Lock()
 
     def get_os(self):
@@ -84,7 +83,7 @@ class SystemProfiler(object):
             for res in resources:
                 if res in ALL_RES:
                     if res == RES_HOSTS:
-                        result = self._sys_monitor.checkres(res, self._bw_up, self._bw_down, self._ispid)
+                        result = self._sys_monitor.checkres(res)
                     else:
                         result = self._sys_monitor.checkres(res)
                     sysmon_results[res] = result

@@ -22,16 +22,16 @@ from speedTester import SpeedTester
 from system_profiler import SystemProfiler
 
 
-class MistController():
+class MistController(object):
     def __init__(self, gui, version, event_dispatcher, mist_opts, task_file=None):
         self._gui = gui
         self._version = version
         # TODO: Should not pass ISP id, invent something else
-        self._profiler = SystemProfiler(event_dispatcher, bandwidth_up=mist_opts.client.profile.upload,
-                                        bandwidth_down=mist_opts.client.profile.download, ispid=mist_opts.client.isp.id)
-        self._tester_profiler = SystemProfiler(event_dispatcher, bandwidth_up=mist_opts.client.profile.upload,
-                                               bandwidth_down=mist_opts.client.profile.download,
-                                               ispid=mist_opts.client.isp.id, from_tester=True)
+        self._profiler = SystemProfiler(event_dispatcher,
+                                        client=mist_opts.client)
+        self._tester_profiler = SystemProfiler(event_dispatcher,
+                                               client=mist_opts.client,
+                                               from_tester=True)
         self._event_dispatcher = event_dispatcher
         self._task_file = task_file
         #         self._do_profile = (no_profile == False)
@@ -39,7 +39,7 @@ class MistController():
         self._mist_opts = mist_opts
 
     def play(self):
-        '''Function called from GUI'''
+        """Function called from GUI"""
         self._gui.set_busy(True)
         if False:  # self._do_profile:
             self._profiler.profile_once_and_call_back(callback=self.measure, report_progress=True)
@@ -48,7 +48,7 @@ class MistController():
             # self.measure()
 
     def check(self):
-        '''Function called from GUI'''
+        """Function called from GUI"""
         self._gui.set_busy(True)
         self._profiler.profile_once_and_call_back(callback=self.profile_done_callback, report_progress=True)
 
@@ -60,7 +60,7 @@ class MistController():
         self._gui.set_busy(False)
 
     def measure(self, profiler_result=None):
-        '''Callback to continue with measurement after profiling'''
+        """Callback to continue with measurement after profiling"""
         self._speed_tester = SpeedTester(self._version, self._event_dispatcher, self._tester_profiler, self._mist_opts)
         self._speed_tester.start()
 
@@ -71,7 +71,7 @@ class MistController():
                 if thread.isAlive():
                     try:
                         thread._Thread__stop()
-                    except:
+                    except Exception:
                         self._event_dispatcher.postEvent(gui_event.ErrorEvent(
                             "Impossibile terminare il processo di misura %s" % str(thread.getName())))
 

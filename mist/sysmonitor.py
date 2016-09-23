@@ -47,7 +47,11 @@ logger = logging.getLogger(__name__)
 
 
 class SysMonitor(object):
-    def __init__(self):
+    def __init__(self, check_speed=False, bw_up=1000, bw_down=1000, ispid='fub001'):
+        self._check_speed = check_speed
+        self._bw_up = bw_up
+        self._bw_down = bw_down
+        self._ispid = ispid
         self._profiler = profiler.Profiler()
         self._netstat = netstat.Netstat(iptools.get_dev())
         self._checks = OrderedDict([(system_resource.RES_OS, self.check_os),
@@ -58,8 +62,8 @@ class SysMonitor(object):
                                     (system_resource.RES_HOSTS, self.checkhosts),
                                     (system_resource.RES_TRAFFIC, self.check_traffic)])
 
-    def checkres(self, res, *args):
-        return self._checks[res](*args)
+    def checkres(self, res):
+        return self._checks[res]()
 
     def log_interfaces(self):
         all_devices = self._profiler.get_all_devices()
@@ -139,7 +143,7 @@ class SysMonitor(object):
             status = False
         return system_resource.SystemResource(system_resource.RES_WIFI, status, value, info)
 
-    def checkhosts(self, bandwidth_up=2048, bandwidth_down=2048, ispid='fub001', use_arp=True):
+    def checkhosts(self, use_arp=True):
         value = None
         try:
             ip = iptools.getipaddr()
@@ -153,7 +157,7 @@ class SysMonitor(object):
                 info = 'La scheda di rete in uso ha un IP pubblico. Non controllo il numero degli altri host in rete.'
             else:
                 if mask != 0:
-                    value = checkhost.countHosts(ip, mask, bandwidth_up, bandwidth_down, ispid, use_arp)
+                    value = checkhost.countHosts(ip, mask, self._bw_up, self._bw_down, self._ispid, use_arp)
                     logger.info('Trovati %d host in rete.' % value)
                     if value < 0:
                         raise SysmonitorException('impossibile determinare il numero di host in rete.',
@@ -161,7 +165,7 @@ class SysMonitor(object):
                     elif value == 0:
                         if use_arp:
                             logger.warning("Passaggio a PING per controllo host in rete")
-                            return self.checkhosts(bandwidth_up, bandwidth_down, ispid, False)
+                            return self.checkhosts(False)
                         else:
                             raise SysmonitorException('impossibile determinare il numero di host in rete.',
                                                       nem_exceptions.BADHOST)
@@ -179,25 +183,29 @@ class SysMonitor(object):
         return system_resource.SystemResource(system_resource.RES_HOSTS, status, value, info)
 
     def is_ethernet_active(self):
+        value = 0
+        status = False
+        info = ''
         try:
-            num_active_eth = 0
             devices = self._profiler.get_all_devices()
             for device in devices:
                 dev_type = device.type
                 if dev_type == 'Ethernet 802.3':
                     if device.is_enabled and device.is_active:
-                        num_active_eth += 1
-                    else:
-                        logger.debug("Found inactive Ethernet device")
-            if num_active_eth > 0:
-                info = 'Dispositivi ethernet attivi.'
-                value = 1
-                status = True
-            else:
+                        value = 1
+                        info = 'Dispositivi ethernet attivi.'
+                        status = True
+                        if self._check_speed:
+                            if (device.speed * 1000 < self._bw_up) or (device.speed * 1000 < self._bw_down):
+                                raise SysmonitorException(("Dispositivi ethernet attivi, ma la scheda di rete di "
+                                                           "{0}Mb/s non è sufficiente per misurare correttamente il "
+                                                           "profilo riportato in fase "
+                                                           "di registrazione.").format(device.speed),
+                                                          nem_exceptions.WARNETH)
+            if value == 0:
                 raise SysmonitorException("Dispositivi ethernet non attivi o non presenti.", nem_exceptions.WARNETH)
         except Exception as e:
             info = e
-            value = 0
             status = False
         return system_resource.SystemResource(system_resource.RES_ETH, status, value, info)
 
@@ -249,9 +257,9 @@ class SysMonitor(object):
         self.checkmem()
         self.checkwireless()
 
-    def checkall(self, up, down, ispid, use_arp=True):
+    def checkall(self, use_arp=True):
         self.mediumcheck()
-        self.checkhosts(up, down, ispid, use_arp)
+        self.checkhosts(use_arp)
         # TODO: Reinserire questo check quanto corretto il problema di determinazione del dato
         # checkdisk()
 
@@ -273,65 +281,3 @@ def get_net_if():
     logger.debug('Network Interfaces:\n %s' % my_interfaces)
 
     return my_interfaces
-
-
-if __name__ == '__main__':
-    import log_conf
-
-    log_conf.init_log()
-    #     import errorcode
-    sysmonitor = SysMonitor()
-    #     print '\ncheckall'
-    #     try:
-    # #         print 'Test sysmonitor checkall: %s' % sysmonitor.checkall(1000, 2000, 'fst001')
-    #         print 'Test sysmonitor checkall: %s' % sysmonitor.checkall(1000, 2000, 'pippo')
-    #     except Exception as e:
-    #         print 'Errore: %s' % e
-    try:
-        print '\ncheckhosts (ARP)'
-        print 'Test sysmonitor checkhosts: %s' % sysmonitor.checkhosts(2000, 2000, 'fst001', True)  # ARPING
-    except Exception as e:
-        print 'Errore: %s' % e
-
-    try:
-        print '\ncheckhosts (ping)'
-        print 'Test sysmonitor checkhosts: %s' % sysmonitor.checkhosts(2000, 2000, 'fst001', False)  # PING
-    except Exception as e:
-        print 'Errore: %s' % e
-
-# try:
-#         print '\ncheckcpu'
-#         print 'Test sysmonitor checkcpu: %s' % sysmonitor.checkcpu()
-#     except Exception as e:
-#         print 'Errore: %s' % e
-#      
-#     try:
-#         print '\ncheckmem'
-#         print 'Test sysmonitor checkmem: %s' % sysmonitor.checkmem()
-#     except Exception as e:
-#         print 'Errore: %s' % e
-#      
-#     try:
-#         print '\ncheckwireless'
-#         print 'Test sysmonitor checkwireless: %s' % sysmonitor.checkwireless()
-#     except Exception as e:
-#         print 'Errore: %s' % e
-#       
-#     try:
-#         print '\nget MAC'
-#         print 'Test sysmonitor get MAC: %s' % sysmonitor.get_mac(None)
-#     except Exception as e:
-#         print 'Errore: %s' % e
-#         logger.error(e, exc_info=True)
-#      
-#     try:
-#         print '\nLog interfaces'
-#         print 'Test sysmonitor log interfaces: %s' % sysmonitor.log_interfaces()
-#     except Exception as e:
-#         print 'Errore: %s' % e
-#         logger.error(e, exc_info=True)
-#     try:
-#     print '\ncheck ethernet'
-#     print 'Test sysmonitor is_ethernet_active: %s' % sysmonitor.is_ethernet_active()
-#     except Exception as e:
-#         print 'Errore: %s' % e
