@@ -143,6 +143,14 @@ class SpeedTester(Thread):
                                                                             test_good + 1, test_todo,
                                                                             int(bandwidth))))
                     spurious_percent = "%.2f%%" % (testres.spurious * 100)
+                    if testres.spurious < 0:
+                        info = ('Traffico totale risulta minore del traffico di misura: percentuale %s'
+                                % spurious_percent)
+                        self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC,
+                                                                                 system_resource.SystemResource(
+                                                                                     status=False, info=info,
+                                                                                     value=spurious_percent), True))
+                        raise Exception("traffico spurio negativo.")
                     if testres.spurious > TH_TRAFFIC:
                         info = ('Eccessiva presenza di traffico internet non legato alla misura: percentuale %s'
                                 % spurious_percent)
