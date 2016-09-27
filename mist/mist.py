@@ -76,9 +76,17 @@ def main(argv=None):
     try:
         sysmonitor.SysMonitor().log_interfaces()
     except Exception as e:
-        print "Impossibile trovare un interfaccia di rete attiva, verificare la connessione alla rete."
-        print "Speedtest non si avvia in assenza di connessione alla rete."
         logger.error("Impossibile trovare interfaccia attiva: %s" % e)
+        if args_opts.text_based:
+            print "Impossibile trovare un interfaccia di rete attiva, verificare la connessione alla rete."
+        else:
+            app = wx.App(False)
+            msgBox = wx.MessageDialog(None,
+                                      "\nImpossibile trovare un interfaccia di rete attiva, "
+                                      "verificare la connessione alla rete.",
+                                      style=wx.OK)
+            msgBox.ShowModal()
+            msgBox.Destroy()
         sys.exit()
 
     try:
