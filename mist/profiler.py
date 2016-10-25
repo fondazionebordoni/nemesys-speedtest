@@ -151,37 +151,43 @@ class Profiler(object):
 
     def is_wireless_active(self):
         for (if_name, if_info) in psutil.net_if_stats().items():
-            if if_info.isup:
-                for wifi_word in WIFI_WORDS:
-                    if wifi_word in str(if_name).lower():
-                        return True
+            try:
+                if if_info.isup:
+                    for wifi_word in WIFI_WORDS:
+                        if wifi_word in str(if_name).lower():
+                            return True
+            except AttributeError:
+                pass
 
     def get_all_devices(self):
         self.ipaddr = iptools.getipaddr()
         devices = []
         for (if_name, if_addrs) in psutil.net_if_addrs().items():
-            dev = Device(if_name)
-            if (if_name.startswith('eth') or if_name.startswith('en') or
-                    ('(LAN)' in if_name)):
-                dev.set_type(IF_TYPE_ETHERNET)
-            for if_addr in if_addrs:
-                if if_addr.family == socket.AF_INET:
-                    ip_addr = if_addr.address
-                    dev.set_ipaddr(ip_addr)
-                    if ip_addr == self.ipaddr:
-                        dev.set_active(True)
-                    dev.set_netmask(if_addr.netmask)
-                elif if_addr.family == psutil.AF_LINK:
-                    dev.set_macaddr(if_addr.address)
-            devices.append(dev)
+            device = Device(if_name)
+            try:
+                if (if_name.startswith('eth') or if_name.startswith('en') or
+                        ('(LAN)' in if_name)):
+                    device.set_type(IF_TYPE_ETHERNET)
+                for if_addr in if_addrs:
+                    if if_addr.family == socket.AF_INET:
+                        ip_addr = if_addr.address
+                        device.set_ipaddr(ip_addr)
+                        if ip_addr == self.ipaddr:
+                            device.set_active(True)
+                        device.set_netmask(if_addr.netmask)
+                    elif if_addr.family == psutil.AF_LINK:
+                        device.set_macaddr(if_addr.address)
+            except Exception as e:
+                device.set_type(str(e))
+            devices.append(device)
 
         net_if_stats = psutil.net_if_stats()
-        for dev in devices:
-            stats = net_if_stats.get(dev.name)
+        for device in devices:
+            stats = net_if_stats.get(device.name)
             if stats:
-                dev.set_speed(stats.speed)
-                dev.set_enabled(stats.isup)
-                dev.set_duplex(stats.duplex)
+                device.set_speed(stats.speed)
+                device.set_enabled(stats.isup)
+                device.set_duplex(stats.duplex)
 
         return devices
 
