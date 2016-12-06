@@ -31,6 +31,7 @@ import netstat
 from proof import Proof
 import timeNtp
 
+
 TOTAL_MEASURE_TIME = 10
 # Wait another 15 secs in case end of file has not arrived
 DOWNLOAD_TIMEOUT_DELAY = 15
@@ -43,10 +44,10 @@ logger = logging.getLogger(__name__)
 
 
 class HttpTesterDown:
-    """
+    '''
     NOTE: not thread-safe, make sure to only call
     one measurement at a time!
-    """
+    '''
 
     def __init__(self, dev, bufsize=8 * 1024, rampup_secs=2):
         self._num_bytes = bufsize

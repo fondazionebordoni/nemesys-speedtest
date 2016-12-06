@@ -1,21 +1,21 @@
-# httpclient.py 
-# -*- coding: utf8 -*-
+# httpclient.py
+# -*- coding: utf-8 -*-
 # Copyright (c) 2016 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
-Minimal httpclient so that we can set 
+Minimal httpclient so that we can set
 TCP window size
 """
 
@@ -57,7 +57,6 @@ class HttpClient(object):
         port = url_res.port
         if not port:
             port = 80
-
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if (tcp_window_size is not None) and (tcp_window_size > 0):
             s.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, tcp_window_size)
@@ -165,7 +164,7 @@ class HttpClient(object):
 
 
 class HttpResponse(object):
-    """Read from socket and parse something like this
+    '''Read from socket and parse something like this
 
     HTTP/1.1 200 OK
     Content-Type: text/plain;charset=ISO-8859-1
@@ -173,7 +172,7 @@ class HttpResponse(object):
     Server: Jetty(8.1.16.v20140903)
 
     [11758564,11691628,11771232,11656120,11534992,11603564,11724892,11764052,11781776]
-    """
+    '''
     def __init__(self, response_code, response_cause, content):
         self._response_code = response_code
         self._response_cause = response_cause
