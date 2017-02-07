@@ -61,9 +61,12 @@ class Tester:
         elif bw == BW_3M:
             num_sessions = 1
             tcp_window_size = 65 * 1024
-        else:
+        elif bw <= BW_100M:
             num_sessions = 6
             tcp_window_size = 65 * 1024
+        else:
+            num_sessions = 1
+            tcp_window_size = -1
         return self._testerhttpup.test_up(url, callback_update_speed, num_sessions=num_sessions,
                                           tcp_window_size=tcp_window_size)
 
