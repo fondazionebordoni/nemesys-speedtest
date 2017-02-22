@@ -16,19 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime
 import logging
-from optparse import OptionParser
-import ping
 import socket
+from datetime import datetime
+from optparse import OptionParser
 
-from host import Host
 import iptools
+import ping
+from host import Host
 from nem_exceptions import MeasurementException
 from proof import Proof
-from timeNtp import timestampNtp
 from testerhttpdown import HttpTesterDown
 from testerhttpup import HttpTesterUp
+from timeNtp import timestampNtp
 
 HTTP_BUFF = 8 * 1024
 BW_3M = 3000000
@@ -36,14 +36,9 @@ BW_100M = 100000000
 logger = logging.getLogger(__name__)
 
 
-class Tester:
-    def __init__(self, dev, ip, host, username='anonymous', password='anonymous@', timeout=11):
-
-        self._nic_if = dev
-        self._if_ip = ip
+class Tester(object):
+    def __init__(self, dev, host, timeout=11):
         self._host = host
-        self._username = username
-        self._password = password
         self._timeout = timeout
         socket.setdefaulttimeout(self._timeout)
         self._testerhttpup = HttpTesterUp(dev, HTTP_BUFF)
@@ -51,7 +46,7 @@ class Tester:
 
     def testhttpdown(self, callback_update_speed=None, num_sessions=7):
         url = "http://%s/file.rnd" % self._host.ip
-        return self._testerhttpdown.test_down(url, 10, callback_update_speed, num_sessions=num_sessions)
+        return self._testerhttpdown.test_down(url, callback_update_speed, num_sessions=num_sessions)
 
     def testhttpup(self, callback_update_speed=None, bw=BW_100M):
         url = "http://%s:8080/file.rnd" % self._host.ip
@@ -95,18 +90,10 @@ def main():
     parser = OptionParser(version="0.10.1.$Rev$",
                           description="A simple bandwidth tester able to perform HTTP upload/download and PING tests.")
     parser.add_option("-t", "--type", choices=('httpdown', 'httpup', 'ftpup', 'ping'),
-                      dest="testtype", default="httpup", type="choice",
-                      help="Choose the type of test to perform: httpdown (default), httpup, ftpup, ping")
+                      dest="testtype", default="httpdown", type="choice",
+                      help="Choose the type of test to perform: httpdown (default), httpup, ping")
     parser.add_option("-b", "--bandwidth", dest="bandwidth", default="100M", type="string",
                       help="The expected bandwith to measure, used in upload tests, e.g. 512k, 2M")
-    #     parser.add_option("-w", "--tcp-window", dest = "tcp_window_size", default = "66560", type = "int",
-    #                                     help = "The TCP window size, only for HTTP upload, e.g. 22528")
-    #     parser.add_option("--ping-timeout", dest = "ping_timeout", default = "20.0", type = "float",
-    #                                     help = "Ping timeout")
-    #     parser.add_option("--sessions-up", dest = "sessions_up", default = "1", type = "int",
-    #                                     help = "Number of sessions in upload (only HTTP)")
-    #     parser.add_option("--sessions-down", dest = "sessions_down", default = "7", type = "int",
-    #                                     help = "Number of sessions in download")
     parser.add_option("-n", "--num-tests", dest="num_tests", default="1", type="int",
                       help="Number of tests to perform")
     parser.add_option("-H", "--host", dest="host", default="eagle2.fub.it",
@@ -114,17 +101,15 @@ def main():
 
     (options, _) = parser.parse_args()
     try:
-        ip = iptools.getipaddr()
-        dev = iptools.get_dev(ip=ip)
+        dev = iptools.get_dev()
     except Exception:
         try:
-            ip = iptools.getipaddr(host=options.host, port=80)
             dev = iptools.get_dev(host=options.host, port=80)
         except Exception:
             print "Impossibile ottenere indirizzo e device, verificare la connessione all'host"
             import sys
             sys.exit(2)
-    t = Tester(dev, ip, Host(options.host), timeout=10, username='nemesys', password='4gc0m244')
+    t = Tester(dev, Host(options.host), timeout=10)
     if options.bandwidth.endswith("M"):
         bw = int(options.bandwidth[:-1]) * 1000000
     elif options.bandwidth.endswith("k"):

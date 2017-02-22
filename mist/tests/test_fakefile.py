@@ -17,8 +17,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from fakefile import Fakefile
+from mist.fakefile import Fakefile
 import time
+
 
 class FakefileTests(unittest.TestCase):
 
@@ -41,6 +42,7 @@ class FakefileTests(unittest.TestCase):
             self.assertEqual(8*1024, len(data))
         endtime = time.time()
         print (endtime - starttime)/num_iterations
+
 
 def main():
     unittest.main()

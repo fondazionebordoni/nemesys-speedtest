@@ -157,7 +157,7 @@ class SysMonitor(object):
                 info = 'La scheda di rete in uso ha un IP pubblico. Non controllo il numero degli altri host in rete.'
             else:
                 if mask != 0:
-                    value = checkhost.countHosts(ip, mask, self._bw_up, self._bw_down, self._ispid, use_arp)
+                    value = checkhost.count_hosts(ip, mask, self._bw_up, self._bw_down, self._ispid, use_arp)
                     logger.info('Trovati %d host in rete.' % value)
                     if value < 0:
                         raise SysmonitorException('impossibile determinare il numero di host in rete.',

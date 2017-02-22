@@ -33,30 +33,31 @@ import timeNtp
 
 
 TOTAL_MEASURE_TIME = 10
+RAMPUP_SECS = 2
 # Wait another 15 secs in case end of file has not arrived
 DOWNLOAD_TIMEOUT_DELAY = 15
-# 100 Mbps for 11 seconds
-MAX_TRANSFERED_BYTES = 100 * 1000000 * 15 / 8
+# 1000 Mbps for 12 seconds
+MAX_TRANSFERED_BYTES = 1000 * 1000000 * 12 / 8
 # 10 seconds timeout on open and read operations
 HTTP_TIMEOUT = 10.0
 
 logger = logging.getLogger(__name__)
 
 
-class HttpTesterDown:
-    '''
+class HttpTesterDown(object):
+    """
     NOTE: not thread-safe, make sure to only call
     one measurement at a time!
-    '''
+    """
 
-    def __init__(self, dev, bufsize=8 * 1024, rampup_secs=2):
+    def __init__(self, dev, bufsize=8 * 1024):
         self._num_bytes = bufsize
-        self._rampup_secs = rampup_secs
         self._netstat = netstat.Netstat(dev)
         self._timeout = False
         self._received_end = False
         self._time_to_stop = False
         self.callback_update_speed = None
+        self._total_measure_time = TOTAL_MEASURE_TIME + RAMPUP_SECS
 
     def _init_counters(self):
         self._time_to_stop = False
@@ -67,16 +68,11 @@ class HttpTesterDown:
         self._read_measure_threads = []
         self._last_measured_time = time.time()
 
-    def test_down(self,
-                  url,
-                  total_test_time_secs=TOTAL_MEASURE_TIME,
-                  callback_update_speed=None,
-                  num_sessions=7):
+    def test_down(self, url, callback_update_speed=None, num_sessions=7):
         start_timestamp = datetime.fromtimestamp(timeNtp.timestampNtp())
         self._timeout = False
         self._received_end = False
         self.callback_update_speed = callback_update_speed
-        self._total_measure_time = total_test_time_secs + self._rampup_secs
         file_size = (MAX_TRANSFERED_BYTES *
                      self._total_measure_time /
                      TOTAL_MEASURE_TIME)
@@ -95,8 +91,6 @@ class HttpTesterDown:
         for _ in range(0, num_sessions):
             download_thread = threading.Thread(target=self._do_one_download,
                                                args=(url,
-                                                     self._total_measure_time,
-                                                     file_size,
                                                      result_queue,
                                                      error_queue,
                                                      measurement_id))
@@ -145,13 +139,12 @@ class HttpTesterDown:
                      bytes_tot=self._bytes_total,
                      spurious=spurio)
 
-    def _do_one_download(self, url, total_measure_time, file_size,
-                         result_queue, error_queue, measurement_id):
+    def _do_one_download(self, url, result_queue, error_queue, measurement_id):
         filebytes = 0
 
         try:
-            headers = ({"X-requested-file-size": file_size,
-                        "X-requested-measurement-time": total_measure_time,
+            headers = ({"X-requested-file-size": MAX_TRANSFERED_BYTES,
+                        "X-requested-measurement-time": self._total_measure_time,
                         "X-measurement-id": measurement_id})
             request = urllib2.Request(url, headers=headers)
             response = urllib2.urlopen(request, None, HTTP_TIMEOUT)
@@ -169,9 +162,7 @@ class HttpTesterDown:
                             % response.getcode())
             return
         else:
-            while (((not self._time_to_stop) or
-                    (not self._received_end)) and
-                    (not self._timeout)):
+            while (not self._time_to_stop) or (not self._received_end) and (not self._timeout):
                 try:
                     my_buffer = response.read(self._num_bytes)
                     if my_buffer is not None:
@@ -211,25 +202,23 @@ class HttpTesterDown:
         new_rx_bytes = self._netstat.get_rx_bytes()
         rx_diff = new_rx_bytes - self._last_rx_bytes
         rate_tot = float(rx_diff * 8) / float(elapsed)
-        if self._measure_count > self._rampup_secs:
+        if self._measure_count > RAMPUP_SECS:
             self._bytes_total += rx_diff
             self._measures_tot.append(rate_tot)
             if self._measure_count == self._total_measure_time:
                 self._endtime = measuring_time
                 self._time_to_stop = True
-        elif self._measure_count == self._rampup_secs:
+        elif self._measure_count == RAMPUP_SECS:
             self._starttime = measuring_time
         if self.callback_update_speed:
             self.callback_update_speed(second=self._measure_count,
                                        speed=rate_tot)
         logger.debug("[HTTP] Reading... count = %d, speed = %d"
                      % (self._measure_count, int(rate_tot)))
-        if True:
-            # not self._time_to_stop and not self._received_end:
-            self._last_rx_bytes = new_rx_bytes
-            read_thread = threading.Timer(1.0, self._read_down_measure)
-            self._read_measure_threads.append(read_thread)
-            read_thread.start()
+        self._last_rx_bytes = new_rx_bytes
+        read_thread = threading.Timer(1.0, self._read_down_measure)
+        self._read_measure_threads.append(read_thread)
+        read_thread.start()
 
 
 if __name__ == '__main__':

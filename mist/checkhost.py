@@ -45,7 +45,7 @@ class sendit(threading.Thread):
             self.status = 0
 
 
-def countHosts(ipAddress, netMask, bandwidthup, bandwidthdown, provider='fub001', use_arp=False):
+def count_hosts(ipAddress, netMask, bandwidthup, bandwidthdown, provider='fub001', use_arp=False):
     if ((provider == "fst001") or (provider.startswith('fub0'))) and (not bool(re.search('^192\.168\.', ipAddress))):
         realSubnet = False
         if bandwidthup == bandwidthdown and not bool(re.search('^10\.', ipAddress)):
@@ -126,6 +126,6 @@ if __name__ == '__main__':
     log_conf.init_log()
     ip = iptools.getipaddr('www.fub.it', 80)
 
-    print "PING:", countHosts(ip, 24, 200, 2000, 'fub001', False)
-    print "ARP:", countHosts(ip, 24, 200, 2000, 'fub001', True)
-#     print countHosts(ip, 24, 2000, 2000, 'fst001', 4, 1)
+    print "PING:", count_hosts(ip, 24, 200, 2000, 'fub001', False)
+    print "ARP:", count_hosts(ip, 24, 200, 2000, 'fub001', True)
+#     print count_hosts(ip, 24, 2000, 2000, 'fst001', 4, 1)

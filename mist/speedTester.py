@@ -118,32 +118,32 @@ class SpeedTester(Thread):
                 short_string = test_type.get_string_type_short(t_type).upper()
                 logger.info("[%s] %s [%s]" % (short_string, message, short_string))
                 if t_type == test_type.PING:
-                    testres = tester.testping()
-                    logger.info("[ Ping: %s ] [ Actual Best: %s ]" % (testres.duration, best_ping_value))
+                    proof = tester.testping()
+                    logger.info("[ Ping: %s ] [ Actual Best: %s ]" % (proof.duration, best_ping_value))
                     self._event_dispatcher.postEvent(
-                        gui_event.ResultEvent(test_type.PING, testres.duration, is_intermediate=True))
+                        gui_event.ResultEvent(test_type.PING, proof.duration, is_intermediate=True))
                     self._event_dispatcher.postEvent(gui_event.UpdateEvent("Risultato %s (%s di %s): %.1f ms" %
                                                                            (test_type.get_string_type(t_type).upper(),
                                                                             test_good + 1, test_todo,
-                                                                            testres.duration)))
-                    if testres.duration < best_ping_value:
-                        best_ping_value = testres.duration
-                        best_testres = testres
+                                                                            proof.duration)))
+                    if proof.duration < best_ping_value:
+                        best_ping_value = proof.duration
+                        best_testres = proof
                         best_testres_profiler = profiler_result
                 else:
                     if test_type.is_http_down(t_type):
-                        testres = tester.testhttpdown(self.receive_partial_results_down)
+                        proof = tester.testhttpdown(self.receive_partial_results_down)
                     elif test_type.is_http_up(t_type):
-                        testres = tester.testhttpup(self.receive_partial_results_up,
+                        proof = tester.testhttpup(self.receive_partial_results_up,
                                                     bw=self._client.profile.upload * 1000)
-                    bandwidth = testres.bytes_tot * 8 / float(testres.duration)
+                    bandwidth = proof.bytes_tot * 8 / float(proof.duration)
                     self._event_dispatcher.postEvent(gui_event.ResultEvent(t_type, bandwidth, is_intermediate=True))
                     self._event_dispatcher.postEvent(gui_event.UpdateEvent("Risultato %s (%s di %s): %s" %
                                                                            (test_type.get_string_type(t_type).upper(),
                                                                             test_good + 1, test_todo,
                                                                             int(bandwidth))))
-                    spurious_percent = "%.2f%%" % (testres.spurious * 100)
-                    if testres.spurious < 0:
+                    spurious_percent = "%.2f%%" % (proof.spurious * 100)
+                    if proof.spurious < 0:
                         info = ('Traffico totale risulta minore del traffico di misura: percentuale %s'
                                 % spurious_percent)
                         self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC,
@@ -151,7 +151,7 @@ class SpeedTester(Thread):
                                                                                      status=False, info=info,
                                                                                      value=spurious_percent), True))
                         raise Exception("traffico spurio negativo.")
-                    if testres.spurious > TH_TRAFFIC:
+                    if proof.spurious > TH_TRAFFIC:
                         info = ('Eccessiva presenza di traffico internet non legato alla misura: percentuale %s'
                                 % spurious_percent)
                         self._event_dispatcher.postEvent(gui_event.ResourceEvent(system_resource.RES_TRAFFIC,
@@ -169,7 +169,7 @@ class SpeedTester(Thread):
                     logger.info("[ Bandwidth in %s : %s ] [ Actual Best: %s ]" % (t_type, bandwidth, best_ping_value))
                     if bandwidth > best_bw_value:
                         best_bw_value = bandwidth
-                        best_testres = testres
+                        best_testres = proof
                         best_testres_profiler = profiler_result
                 test_good += 1
                 self._progress += self._progress_step
@@ -244,8 +244,7 @@ class SpeedTester(Thread):
 
                 start_time = datetime.fromtimestamp(timestampNtp())
 
-                tester = Tester(dev=dev, ip=ip, host=my_task.server, timeout=self._testtimeout,
-                                username=self._client.username, password=self._client.password)
+                tester = Tester(dev=dev, host=my_task.server, timeout=self._testtimeout)
 
                 measure = Measure(self._client, start_time, my_task.server, ip, os, mac, self._version)
 

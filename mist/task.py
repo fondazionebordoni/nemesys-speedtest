@@ -21,25 +21,26 @@ from collections import OrderedDict
 
 import httputils
 import xmlutils
+import test_type
 
 logger = logging.getLogger(__name__)
 
 
 def download_task(url, certificate, client_id, version, md5conf, timeout, server=None):
-    '''Scarica il prossimo task dallo scheduler'''
+    """Scarica il prossimo task dallo scheduler"""
 
     try:
         connection = httputils.getverifiedconnection(url=url, certificate=certificate, timeout=timeout)
-        if (server is not None):
+        if server is not None:
             connection.request('GET', '%s?clientid=%s&version=%s&confid=%s&server=%s' % (
-            url.path, client_id, version, md5conf, server.ip))
+                url.path, client_id, version, md5conf, server.ip))
         else:
             connection.request('GET', '%s?clientid=%s&version=%s&confid=%s' % (url.path, client_id, version, md5conf))
 
         data = connection.getresponse().read()
         task = xmlutils.xml2task(data)
 
-        if (task is None):
+        if task is None:
             logger.info('Lo scheduler ha inviato un task vuoto.')
         else:
             logger.info("--------[ TASK ]--------")
@@ -118,25 +119,38 @@ class Task:
 
     @property
     def dict(self):
-        task = OrderedDict \
-                ([ \
-                ('Task id', self.id), \
-                ('Start time', self.start), \
-                ('Server id', self.server.id), \
-                ('Server name', self.server.name), \
-                ('Server ip', self.server.ip), \
-                ('Server location', self.server.location), \
-                ('Ping number', self.ping), \
-                ('Ping repeat', self.nicmp), \
-                ('Ping delay', self.delay), \
-                ('Download HTTP number', self.http_download), \
-                ('Upload HTTP number', self.http_upload), \
-                ('Now parameter', self.now), \
-                ('Message', self.message) \
-                ])
+        task = OrderedDict([
+            ('Task id', self.id),
+            ('Start time', self.start),
+            ('Server id', self.server.id),
+            ('Server name', self.server.name),
+            ('Server ip', self.server.ip),
+            ('Server location', self.server.location),
+            ('Ping number', self.ping),
+            ('Ping repeat', self.nicmp),
+            ('Ping delay', self.delay),
+            ('Download HTTP number', self.http_download),
+            ('Upload HTTP number', self.http_upload),
+            ('Now parameter', self.now),
+            ('Message', self.message)
+        ])
         return task
 
+    def get_n_test(self, t_type):
+        if t_type == test_type.PING:
+            test_todo = self.ping
+        elif test_type.is_http_down(t_type):
+            test_todo = self.http_download
+        elif test_type.is_http_up(t_type):
+            test_todo = self.http_upload
+        else:
+            logger.warn("Tipo di test da effettuare non definito: %s" % test_type.get_string_type(t_type))
+            test_todo = 0
+
+
     def __str__(self):
-        return ('id: %s; start: %s; serverip: %s; ping %d; ncimp: %d; delay: %d; now %d; message: %s; http_download: %d; http_upload: %d' %
-               (self.id, self.start, self.server.ip, self.ping, self.nicmp, self.delay, self.now, self.message,
+        return (
+            'id: {0}; start: {1}; serverip: {2}; ping {3}; ncimp: {4}; delay: {4}; now {5}; message: {6};'
+            ' http_download: {7}; http_upload: {8}'.format(
+                self.id, self.start, self.server.ip, self.ping, self.nicmp, self.delay, self.now, self.message,
                 self.http_download, self.http_upload))

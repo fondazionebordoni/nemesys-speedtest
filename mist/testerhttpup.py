@@ -40,15 +40,15 @@ MAX_TRANSFERED_BYTES = 1000 * 1000000 * 15 / 8
 logger = logging.getLogger(__name__)
 
 
-class HttpTesterUp:
-    '''
+class HttpTesterUp(object):
+    """
     NOTE: not thread-safe, make sure to only call
     one measurement at a time!
-    '''
+    """
 
-    def __init__(self, dev, bufsize=8 * 1024):
-        self._num_bytes = bufsize
-        self._netstat = netstat.Netstat(dev)
+    def __init__(self, device, bufsize=8 * 1024):
+        self._bufsize = bufsize
+        self._netstat = netstat.Netstat(device)
         self.callback_update_speed = None
         self._time_to_stop = False
 
@@ -91,14 +91,14 @@ class HttpTesterUp:
                 url,
                 callback_update_speed=None,
                 total_test_time_secs=TOTAL_MEASURE_TIME,
-                recv_bufsize=8 * 1024,
+                # recv_bufsize=8 * 1024,
                 num_sessions=1,
                 tcp_window_size=-1):
-        '''
+        """
         Upload test is done server side. We just measure
         the average speed payload/net in order to
         verify spurious traffic.
-        '''
+        """
         logger.info("HTTP upload, %d sessions, TCP window size = %d"
                     % (num_sessions, tcp_window_size))
         start_timestamp = datetime.fromtimestamp(timeNtp.timestampNtp())
@@ -112,16 +112,17 @@ class HttpTesterUp:
         self._read_measure_threads.append(read_thread)
         self._starttime = time.time()
         start_tx_bytes = self._netstat.get_tx_bytes()
-        for _ in range(0, num_sessions):
+        for i in range(0, num_sessions):
             fakefile = Fakefile(MAX_TRANSFERED_BYTES)
             test_timeout = total_test_time_secs + TEST_TIMEOUT
-            upload_thread = UploadThread(httptester=self,
+            upload_thread = UploadThread(name='thread-%d' % i,
+                                         httptester=self,
                                          fakefile=fakefile,
                                          url=url,
                                          upload_sending_timeout=test_timeout,
                                          measurement_id=measurement_id,
-                                         recv_bufsize=recv_bufsize,
-                                         num_bytes=self._num_bytes,
+                                         # recv_bufsize=self._bufsize,
+                                         bufsize=self._bufsize,
                                          tcp_window_size=tcp_window_size)
             upload_thread.start()
             upload_threads.append(upload_thread)
@@ -175,10 +176,10 @@ class HttpTesterUp:
 
 
 def _test_from_server_response(response):
-    '''
+    """
     Server response is a comma separated string containing:
     <total_bytes received 10th second>, <total_bytes received 9th second>, ...
-    '''
+    """
     logger.debug("Ricevuto risposta dal server: %s" % str(response))
     if not response or len(response) == 0:
         raise MeasurementException("Nessuna risposta dal server",
@@ -189,34 +190,34 @@ def _test_from_server_response(response):
         except:
             raise MeasurementException("Ricevuto risposta errata dal server",
                                        nem_exceptions.SERVER_ERROR)
-        time = len(results) * 1000
+        testtime = len(results) * 1000
         partial_bytes = [float(x) for x in results]
         bytes_received = int(sum(partial_bytes))
-    return time, bytes_received
+    return testtime, bytes_received
 
 
 class UploadThread(threading.Thread):
-    def __init__(self, httptester, fakefile, url, upload_sending_timeout,
-                 measurement_id, recv_bufsize, num_bytes,
-                 tcp_window_size=None):
+    def __init__(self, name, httptester, fakefile, url, upload_sending_timeout,
+                 measurement_id, bufsize, tcp_window_size=None):
         threading.Thread.__init__(self)
         self._httptester = httptester
+        self._name = name
         self._fakefile = fakefile
         self._url = url
         self._upload_sending_timeout = upload_sending_timeout
         self._measurement_id = measurement_id
-        self._recv_bufsize = recv_bufsize
-        self._num_bytes = num_bytes
+        # self._recv_bufsize = recv_bufsize
+        self._bufsize = bufsize
         self._tcp_window_size = tcp_window_size
         self._error = None
         self._response = None
 
     def run(self):
-        chunk_generator = ChunkGenerator(self._fakefile, self._num_bytes)
+        chunk_generator = ChunkGenerator(self._fakefile, self._bufsize)
         response = None
         httpc = httpclient.HttpClient()
         try:
-            logger.info("Connecting to server")
+            logger.debug("%s Connecting to server %s", self._name, self._url)
             headers = {"X-measurement-id": self._measurement_id}
             response = httpc.post(self._url,
                                   data_source=chunk_generator.gen_chunk(),
@@ -230,10 +231,8 @@ class UploadThread(threading.Thread):
             self._httptester._stop_up_measurement()
             chunk_generator.stop()
             if response:
-                try:
-                    response.close()
-                except:
-                    pass
+                response.close()
+        logger.debug("%s done sending", self._name)
         if response is None:
             if not self._error:
                 self._error = "Nessuna risposta dal server"
@@ -252,7 +251,7 @@ class UploadThread(threading.Thread):
         return self._response
 
 
-class ChunkGenerator:
+class ChunkGenerator(object):
     def __init__(self, fakefile, num_bytes):
         self._fakefile = fakefile
         self._time_to_stop = False
@@ -268,19 +267,12 @@ class ChunkGenerator:
 
 if __name__ == '__main__':
     import log_conf
+    import iptools
 
     log_conf.init_log()
     socket.setdefaulttimeout(10)
-    #    host = "10.80.1.1"
     #    host = "193.104.137.133"
-    #    host = "regopptest6.fub.it"
     host = "eagle2.fub.it"
-    #     host = "rambo.fub.it"
-    #     host = "regoppwebtest.fub.it"
-    #    host = "rocky.fub.it"
-    #    host = "billia.fub.it"
-    import iptools
-
     dev = iptools.get_dev()
     http_tester = HttpTesterUp(dev)
     print "\n------ UPLOAD ---------\n"
