@@ -42,11 +42,11 @@ class Tester(object):
         self._timeout = timeout
         socket.setdefaulttimeout(self._timeout)
         self._testerhttpup = HttpTesterUp(dev, HTTP_BUFF)
-        self._testerhttpdown = HttpTesterDown(dev, HTTP_BUFF)
+        self._testerhttpdown = HttpTesterDown(dev)
 
     def testhttpdown(self, callback_update_speed=None, num_sessions=7):
         url = "http://%s/file.rnd" % self._host.ip
-        return self._testerhttpdown.test_down(url, callback_update_speed, num_sessions=num_sessions)
+        return self._testerhttpdown.test(url, callback_update_speed, num_sessions=num_sessions)
 
     def testhttpup(self, callback_update_speed=None, bw=BW_100M):
         url = "http://%s:8080/file.rnd" % self._host.ip
