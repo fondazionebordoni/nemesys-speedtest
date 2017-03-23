@@ -30,8 +30,6 @@ from nem_exceptions import SysmonitorException
 import nem_exceptions
 import system_resource
 
-platform_name = platform.system().lower()
-
 # Soglie di sistema
 # ------------------------------------------------------------------------------
 # Massima quantità di host in rete

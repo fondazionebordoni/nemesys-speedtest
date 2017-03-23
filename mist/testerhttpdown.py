@@ -1,7 +1,7 @@
-# httptester.py
+# httptesterdown.py
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2015-2016 Fondazione Ugo Bordoni.
+# Copyright (c) 2015-2017 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import Queue
+import random
 from datetime import datetime
 import logging
 import socket
@@ -75,8 +76,9 @@ class Downloader(threading.Thread):
             self.result_queue.put(Result(error=error))
             self.stop_event.set()
             return
-        if response.getcode() != 200:
-            error = {'message': 'Connessione HTTP fallita, codice di errore ricevuto: {}'.format(response.getcode()),
+        response_code = response.getcode()
+        if response_code != 200:
+            error = {'message': 'Connessione HTTP fallita, codice di errore ricevuto: {}'.format(response_code),
                      'code': nem_exceptions.CONNECTION_FAILED}
             self.result_queue.put(Result(error=error))
             self.stop_event.set()
@@ -87,7 +89,6 @@ class Downloader(threading.Thread):
             try:
                 my_buffer = response.read(BUFSIZE)
                 if my_buffer is None:
-                    logger.debug('Thread %s: End of data', self.measurement_id)
                     error = {'message': 'Non ricevuti dati sufficienti per completare la misura',
                              'code': nem_exceptions.SERVER_ERROR}
                     self.result_queue.put(Result(error=error))
@@ -110,10 +111,11 @@ class Producer(threading.Thread):
         self.stop_event = stop_event
         self.result_queue = result_queue
         self.num_sessions = num_sessions
+        self.measurement_id = 'sess-{}'.format(random.randint(0, 100000))
 
     def run(self):
         for i in range(0, self.num_sessions):
-            thread = Downloader(self.url, self.stop_event, self.result_queue, i)
+            thread = Downloader(self.url, self.stop_event, self.result_queue, self.measurement_id)
             thread.start()
 
 

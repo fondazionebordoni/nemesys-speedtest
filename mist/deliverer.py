@@ -1,18 +1,17 @@
 # deliverer.py
 # -*- coding: utf8 -*-
-
 # Copyright (c) 2010 Fondazione Ugo Bordoni.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
@@ -38,12 +37,12 @@ class Deliverer(object):
         self._timeout = timeout
 
     def upload(self, filename):
-        '''
+        """
         Effettua l'upload del file. Restituisce la risposta ricevuta dal repository o None se c'è stato un problema.
-        '''
+        """
         response = None
-        logger.info('Invio a WEB: %s' % self._url)
-        logger.info('Del file ZIP: %s' % filename)
+        logger.info('Invio a WEB: %s', self._url)
+        logger.info('Del file ZIP: %s', filename)
         try:
             with open(filename, 'rb') as myfile:
                 body = myfile.read()
@@ -57,19 +56,19 @@ class Deliverer(object):
 
         except HTTPException as e:
             os.remove(filename)
-            logger.error('Impossibile effettuare l\'invio del file delle misure. Errore: %s' % e)
+            logger.error('Impossibile effettuare l\'invio del file delle misure. Errore: %s', e)
 
         except SSLError as e:
             os.remove(filename)
-            logger.error('Errore SSL durante l\'invio del file delle misure: %s' % e)
+            logger.error('Errore SSL durante l\'invio del file delle misure: %s', e)
 
         return response
 
     def pack(self, filename):
-        '''
+        """
         Crea un file zip contenente //filename// e la sua firma SHA1.
         Restituisce il nome del file zip creato.
-        '''
+        """
 
         # Aggiungi la data di invio in fondo al file
         with open(filename, 'a') as myfile:
@@ -100,26 +99,25 @@ class Deliverer(object):
         # Controllo lo zip
         if zip_file.testzip() is not None:
             zip_file.close()
-            logger.error("Lo zip %s è corrotto. Lo elimino." % zipname)
+            logger.error('Lo zip %s è corrotto. Lo elimino.', zipname)
             os.remove(zipname)
             zipname = None
         else:
             zip_file.close()
-            logger.debug("File %s compresso correttamente in %s" % (filename, zipname))
+            logger.debug('File %s compresso correttamente in %s', filename, zipname)
 
         # A questo punto ho un xml e uno zip
         return zipname
 
-    # restituisce la firma del file da inviare
     def sign(self, filename):
-        '''
+        """
         Restituisce la stringa contenente la firma del digest SHA1 del
         file da firmare
-        '''
+        """
         try:
             from M2Crypto import RSA
         except Exception:
-            logger.debug('Impossibile importare il modulo M2Crypto')
+            logger.error('Impossibile importare il modulo M2Crypto')
             return None
 
         data = open(filename, 'rb').read()
@@ -132,9 +130,3 @@ class Deliverer(object):
             return signature
         else:
             return None
-
-if __name__ == '__main__':
-    import log_conf
-    log_conf.init_log()
-    d = Deliverer('https://repository.agcom244.fub.it/Upload', 'fub000.pem')
-    print ('%s' % d.upload(d.pack("outbox/measure.xml")))

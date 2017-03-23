@@ -41,7 +41,7 @@ class Tester(object):
         self._host = host
         self._timeout = timeout
         socket.setdefaulttimeout(self._timeout)
-        self._testerhttpup = HttpTesterUp(dev, HTTP_BUFF)
+        self._testerhttpup = HttpTesterUp(dev)
         self._testerhttpdown = HttpTesterDown(dev)
 
     def testhttpdown(self, callback_update_speed=None, num_sessions=7):
@@ -62,7 +62,7 @@ class Tester(object):
         else:
             num_sessions = 1
             tcp_window_size = -1
-        return self._testerhttpup.test_up(url, callback_update_speed, num_sessions=num_sessions,
+        return self._testerhttpup.test(url, callback_update_speed, num_sessions=num_sessions,
                                           tcp_window_size=tcp_window_size)
 
     def testping(self, timeout=10):

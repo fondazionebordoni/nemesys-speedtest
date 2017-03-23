@@ -18,12 +18,94 @@
 
 import logging
 from collections import OrderedDict
+from datetime import datetime
+
+import xmltodict
 
 import httputils
-import xmlutils
-import test_type
+from server import Server
 
 logger = logging.getLogger(__name__)
+DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+
+class TaskException(Exception):
+    pass
+
+
+def xml2task(xml):
+    try:
+        xml_dict = xmltodict.parse(xml)
+    except Exception as e:
+        raise TaskException("Impossibile fare il "
+                            "parsing del task ricevuto: %s" % e)
+
+    if (not xml_dict or
+                'calendar' not in xml_dict or
+            not xml_dict['calendar'] or
+                'task' not in xml_dict['calendar']):
+        raise TaskException("Ricevuto task vuoto")
+    task_dict = xml_dict['calendar']['task']
+    message = task_dict.get('message') or ""
+    # if '@wait' in task_dict and task_dict['@wait'].lower() == 'true':
+    #     '''wait task, just get delay and message'''
+    #     if 'delay' in task_dict:
+    #         delay = task_dict['delay']
+    #     else:
+    #         logger.warn("Task di attesa, ma manca il tempo di attesa, "
+    #                     "uso il default 5 minuti")
+    #         delay = 5*60
+    #     return new_wait_task(int(delay), message)
+    # else:
+    task_id = task_dict.get('id') or 0
+    nup = (task_dict.get('nup') or
+           task_dict.get('nhttpup') or
+           task_dict.get('nftpup') or
+           0)
+    if isinstance(nup, OrderedDict):
+        nup = nup.get('#text')
+    ndown = (task_dict.get('ndown') or
+             task_dict.get('nhttpdown') or
+             task_dict.get('nftpdown') or
+             0)
+    if isinstance(ndown, OrderedDict):
+        ndown = ndown.get('#text')
+    nping = task_dict.get('nping')
+    if isinstance(nping, OrderedDict):
+        nping = nping.get('#text')
+    start = task_dict.get('start')
+    now = False
+    if isinstance(start, OrderedDict):
+        if '@now' in start:
+            now = ((start.get('@now') == '1') or
+                   (start.get('@now').lower() == 'true'))
+        start = start.get('#text')
+    # Date
+    try:
+        starttime = datetime.strptime(start, DATE_TIME_FORMAT)
+    except ValueError:
+        logger.debug('XML: %s' % start)
+        raise Exception("Le informazioni orarie "
+                        "per la programmazione delle misure sono errate.")
+    # TODO: scartare se id mancante?
+    srvid = task_dict.get('srvid') or "id-server-mancante"
+    if 'srvip' not in task_dict:
+        raise TaskException("Nel task manca l'indirizzo IP "
+                            "del server di misura")
+    else:
+        srvip = task_dict.get('srvip')
+    srvname = task_dict.get('srvname')
+    server = Server(srvid, srvip, srvname)
+    # def __init__(self, task_id, start, server, ping=4, nicmp=1, delay=1, now=False, message=None, http_download=4,
+    #              http_upload=4):
+    return Task(task_id,
+                starttime,
+                server,
+                int(nup),
+                int(ndown),
+                int(nping),
+                now,
+                message)
 
 
 def download_task(url, certificate, client_id, version, md5conf, timeout, server=None):
@@ -38,7 +120,7 @@ def download_task(url, certificate, client_id, version, md5conf, timeout, server
             connection.request('GET', '%s?clientid=%s&version=%s&confid=%s' % (url.path, client_id, version, md5conf))
 
         data = connection.getresponse().read()
-        task = xmlutils.xml2task(data)
+        task = xml2task(data)
 
         if task is None:
             logger.info('Lo scheduler ha inviato un task vuoto.')
@@ -136,17 +218,17 @@ class Task:
         ])
         return task
 
-    def get_n_test(self, t_type):
-        if t_type == test_type.PING:
-            test_todo = self.ping
-        elif test_type.is_http_down(t_type):
-            test_todo = self.http_download
-        elif test_type.is_http_up(t_type):
-            test_todo = self.http_upload
-        else:
-            logger.warn("Tipo di test da effettuare non definito: %s" % test_type.get_string_type(t_type))
-            test_todo = 0
-
+    # def get_n_test(self, t_type):
+    #     if t_type == test_type.PING:
+    #         test_todo = self.ping
+    #     elif test_type.is_http_down(t_type):
+    #         test_todo = self.http_download
+    #     elif test_type.is_http_up(t_type):
+    #         test_todo = self.http_upload
+    #     else:
+    #         logger.warn("Tipo di test da effettuare non definito: %s" % test_type.get_string_type(t_type))
+    #         test_todo = 0
+    #     return test_todo
 
     def __str__(self):
         return (

@@ -17,7 +17,7 @@ RES_HOSTS = 'Hosts'
 RES_TRAFFIC = 'Traffic'
 
 
-class SystemResource:
+class SystemResource(object):
     def __init__(self, res=None, status=None, value=None, info=None):
         self._res = res
         self._status = status
