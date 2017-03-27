@@ -25,7 +25,6 @@ import logging
 import platform
 import re
 import socket
-import string
 import struct
 from subprocess import Popen, PIPE
 from threading import Thread
