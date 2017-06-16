@@ -482,8 +482,8 @@ class mistGUI(wx.Frame):
         self.messages_text.AppendText(message)
         self.messages_text.ScrollLines(-1)
 
-        font1 = wx.Font(14, wx.DECORATIVE, wx.ITALIC, wx.BOLD)
-        font2 = wx.Font(10, wx.DECORATIVE, wx.ITALIC, wx.BOLD, 1, "")
+        font1 = wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_BOLD)
+        font2 = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, 1, "")
         word1 = "Benvenuto in %s versione %s" % (mist_messages.SWN, self._version)
         words = {word1: (wx.NullColour, wx.NullColour, font1), 'CHECK': (MY_BLUE, wx.NullColour, font2),
                  'TEST': ('green', wx.NullColour, font2)}

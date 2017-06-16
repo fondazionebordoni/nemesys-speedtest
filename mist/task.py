@@ -33,6 +33,87 @@ class TaskException(Exception):
     pass
 
 
+class Task(object):
+    def __init__(self, task_id, start, server, ping=4, nicmp=1, delay=1, now=False, message=None, http_download=4,
+                 http_upload=4):
+        self._id = task_id
+        self._start = start
+        self._server = server
+        self._ftpup_bytes = 0
+        self._http_upload = http_upload
+        self._http_download = http_download
+        self._ping = ping
+        self._nicmp = nicmp
+        self._delay = delay
+        self._now = now
+        self._message = message
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def start(self):
+        return self._start
+
+    @property
+    def server(self):
+        return self._server
+
+    @property
+    def http_download(self):
+        return self._http_download
+
+    @property
+    def http_upload(self):
+        return self._http_upload
+
+    @property
+    def ping(self):
+        return self._ping
+
+    @property
+    def nicmp(self):
+        return self._nicmp
+
+    @property
+    def delay(self):
+        return self._delay
+
+    @property
+    def now(self):
+        return self._now
+
+    @property
+    def message(self):
+        return self._message
+
+    @property
+    def ftpup_bytes(self):
+        return self._ftpup_bytes
+
+    def set_ftpup_bytes(self, num_bytes):
+        self._ftpup_bytes = num_bytes
+
+    @property
+    def dict(self):
+        task = OrderedDict([
+            ('Task id', self.id),
+            ('Start time', self.start),
+            ('Server id', self.server.id),
+            ('Server name', self.server.name),
+            ('Server ip', self.server.ip),
+            ('Server location', self.server.location),
+            ('Ping number', self.ping),
+            ('Ping repeat', self.nicmp),
+            ('Ping delay', self.delay),
+            ('Download HTTP number', self.http_download),
+            ('Upload HTTP number', self.http_upload),
+            ('Now parameter', self.now),
+            ('Message', self.message)
+        ])
+        return task
+
 def xml2task(xml):
     try:
         xml_dict = xmltodict.parse(xml)
@@ -137,86 +218,6 @@ def download_task(url, certificate, client_id, version, md5conf, timeout, server
     return task
 
 
-class Task:
-    def __init__(self, task_id, start, server, ping=4, nicmp=1, delay=1, now=False, message=None, http_download=4,
-                 http_upload=4):
-        self._id = task_id
-        self._start = start
-        self._server = server
-        self._ftpup_bytes = 0
-        self._http_upload = http_upload
-        self._http_download = http_download
-        self._ping = ping
-        self._nicmp = nicmp
-        self._delay = delay
-        self._now = now
-        self._message = message
-
-    @property
-    def id(self):
-        return self._id
-
-    @property
-    def start(self):
-        return self._start
-
-    @property
-    def server(self):
-        return self._server
-
-    @property
-    def http_download(self):
-        return self._http_download
-
-    @property
-    def http_upload(self):
-        return self._http_upload
-
-    @property
-    def ping(self):
-        return self._ping
-
-    @property
-    def nicmp(self):
-        return self._nicmp
-
-    @property
-    def delay(self):
-        return self._delay
-
-    @property
-    def now(self):
-        return self._now
-
-    @property
-    def message(self):
-        return self._message
-
-    @property
-    def ftpup_bytes(self):
-        return self._ftpup_bytes
-
-    def set_ftpup_bytes(self, num_bytes):
-        self._ftpup_bytes = num_bytes
-
-    @property
-    def dict(self):
-        task = OrderedDict([
-            ('Task id', self.id),
-            ('Start time', self.start),
-            ('Server id', self.server.id),
-            ('Server name', self.server.name),
-            ('Server ip', self.server.ip),
-            ('Server location', self.server.location),
-            ('Ping number', self.ping),
-            ('Ping repeat', self.nicmp),
-            ('Ping delay', self.delay),
-            ('Download HTTP number', self.http_download),
-            ('Upload HTTP number', self.http_upload),
-            ('Now parameter', self.now),
-            ('Message', self.message)
-        ])
-        return task
 
     # def get_n_test(self, t_type):
     #     if t_type == test_type.PING:

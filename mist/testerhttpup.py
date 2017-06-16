@@ -102,7 +102,7 @@ class Uploader(threading.Thread):
                                   headers=headers,
                                   tcp_window_size=self.tcp_window_size,
                                   timeout=TEST_TIMEOUT)
-            if not response:
+            if response is None:
                 self.result_queue.put(Result(error={'message': 'Nessuna risposta dal server',
                                                     'code': nem_exceptions.BROKEN_CONNECTION}))
             elif response.status_code != 200:
@@ -162,7 +162,12 @@ class Consumer(threading.Thread):
         if not response_data and len(self.errors) == 0:
             self.errors.append({'message': 'Nessuna risposta dal server', 'code': nem_exceptions.BROKEN_CONNECTION})
         else:
-            (self.duration, self.bytes_received) = test_from_server_response(response_data)
+            try:
+                (self.duration, self.bytes_received) = test_from_server_response(response_data)
+            except nem_exceptions.MeasurementException as e:
+                self.errors.append({'message': e.message, 'code': e.errorcode})
+            except Exception as e:
+                self.errors.append({'message': e.message, 'code': nem_exceptions.errorcode_from_exception(e)})
 
 
 class Observer(threading.Thread):

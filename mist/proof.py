@@ -21,8 +21,7 @@ from datetime import datetime
 
 class Proof(object):
 
-    def __init__(self, test_type, start_time, duration,
-                 bytes_nem=0, bytes_tot=0, spurious=0, errorcode=0):
+    def __init__(self, test_type, start_time, duration, bytes_nem=0, bytes_tot=0, spurious=0, errorcode=0):
         self._type = test_type
         self._start = start_time
         self._duration = duration
@@ -41,9 +40,9 @@ class Proof(object):
 
     @property
     def duration(self):
-        '''
+        """
         Values must be saved in milliseconds.
-        '''
+        """
         return self._duration
 
     @property
@@ -85,7 +84,7 @@ class Proof(object):
                            self.errorcode)
 
 if __name__ == '__main__':
-    t = Proof('download', datetime.now(), 20, 100000, 0, 101)
+    t = Proof('download', datetime.now(), 20, 100000, None, 101)
     print t
     t = Proof('ping', datetime.now(), 10000, 999)
     print t
